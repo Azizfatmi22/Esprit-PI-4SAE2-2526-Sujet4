@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/plannings")
-@CrossOrigin(origins = "http://localhost:4200")
+
 public class PlanningController {
 
     private final PlanningService planningService;
@@ -22,9 +22,14 @@ public class PlanningController {
 
     @PostMapping
     public ResponseEntity<Planning> create(
-            @RequestParam int sessionId,
-            @RequestParam Long locationId,
+            @RequestParam int sessionId,                  // must be provided
+            @RequestParam(required = false) Long locationId, // optional for online
             @RequestBody Planning planning) {
+
+        // Validate sessionId
+        if (sessionId <= 0) {
+            throw new IllegalArgumentException("sessionId is required and must be > 0");
+        }
 
         return ResponseEntity.ok(
                 planningService.createPlanning(planning, sessionId, locationId)
