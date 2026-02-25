@@ -18,4 +18,5 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
     boolean existsByName(String name);
 
     Optional<Location> findByPlatformUrl(String platformUrl);
+
 }

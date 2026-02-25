@@ -1,5 +1,6 @@
 package com.sessionmanagementservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
@@ -23,13 +24,13 @@ public class Session {
 
 
         private Long courseId;
-        private Long trainerId;
+        private String trainerId;
 
         @Enumerated(EnumType.STRING)
         private SessionStatus status;
 
         private Integer maxParticipants;
-
+        @JsonFormat(pattern = "yyyy-MM-dd")
         private LocalDate createdAt;
 
         public Long getId() {

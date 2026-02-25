@@ -3,6 +3,7 @@ package com.sessionmanagementservice.Services.impl;
 
 
 import com.sessionmanagementservice.Repositories.LocationRepository;
+import com.sessionmanagementservice.Repositories.PlanningRepository;
 import com.sessionmanagementservice.Services.interfaces.LocationService;
 import com.sessionmanagementservice.entities.Location;
 import com.sessionmanagementservice.entities.LocationType;
@@ -16,9 +17,10 @@ public class LocationServiceImpl implements LocationService {
 
 
     private final LocationRepository locationRepository;
-
-    public LocationServiceImpl(LocationRepository locationRepository) {
+    private final PlanningRepository planningRepository;
+    public LocationServiceImpl(LocationRepository locationRepository,PlanningRepository planningRepository) {
         this.locationRepository = locationRepository;
+        this.planningRepository = planningRepository;
     }
 
     @Override
@@ -71,6 +73,71 @@ public class LocationServiceImpl implements LocationService {
     @Override
     public List<Location> getLocationsByType(LocationType type) {
         return locationRepository.findByType(type);
+    }
+
+    @Override
+    public List<Location> findAvailableLocations(int requiredCapacity) {
+
+        return locationRepository.findAll().stream()
+                .filter(loc -> loc.getCapacity() >= requiredCapacity)
+                .toList();
+    }
+
+    @Override
+    public Location findLeastUsedLocation() {
+
+        return locationRepository.findAll().stream()
+                .min((l1, l2) -> Long.compare(
+                        planningRepository.countByLocationId(l1.getId()),
+                        planningRepository.countByLocationId(l2.getId())
+                ))
+                .orElseThrow(() -> new RuntimeException("No locations found"));
+    }
+
+    @Override
+    public Location suggestBestLocation(int requiredCapacity, LocationType type) {
+
+        return locationRepository.findByType(type).stream()
+                .filter(loc -> loc.getCapacity() >= requiredCapacity)
+                .min((l1, l2) -> Integer.compare(l1.getCapacity(), l2.getCapacity()))
+                .orElseThrow(() -> new RuntimeException("No suitable location found"));
+    }
+
+    @Override
+    public List<Location> findOverloadedLocations(int threshold) {
+
+        return locationRepository.findAll().stream()
+                .filter(loc ->
+                        planningRepository.countByLocationId(loc.getId()) > threshold
+                )
+                .toList();
+    }
+
+    @Override
+    public List<Location> searchLocations(String keyword) {
+
+        return locationRepository.findAll().stream()
+                .filter(loc ->
+                        loc.getName().toLowerCase().contains(keyword.toLowerCase()) ||
+                                loc.getAddress().toLowerCase().contains(keyword.toLowerCase())
+                )
+                .toList();
+    }
+
+    @Override
+    public List<Location> getOnlineLocations() {
+
+        return locationRepository.findByType(LocationType.ONLINE_PLATFORM);
+    }
+
+    @Override
+    public boolean isValidLocation(Location location) {
+
+        if (location.getType() == LocationType.ONLINE_PLATFORM) {
+            return location.getPlatformUrl() != null && !location.getPlatformUrl().isEmpty();
+        }
+
+        return location.getCapacity() > 0 && location.getAddress() != null;
     }
 }
 
