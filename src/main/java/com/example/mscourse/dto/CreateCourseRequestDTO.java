@@ -1,20 +1,20 @@
 package com.example.mscourse.dto;
 
-import com.example.mscourse.entities.*;
+import com.example.mscourse.entities.Level;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateCourseRequestDTO {
 
     @NotBlank(message = "Title is required")
-    @Size(min = 3, max = 100, message = "Title must be between 3 and 100 characters")
+    @Size(min = 3, max = 200, message = "Title must be between 3 and 200 characters")
     private String title;
 
     @Size(max = 2000, message = "Description cannot exceed 2000 characters")
@@ -24,13 +24,16 @@ public class CreateCourseRequestDTO {
     private Level level;
 
     @NotNull(message = "Price is required")
-    @Min(value = 0, message = "Price cannot be negative")
-    @Max(value = 99999, message = "Price cannot exceed 99999")
+    @PositiveOrZero(message = "Price must be positive or zero")
     private Double price;
 
-    private Long trainerId; // Made optional for frontend (it sets it to 1L in service)
-    private Integer duration; // Duration in seconds
+    @Positive(message = "Duration must be positive")
+    private Integer durationMinutes;
 
-    private List<ChapterDTO> chapters; // Include chapters with their content
-    private String thumbnail;
+    private String status; // DRAFT, PUBLISHED, ARCHIVED
+
+    @NotNull(message = "Trainer ID is required")
+    private Long trainerId;
+
+    private String thumbnailUrl;
 }

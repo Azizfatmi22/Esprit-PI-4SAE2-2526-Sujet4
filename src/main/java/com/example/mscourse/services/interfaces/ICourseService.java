@@ -1,9 +1,11 @@
 package com.example.mscourse.services.interfaces;
 
+
 import com.example.mscourse.dto.*;
-import com.example.mscourse.entities.*;
+import com.example.mscourse.entities.Level;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 
 public interface ICourseService {
@@ -13,6 +15,7 @@ public interface ICourseService {
 
     // Read operations
     CourseDTO getCourseById(Long id);
+    CourseDTO getCourseWithChapters(Long id);
     Page<CourseSummaryDTO> getAllCourses(Pageable pageable);
     List<CourseSummaryDTO> getCoursesByLevel(Level level);
     List<CourseSummaryDTO> getCoursesByTrainer(Long trainerId);
@@ -22,11 +25,16 @@ public interface ICourseService {
     CourseDTO updateCourse(Long id, UpdateCourseRequestDTO courseDTO);
     CourseDTO updateCourseStatus(Long id, String status);
     CourseDTO updateCourseRating(Long id, Double rating);
+    CourseDTO updateCourseThumbnail(Long id, String thumbnailUrl);
 
     // Delete operations
     void deleteCourse(Long id);
 
-    // Chapter operations
-    ChapterDTO addChapterToCourse(Long courseId, ChapterDTO chapterDTO);
-    List<ChapterDTO> getCourseChapters(Long courseId);
+    // Statistics
+    CourseStatisticsDTO getCourseStatistics(Long trainerId);
+    List<CourseSummaryDTO> getTopRatedCourses(int limit);
+    List<CourseSummaryDTO> getMostEnrolledCourses(int limit);
+
+    // Validation
+    boolean existsByTitleAndTrainer(String title, Long trainerId);
 }

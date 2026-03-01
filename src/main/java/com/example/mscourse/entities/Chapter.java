@@ -5,12 +5,14 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "chapters")
+@Table(name = "chapters", indexes = {
+        @Index(name = "idx_chapter_course", columnList = "course_id"),
+        @Index(name = "idx_chapter_order", columnList = "order_index")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,24 +22,31 @@ public class Chapter {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 200)
     private String title;
 
+    @Column(name = "order_index")
     private Integer orderIndex;
+
+    @Column(name = "description", length = 500)
+    private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
     @OneToMany(mappedBy = "chapter", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("orderIndex ASC")
     private List<ContentBlock> contentBlocks = new ArrayList<>();
 
-    @OneToMany(mappedBy = "chapter", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ChapterFile> files = new ArrayList<>();
+    // Helper methods
+    public void addContentBlock(ContentBlock contentBlock) {
+        contentBlocks.add(contentBlock);
+        contentBlock.setChapter(this);
+    }
 
-    @OneToMany(mappedBy = "chapter", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ChapterImage> images = new ArrayList<>();
-
-    @OneToMany(mappedBy = "chapter", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ChapterVideo> videos = new ArrayList<>();
+    public void removeContentBlock(ContentBlock contentBlock) {
+        contentBlocks.remove(contentBlock);
+        contentBlock.setChapter(null);
+    }
 }

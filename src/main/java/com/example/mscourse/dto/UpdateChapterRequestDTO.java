@@ -1,22 +1,22 @@
 package com.example.mscourse.dto;
 
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ChapterDTO {
-    private Long id;
+public class UpdateChapterRequestDTO {
+
+    @Size(min = 3, max = 200, message = "Title must be between 3 and 200 characters")
     private String title;
+
+    @Size(max = 500, message = "Description cannot exceed 500 characters")
     private String description;
+
     private Integer orderIndex;
-    private Long courseId;
-    private List<ContentBlockDTO> contentBlocks;
-    private Integer totalContentBlocks;
 }

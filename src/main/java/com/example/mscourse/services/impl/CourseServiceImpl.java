@@ -2,9 +2,9 @@ package com.example.mscourse.services.impl;
 
 import com.example.mscourse.dto.*;
 import com.example.mscourse.entities.*;
-import com.example.mscourse.Exceptions.CourseNotFoundException;
-import com.example.mscourse.repositories.ChapterRepository;
-import com.example.mscourse.repositories.ContentBlockRepository;
+import com.example.mscourse.exceptions.ResourceNotFoundException;
+import com.example.mscourse.exceptions.UnauthorizedException;
+import com.example.mscourse.exceptions.ValidationException;
 import com.example.mscourse.repositories.CourseRepository;
 import com.example.mscourse.services.interfaces.ICourseService;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +13,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,268 +26,365 @@ import java.util.stream.Collectors;
 public class CourseServiceImpl implements ICourseService {
 
     private final CourseRepository courseRepository;
-    private final ChapterRepository chapterRepository;
-    private final ContentBlockRepository contentBlockRepository;
 
     @Override
-    public CourseDTO createCourse(CreateCourseRequestDTO requestDTO) {
-        log.info("Creating new course: {}", requestDTO.getTitle());
+    public CourseDTO createCourse(CreateCourseRequestDTO courseDTO) {
+        log.info("Creating new course: {}", courseDTO.getTitle());
+
+        // Validate unique title for trainer
+        if (existsByTitleAndTrainer(courseDTO.getTitle(), courseDTO.getTrainerId())) {
+            throw new ValidationException("Course with this title already exists for this trainer");
+        }
 
         Course course = new Course();
-        course.setTitle(requestDTO.getTitle());
-        course.setDescription(requestDTO.getDescription());
-        course.setLevel(requestDTO.getLevel());
-        course.setPrice(requestDTO.getPrice());
-        course.setDuration(requestDTO.getDuration());
-        course.setTrainerId(requestDTO.getTrainerId() != null ? requestDTO.getTrainerId() : 1L);
-        course.setThumbnail(requestDTO.getThumbnail());
-        course.setStatus("DRAFT");
+        course.setTitle(courseDTO.getTitle());
+        course.setDescription(courseDTO.getDescription());
+        course.setLevel(courseDTO.getLevel());
+        course.setPrice(courseDTO.getPrice());
+        course.setDurationMinutes(courseDTO.getDurationMinutes());
+        course.setTrainerId(courseDTO.getTrainerId());
+        course.setThumbnailUrl(courseDTO.getThumbnailUrl());
+        course.setStatus(courseDTO.getStatus() != null ? courseDTO.getStatus() : "DRAFT");
         course.setEnrolledStudents(0);
         course.setRating(0.0);
 
-        // Save course first
         Course savedCourse = courseRepository.save(course);
-        log.info("Course created with ID: {}", savedCourse.getId());
+        log.info("Course created successfully with ID: {}", savedCourse.getId());
 
-        // Handle chapters if provided
-        if (requestDTO.getChapters() != null && !requestDTO.getChapters().isEmpty()) {
-            List<Chapter> chapters = requestDTO.getChapters().stream()
-                    .map(chapterDTO -> createChapterFromDTO(chapterDTO, savedCourse))
-                    .collect(Collectors.toList());
-            savedCourse.setChapters(chapters);
-            log.info("Created {} chapters for course {}", chapters.size(), savedCourse.getId());
-        }
-
-        return convertToDTO(savedCourse);
+        return mapToDTO(savedCourse);
     }
 
     @Override
     public CourseDTO getCourseById(Long id) {
-        log.info("Fetching course with ID: {}", id);
+        log.info("Fetching course by ID: {}", id);
         Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new CourseNotFoundException("Course not found with ID: " + id));
-        return convertToDTO(course);
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + id));
+        return mapToDTO(course);
     }
+
+    @Override
+    public CourseDTO getCourseWithChapters(Long id) {
+        log.info("Fetching course with chapters by ID: {}", id);
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + id));
+
+        CourseDTO courseDTO = mapToDTO(course);
+
+        // Fetch and map chapters with content blocks
+        if (course.getChapters() != null && !course.getChapters().isEmpty()) {
+            List<ChapterDTO> chapterDTOs = course.getChapters().stream()
+                    .sorted((c1, c2) -> Integer.compare(c1.getOrderIndex(), c2.getOrderIndex()))
+                    .map(this::mapChapterToDTO)
+                    .collect(Collectors.toList());
+            courseDTO.setChapters(chapterDTOs);
+        }
+
+        return courseDTO;
+    }
+
 
     @Override
     public Page<CourseSummaryDTO> getAllCourses(Pageable pageable) {
         log.info("Fetching all courses with pagination");
         return courseRepository.findAll(pageable)
-                .map(this::convertToSummaryDTO);
+                .map(this::mapToSummaryDTO);
     }
 
     @Override
     public List<CourseSummaryDTO> getCoursesByLevel(Level level) {
         log.info("Fetching courses by level: {}", level);
-        return courseRepository.findByLevel(level)
-                .stream()
-                .map(this::convertToSummaryDTO)
+        return courseRepository.findByLevel(level).stream()
+                .map(this::mapToSummaryDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<CourseSummaryDTO> getCoursesByTrainer(Long trainerId) {
         log.info("Fetching courses by trainer: {}", trainerId);
-        return courseRepository.findByTrainerId(trainerId)
-                .stream()
-                .map(this::convertToSummaryDTO)
+        return courseRepository.findByTrainerId(trainerId).stream()
+                .map(this::mapToSummaryDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<CourseSummaryDTO> searchCourses(String keyword) {
         log.info("Searching courses with keyword: {}", keyword);
-        return courseRepository.searchCourses(keyword)
-                .stream()
-                .map(this::convertToSummaryDTO)
+        return courseRepository.searchCourses(keyword).stream()
+                .map(this::mapToSummaryDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public CourseDTO updateCourse(Long id, UpdateCourseRequestDTO requestDTO) {
+    public CourseDTO updateCourse(Long id, UpdateCourseRequestDTO courseDTO) {
         log.info("Updating course with ID: {}", id);
-        Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new CourseNotFoundException("Course not found with ID: " + id));
 
-        if (requestDTO.getTitle() != null) {
-            course.setTitle(requestDTO.getTitle());
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + id));
+
+        // Update fields if provided
+        if (courseDTO.getTitle() != null) {
+            // Check if new title is unique for this trainer
+            if (!course.getTitle().equals(courseDTO.getTitle()) &&
+                    existsByTitleAndTrainer(courseDTO.getTitle(), course.getTrainerId())) {
+                throw new ValidationException("Course with this title already exists for this trainer");
+            }
+            course.setTitle(courseDTO.getTitle());
         }
-        if (requestDTO.getDescription() != null) {
-            course.setDescription(requestDTO.getDescription());
+
+        if (courseDTO.getDescription() != null) {
+            course.setDescription(courseDTO.getDescription());
         }
-        if (requestDTO.getLevel() != null) {
-            course.setLevel(requestDTO.getLevel());
+
+        if (courseDTO.getLevel() != null) {
+            course.setLevel(courseDTO.getLevel());
         }
-        if (requestDTO.getPrice() != null) {
-            course.setPrice(requestDTO.getPrice());
+
+        if (courseDTO.getPrice() != null) {
+            course.setPrice(courseDTO.getPrice());
         }
-        if (requestDTO.getStatus() != null) {
-            course.setStatus(requestDTO.getStatus());
+
+        if (courseDTO.getDurationMinutes() != null) {
+            course.setDurationMinutes(courseDTO.getDurationMinutes());
         }
-        if (requestDTO.getThumbnail() != null) {
-            course.setThumbnail(requestDTO.getThumbnail());
+
+        if (courseDTO.getStatus() != null) {
+            course.setStatus(courseDTO.getStatus());
+        }
+
+        if (courseDTO.getThumbnailUrl() != null) {
+            course.setThumbnailUrl(courseDTO.getThumbnailUrl());
         }
 
         Course updatedCourse = courseRepository.save(course);
-        return convertToDTO(updatedCourse);
+        log.info("Course updated successfully");
+
+        return mapToDTO(updatedCourse);
     }
 
     @Override
     public CourseDTO updateCourseStatus(Long id, String status) {
-        log.info("Updating status of course {} to {}", id, status);
+        log.info("Updating status of course {} to: {}", id, status);
+
         Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new CourseNotFoundException("Course not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + id));
+
         course.setStatus(status);
         Course updatedCourse = courseRepository.save(course);
-        return convertToDTO(updatedCourse);
+
+        return mapToDTO(updatedCourse);
     }
 
     @Override
     public CourseDTO updateCourseRating(Long id, Double rating) {
-        log.info("Updating rating of course {} to {}", id, rating);
+        log.info("Updating rating of course {} to: {}", id, rating);
+
+        if (rating < 0 || rating > 5) {
+            throw new ValidationException("Rating must be between 0 and 5");
+        }
+
         Course course = courseRepository.findById(id)
-                .orElseThrow(() -> new CourseNotFoundException("Course not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + id));
+
         course.setRating(rating);
         Course updatedCourse = courseRepository.save(course);
-        return convertToDTO(updatedCourse);
+
+        return mapToDTO(updatedCourse);
+    }
+
+    @Override
+    public CourseDTO updateCourseThumbnail(Long id, String thumbnailUrl) {
+        log.info("Updating thumbnail of course {}", id);
+
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + id));
+
+        course.setThumbnailUrl(thumbnailUrl);
+        Course updatedCourse = courseRepository.save(course);
+
+        return mapToDTO(updatedCourse);
     }
 
     @Override
     public void deleteCourse(Long id) {
         log.info("Deleting course with ID: {}", id);
+
         if (!courseRepository.existsById(id)) {
-            throw new CourseNotFoundException("Course not found with ID: " + id);
+            throw new ResourceNotFoundException("Course not found with id: " + id);
         }
+
         courseRepository.deleteById(id);
         log.info("Course deleted successfully");
     }
 
     @Override
-    public ChapterDTO addChapterToCourse(Long courseId, ChapterDTO chapterDTO) {
-        throw new UnsupportedOperationException("Not implemented yet");
+    public CourseStatisticsDTO getCourseStatistics(Long trainerId) {
+        log.info("Getting course statistics for trainer: {}", trainerId);
+
+        List<Course> courses = courseRepository.findByTrainerId(trainerId);
+
+        Map<Level, Long> coursesByLevel = courses.stream()
+                .collect(Collectors.groupingBy(Course::getLevel, Collectors.counting()));
+
+        Map<String, Long> coursesByStatus = courses.stream()
+                .collect(Collectors.groupingBy(Course::getStatus, Collectors.counting()));
+
+        long totalEnrollments = courses.stream()
+                .mapToInt(c -> c.getEnrolledStudents() != null ? c.getEnrolledStudents() : 0)
+                .sum();
+
+        double averageRating = courses.stream()
+                .filter(c -> c.getRating() != null)
+                .mapToDouble(Course::getRating)
+                .average()
+                .orElse(0.0);
+
+        long totalChapters = courses.stream()
+                .mapToLong(c -> c.getChapters() != null ? c.getChapters().size() : 0)
+                .sum();
+
+        long totalContentBlocks = courses.stream()
+                .flatMap(c -> c.getChapters().stream())
+                .mapToLong(ch -> ch.getContentBlocks() != null ? ch.getContentBlocks().size() : 0)
+                .sum();
+
+        return CourseStatisticsDTO.builder()
+                .trainerId(trainerId)
+                .totalCourses((long) courses.size())
+                .publishedCourses(coursesByStatus.getOrDefault("PUBLISHED", 0L))
+                .draftCourses(coursesByStatus.getOrDefault("DRAFT", 0L))
+                .archivedCourses(coursesByStatus.getOrDefault("ARCHIVED", 0L))
+                .totalEnrollments(totalEnrollments)
+                .averageRating(averageRating)
+                .coursesByLevel(coursesByLevel)
+                .coursesByStatus(coursesByStatus)
+                .totalChapters(totalChapters)
+                .totalContentBlocks(totalContentBlocks)
+                .build();
     }
 
     @Override
-    public List<ChapterDTO> getCourseChapters(Long courseId) {
-        throw new UnsupportedOperationException("Not implemented yet");
+    public List<CourseSummaryDTO> getTopRatedCourses(int limit) {
+        log.info("Fetching top {} rated courses", limit);
+        return courseRepository.findTop10ByOrderByCreatedAtDesc().stream()
+                .filter(c -> c.getRating() != null)
+                .sorted((c1, c2) -> Double.compare(c2.getRating(), c1.getRating()))
+                .limit(limit)
+                .map(this::mapToSummaryDTO)
+                .collect(Collectors.toList());
     }
 
-    // Helper method to convert ChapterDTO to Chapter entity
-    private Chapter createChapterFromDTO(ChapterDTO chapterDTO, Course course) {
-        Chapter chapter = new Chapter();
-        chapter.setTitle(chapterDTO.getTitle());
-        chapter.setOrderIndex(chapterDTO.getId() != null ? Math.toIntExact(chapterDTO.getId()) : 0);
-        chapter.setCourse(course);
-
-        Chapter savedChapter = chapterRepository.save(chapter);
-
-        // Handle content blocks
-        if (chapterDTO.getContentBlocks() != null && !chapterDTO.getContentBlocks().isEmpty()) {
-            List<ContentBlock> contentBlocks = chapterDTO.getContentBlocks().stream()
-                    .map(blockDTO -> createContentBlockFromDTO(blockDTO, savedChapter))
-                    .collect(Collectors.toList());
-            savedChapter.setContentBlocks(contentBlocks);
-        }
-
-        // Handle videos
-        if (chapterDTO.getVideos() != null && !chapterDTO.getVideos().isEmpty()) {
-            List<ChapterVideo> videos = chapterDTO.getVideos().stream()
-                    .map(videoDTO -> {
-                        ChapterVideo video = new ChapterVideo();
-                        video.setName(videoDTO.getName());
-                        video.setUrl(videoDTO.getUrl());
-                        video.setSize(videoDTO.getSize());
-                        video.setType(videoDTO.getType());
-                        video.setDuration(videoDTO.getDuration());
-                        video.setChapter(savedChapter);
-                        return video;
-                    })
-                    .collect(Collectors.toList());
-            savedChapter.setVideos(videos);
-        }
-
-        // Handle images
-        if (chapterDTO.getImages() != null && !chapterDTO.getImages().isEmpty()) {
-            List<ChapterImage> images = chapterDTO.getImages().stream()
-                    .map(imageDTO -> {
-                        ChapterImage image = new ChapterImage();
-                        image.setName(imageDTO.getName());
-                        image.setUrl(imageDTO.getUrl());
-                        image.setSize(imageDTO.getSize());
-                        image.setType(imageDTO.getType());
-                        image.setChapter(savedChapter);
-                        return image;
-                    })
-                    .collect(Collectors.toList());
-            savedChapter.setImages(images);
-        }
-
-        // Handle files
-        if (chapterDTO.getFiles() != null && !chapterDTO.getFiles().isEmpty()) {
-            List<ChapterFile> files = chapterDTO.getFiles().stream()
-                    .map(fileDTO -> {
-                        ChapterFile file = new ChapterFile();
-                        file.setFileName(fileDTO.getFileName());
-                        file.setFileType(fileDTO.getFileType());
-                        file.setFileSize(fileDTO.getFileSize());
-                        file.setFileUrl(fileDTO.getFileUrl());
-                        file.setDescription(fileDTO.getDescription());
-                        file.setChapter(savedChapter);
-                        return file;
-                    })
-                    .collect(Collectors.toList());
-            savedChapter.setFiles(files);
-        }
-
-        return chapterRepository.save(savedChapter);
+    @Override
+    public List<CourseSummaryDTO> getMostEnrolledCourses(int limit) {
+        log.info("Fetching top {} most enrolled courses", limit);
+        return courseRepository.findAll().stream()
+                .sorted((c1, c2) -> Integer.compare(
+                        c2.getEnrolledStudents() != null ? c2.getEnrolledStudents() : 0,
+                        c1.getEnrolledStudents() != null ? c1.getEnrolledStudents() : 0))
+                .limit(limit)
+                .map(this::mapToSummaryDTO)
+                .collect(Collectors.toList());
     }
 
-    // Helper method to convert ContentBlockDTO to ContentBlock entity
-    private ContentBlock createContentBlockFromDTO(ContentBlockDTO blockDTO, Chapter chapter) {
-        ContentBlock contentBlock = new ContentBlock();
-        contentBlock.setType(blockDTO.getType());
-        contentBlock.setOrderIndex(blockDTO.getOrder());
-        contentBlock.setData(blockDTO.getData());
-        contentBlock.setTitle(blockDTO.getTitle());
-        contentBlock.setChapter(chapter);
-        return contentBlockRepository.save(contentBlock);
+    @Override
+    public boolean existsByTitleAndTrainer(String title, Long trainerId) {
+        return courseRepository.existsByTitleAndTrainerId(title, trainerId);
     }
 
-    // Helper method to convert Entity to DTO
-    private CourseDTO convertToDTO(Course course) {
-        CourseDTO dto = new CourseDTO();
-        dto.setId(course.getId());
-        dto.setTitle(course.getTitle());
-        dto.setDescription(course.getDescription());
-        dto.setLevel(course.getLevel());
-        dto.setPrice(course.getPrice());
-        dto.setStatus(course.getStatus());
-        dto.setTrainerId(course.getTrainerId());
-        dto.setEnrolledStudents(course.getEnrolledStudents());
-        dto.setRating(course.getRating());
-        dto.setThumbnail(course.getThumbnail());
+    // Mapping methods
+    private CourseDTO mapToDTO(Course course) {
+        CourseDTO.CourseDTOBuilder builder = CourseDTO.builder()
+                .id(course.getId())
+                .title(course.getTitle())
+                .description(course.getDescription())
+                .level(course.getLevel())
+                .price(course.getPrice())
+                .durationMinutes(course.getDurationMinutes())
+                .status(course.getStatus())
+                .trainerId(course.getTrainerId())
+                .enrolledStudents(course.getEnrolledStudents())
+                .rating(course.getRating())
+                .thumbnailUrl(course.getThumbnailUrl())
+                .createdAt(course.getCreatedAt())
+                .updatedAt(course.getUpdatedAt());
 
-        // Set duration
-        if (course.getDuration() != null) {
-            dto.setDuration(String.valueOf(course.getDuration()));
-        } else {
-            dto.setDuration("0");
+        if (course.getChapters() != null) {
+            builder.totalChapters(course.getChapters().size());
+            builder.chapters(course.getChapters().stream()
+                    .map(this::mapChapterToDTO)
+                    .collect(Collectors.toList()));
         }
 
-        return dto;
+        if (course.getAttachments() != null) {
+            builder.attachments(course.getAttachments().stream()
+                    .map(this::mapAttachmentToDTO)
+                    .collect(Collectors.toList()));
+        }
+
+        return builder.build();
     }
 
-    // Helper method to convert Entity to Summary DTO
-    private CourseSummaryDTO convertToSummaryDTO(Course course) {
-        CourseSummaryDTO dto = new CourseSummaryDTO();
-        dto.setId(course.getId());
-        dto.setTitle(course.getTitle());
-        dto.setLevel(course.getLevel());
-        dto.setPrice(course.getPrice());
-        dto.setStatus(course.getStatus());
-        dto.setThumbnail(course.getThumbnail());
-        dto.setRating(course.getRating());
-        dto.setEnrolledStudents(course.getEnrolledStudents());
-        return dto;
+    private CourseSummaryDTO mapToSummaryDTO(Course course) {
+        int totalChapters = course.getChapters() != null ? course.getChapters().size() : 0;
+
+        return CourseSummaryDTO.builder()
+                .id(course.getId())
+                .title(course.getTitle())
+                .description(course.getDescription())
+                .level(course.getLevel())
+                .price(course.getPrice())
+                .status(course.getStatus())
+                .trainerId(course.getTrainerId())
+                .enrolledStudents(course.getEnrolledStudents())
+                .rating(course.getRating())
+                .thumbnailUrl(course.getThumbnailUrl())
+                .totalChapters(totalChapters)
+                .totalDurationMinutes(course.getDurationMinutes())
+                .build();
+    }
+
+    private ChapterDTO mapChapterToDTO(Chapter chapter) {
+        ChapterDTO chapterDTO = ChapterDTO.builder()
+                .id(chapter.getId())
+                .title(chapter.getTitle())
+                .description(chapter.getDescription())
+                .orderIndex(chapter.getOrderIndex())
+                .courseId(chapter.getCourse().getId())
+                .totalContentBlocks(chapter.getContentBlocks() != null ? chapter.getContentBlocks().size() : 0)
+                .build();
+        
+        // Include content blocks if they exist
+        if (chapter.getContentBlocks() != null && !chapter.getContentBlocks().isEmpty()) {
+            List<ContentBlockDTO> contentBlockDTOs = chapter.getContentBlocks().stream()
+                    .sorted((cb1, cb2) -> Integer.compare(cb1.getOrderIndex(), cb2.getOrderIndex()))
+                    .map(this::mapContentBlockToDTO)
+                    .collect(Collectors.toList());
+            chapterDTO.setContentBlocks(contentBlockDTOs);
+        }
+        
+        return chapterDTO;
+    }
+    
+    private ContentBlockDTO mapContentBlockToDTO(ContentBlock contentBlock) {
+        return ContentBlockDTO.builder()
+                .id(contentBlock.getId())
+                .type(contentBlock.getType())
+                .title(contentBlock.getTitle())
+                .data(contentBlock.getData())
+                .orderIndex(contentBlock.getOrderIndex())
+                .chapterId(contentBlock.getChapter().getId())
+                .build();
+    }
+
+    private CourseAttachmentDTO mapAttachmentToDTO(CourseAttachment attachment) {
+        return CourseAttachmentDTO.builder()
+                .id(attachment.getId())
+                .fileName(attachment.getFileName())
+                .fileType(attachment.getFileType())
+                .fileSize(attachment.getFileSize())
+                .fileUrl(attachment.getFileUrl())
+                .category(attachment.getCategory())
+                .description(attachment.getDescription())
+                .courseId(attachment.getCourse().getId())
+                .build();
     }
 }

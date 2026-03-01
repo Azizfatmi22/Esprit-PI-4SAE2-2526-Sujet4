@@ -4,9 +4,14 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@Table(name = "content_blocks")
+@Table(name = "content_blocks", indexes = {
+        @Index(name = "idx_content_chapter", columnList = "chapter_id"),
+        @Index(name = "idx_content_type", columnList = "type")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,16 +22,21 @@ public class ContentBlock {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    private ContentType type; // text, image, video, resource, pdf
+    @Column(nullable = false, columnDefinition = "LONGTEXT")
+    private ContentType type;
 
-    private Integer orderIndex; // To order content within chapter
+    @Column(name = "order_index")
+    private Integer orderIndex;
 
-    @Column(columnDefinition = "TEXT") // For long text
-    private String data; // The actual content (text, URL, etc.)
+    @Column(columnDefinition = "LONGTEXT")
+    private String data;
 
-    private String title; // Optional title for the block
+    @Column(length = 200)
+    private String title;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chapter_id", nullable = false)
     private Chapter chapter;
+
+
 }
