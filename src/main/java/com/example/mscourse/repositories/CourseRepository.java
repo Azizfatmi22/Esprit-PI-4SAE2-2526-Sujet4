@@ -16,7 +16,7 @@ import java.util.Optional;
 public interface CourseRepository extends JpaRepository<Course, Long> {
 
     // Find courses by trainer
-    List<Course> findByTrainerId(Long trainerId);
+    List<Course> findByTrainerId(String trainerId);
 
     // Find courses by level
     List<Course> findByLevel(Level level);
@@ -25,7 +25,7 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     List<Course> findByStatus(String status);
 
     // Find courses by trainer and status
-    List<Course> findByTrainerIdAndStatus(Long trainerId, String status);
+    List<Course> findByTrainerIdAndStatus(String trainerId, String status);
 
     // Search courses by title or description (case insensitive)
     @Query("SELECT c FROM Course c WHERE LOWER(c.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(c.description) LIKE LOWER(CONCAT('%', :keyword, '%'))")
@@ -44,10 +44,10 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     List<Course> findByPriceLessThanEqual(Double price);
 
     // Count courses by trainer
-    Long countByTrainerId(Long trainerId);
+    Long countByTrainerId(String trainerId);
 
     // Check if course exists with same title for trainer
-    boolean existsByTitleAndTrainerId(String title, Long trainerId);
+    boolean existsByTitleAndTrainerId(String title, String trainerId);
 
     // Find latest courses
     List<Course> findTop10ByOrderByCreatedAtDesc();
@@ -58,8 +58,8 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     // Get course statistics
     @Query("SELECT COUNT(c) FROM Course c WHERE c.trainerId = :trainerId")
-    long getTotalCoursesByTrainer(@Param("trainerId") Long trainerId);
+    long getTotalCoursesByTrainer(@Param("trainerId") String trainerId);
 
     @Query("SELECT AVG(c.rating) FROM Course c WHERE c.trainerId = :trainerId")
-    Double getAverageRatingByTrainer(@Param("trainerId") Long trainerId);
+    Double getAverageRatingByTrainer(@Param("trainerId") String trainerId);
 }

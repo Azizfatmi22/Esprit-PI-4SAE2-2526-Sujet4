@@ -71,6 +71,7 @@ public class FileController {
      */
     @GetMapping("/debug/test/{coursId}/{chapitreId}/{contentBlockId}/{type}/{filename:.+}")
     public ResponseEntity<?> testPathMatching(
+
             @PathVariable Long coursId,
             @PathVariable Long chapitreId,
             @PathVariable Long contentBlockId,
@@ -110,7 +111,7 @@ public class FileController {
             @RequestParam("type") String type,
             @RequestParam("coursId") Long coursId,
             @RequestParam("chapitreId") Long chapitreId,
-            @RequestParam(value = "contentBlockId", required = false) Long contentBlockId) {
+            @RequestParam("contentBlockId") Long contentBlockId) {  // ← Required
 
         Map<String, Object> response = new HashMap<>();
 
@@ -124,7 +125,7 @@ public class FileController {
             // Get file extension
             String originalFilename = file.getOriginalFilename();
             String extension = "";
-            
+
             if (originalFilename != null && originalFilename.contains(".")) {
                 extension = originalFilename.substring(originalFilename.lastIndexOf("."));
             }
@@ -132,28 +133,14 @@ public class FileController {
             // Determine subfolder based on type
             String typeFolder = determineSubfolder(type);
 
-            // Structure: uploads/cours_{coursId}/chapitre_{chapitreId}/content_block_{id}/{typeFolder}/
-            String uploadPath;
-            String fileUrl;
-            String filename;
-            
-            if (contentBlockId != null) {
-                // Filename: {id}.ext (e.g., 19.jpg)
-                filename = contentBlockId + extension;
-                
-                // Save with content block ID
-                uploadPath = String.format("%s/cours_%d/chapitre_%d/content_block_%d/%s/",
-                        uploadDir, coursId, chapitreId, contentBlockId, typeFolder);
-                fileUrl = String.format("/api/courses/uploads/cours_%d/chapitre_%d/content_block_%d/%s/%s",
-                        coursId, chapitreId, contentBlockId, typeFolder, filename);
-            } else {
-                // Fallback: Use timestamp for temporary uploads
-                filename = System.currentTimeMillis() + extension;
-                uploadPath = String.format("%s/cours_%d/chapitre_%d/temp/%s/",
-                        uploadDir, coursId, chapitreId, typeFolder);
-                fileUrl = String.format("/api/courses/uploads/cours_%d/chapitre_%d/temp/%s/%s",
-                        coursId, chapitreId, typeFolder, filename);
-            }
+            // Filename: {id}.ext (e.g., 19.jpg)
+            String filename = contentBlockId + extension;
+
+            // Save with content block ID
+            String uploadPath = String.format("%s/cours_%d/chapitre_%d/content_block_%d/%s/",
+                    uploadDir, coursId, chapitreId, contentBlockId, typeFolder);
+            String fileUrl = String.format("/api/courses/uploads/cours_%d/chapitre_%d/content_block_%d/%s/%s",
+                    coursId, chapitreId, contentBlockId, typeFolder, filename);
 
             Path dirPath = Paths.get(uploadPath);
             if (!Files.exists(dirPath)) {
@@ -172,9 +159,7 @@ public class FileController {
             response.put("contentType", file.getContentType());
             response.put("coursId", coursId);
             response.put("chapitreId", chapitreId);
-            if (contentBlockId != null) {
-                response.put("contentBlockId", contentBlockId);
-            }
+            response.put("contentBlockId", contentBlockId);
             response.put("type", typeFolder);
             response.put("message", "Fichier uploadé avec succès");
 
@@ -199,7 +184,8 @@ public class FileController {
             @RequestParam("files") MultipartFile[] files,
             @RequestParam("type") String type,
             @RequestParam("coursId") Long coursId,
-            @RequestParam("chapitreId") Long chapitreId) {
+            @RequestParam("chapitreId") Long chapitreId
+    ) {
 
         Map<String, Object> response = new HashMap<>();
         List<Map<String, String>> uploadedFiles = new ArrayList<>();
@@ -285,11 +271,12 @@ public class FileController {
             // Filename: {id}.ext (e.g., 11.jpg)
             String filename = coursId + extension;
 
-            // Structure: uploads/thumbnails/
-            String uploadPath = uploadDir + "/thumbnails/";
+            // Structure: uploads/cours_{coursId}/thumbnails/
+            String uploadPath = String.format("%s/cours_%d/thumbnails/", uploadDir, coursId);
             Path dirPath = Paths.get(uploadPath);
             if (!Files.exists(dirPath)) {
                 Files.createDirectories(dirPath);
+                logger.info("Created directory: {}", dirPath);
             }
 
             // Save the file (overwrite if exists)
@@ -297,12 +284,15 @@ public class FileController {
             Files.write(filePath, file.getBytes());
             logger.info("Thumbnail saved: {}", filePath);
 
-            String fileUrl = "/api/courses/uploads/thumbnails/" + filename;
+            // Fix the URL formatting - use String.format instead of concatenation
+            String fileUrl = String.format("/api/courses/uploads/cours_%d/thumbnails/%s",
+                    coursId, filename);
 
             response.put("fileUrl", fileUrl);
             response.put("fileName", originalFilename);
             response.put("fileSize", file.getSize());
             response.put("coursId", coursId);
+            response.put("message", "Thumbnail uploadé avec succès");
 
             return ResponseEntity.ok(response);
 
@@ -312,7 +302,6 @@ public class FileController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-
     // ==================== SERVE METHODS ====================
 
     /**
@@ -333,7 +322,6 @@ public class FileController {
         logger.info("contentBlockId: {}", contentBlockId);
         logger.info("type: {}", type);
         logger.info("filename: {}", filename);
-
         String typeFolder = determineSubfolder(type);
         logger.info("typeFolder: {}", typeFolder);
         
@@ -355,6 +343,12 @@ public class FileController {
             @PathVariable String type,
             @PathVariable String filename) {
 
+        logger.info("=== SERVE COURSE FILE ===");
+        logger.info("coursId: {}", coursId);
+        logger.info("chapitreId: {}", chapitreId);
+        logger.info("type: {}", type);
+        logger.info("filename: {}", filename);
+
         String typeFolder = determineSubfolder(type);
         String filePath = String.format("cours_%d/chapitre_%d/%s/%s",
                 coursId, chapitreId, typeFolder, filename);
@@ -373,6 +367,12 @@ public class FileController {
             @PathVariable String type,
             @PathVariable String filename) {
 
+        logger.info("=== SERVE TEMP FILE ===");
+        logger.info("coursId: {}", coursId);
+        logger.info("chapitreId: {}", chapitreId);
+        logger.info("type: {}", type);
+        logger.info("filename: {}", filename);
+
         String typeFolder = determineSubfolder(type);
         String filePath = String.format("cours_%d/chapitre_%d/temp/%s/%s",
                 coursId, chapitreId, typeFolder, filename);
@@ -382,10 +382,21 @@ public class FileController {
 
     /**
      * Serve thumbnails
+     * Matches: /api/courses/uploads/{coursId}/thumbnails/{filename}
      */
-    @GetMapping("/thumbnails/{filename:.+}")
-    public ResponseEntity<Resource> serveThumbnail(@PathVariable String filename) {
-        return serveFile("thumbnails/" + filename, filename);
+    @GetMapping("/{coursId}/thumbnails/{filename:.+}")
+    public ResponseEntity<Resource> serveThumbnail(
+            @PathVariable Long coursId,
+            @PathVariable String filename) {
+
+        logger.info("=== SERVE COURSE THUMBNAIL ===");
+        logger.info("coursId: {}", coursId);
+        logger.info("filename: {}", filename);
+
+        // ✅ Map URL path to actual storage path structure with cours_ prefix
+        String filePath = String.format("cours_%d/thumbnails/%s", coursId, filename);
+
+        return serveFile(filePath, filename);
     }
 
     /**
@@ -547,17 +558,21 @@ public class FileController {
     /**
      * Delete a file
      */
-    @DeleteMapping("/cours_{coursId}/chapitre_{chapitreId}/{type}/{filename:.+}")
+    @DeleteMapping("/cours_{coursId}/chapitre_{chapitreId}/content_block_{contentBlockId}/{type}/{filename:.+}")
     public ResponseEntity<?> deleteFile(
             @PathVariable Long coursId,
             @PathVariable Long chapitreId,
+            @PathVariable Long contentBlockId,
             @PathVariable String type,
             @PathVariable String filename) {
 
         try {
+
             String typeFolder = determineSubfolder(type);
-            String filePath = String.format("%s/cours_%d/chapitre_%d/%s/%s",
-                    uploadDir, coursId, chapitreId, typeFolder, filename);
+            String filePath = String.format("%s/cours_%d/chapitre_%d/content_block_%d/%s/%s",
+                    uploadDir,coursId, chapitreId, contentBlockId, typeFolder, filename);
+
+
 
             Path path = Paths.get(filePath);
             if (Files.exists(path)) {
@@ -577,16 +592,17 @@ public class FileController {
     /**
      * List files in a course/chapter
      */
-    @GetMapping("/cours_{coursId}/chapitre_{chapitreId}/{type}/list")
+    @GetMapping("/cours_{coursId}/chapitre_{chapitreId}/content_block_{contentBlockId}/{type}/list")
     public ResponseEntity<?> listFiles(
             @PathVariable Long coursId,
             @PathVariable Long chapitreId,
+            @PathVariable Long contentBlockId,
             @PathVariable String type) {
 
         try {
             String typeFolder = determineSubfolder(type);
-            String dirPath = String.format("%s/cours_%d/chapitre_%d/%s/",
-                    uploadDir, coursId, chapitreId, typeFolder);
+            String dirPath = String.format("%s/cours_%d/chapitre_%d/content_block_%d/%s/",
+                    uploadDir, coursId, chapitreId,contentBlockId, typeFolder);
 
             Path path = Paths.get(dirPath);
             if (!Files.exists(path)) {
@@ -598,8 +614,8 @@ public class FileController {
                 Map<String, String> fileInfo = new HashMap<>();
                 String filename = filePath.getFileName().toString();
                 fileInfo.put("fileName", filename);
-                fileInfo.put("fileUrl", String.format("/api/courses/uploads/cours_%d/chapitre_%d/%s/%s",
-                        coursId, chapitreId, typeFolder, filename));
+                fileInfo.put("fileUrl", String.format("/api/courses/uploads/cours_%d/chapitre_%d/content_block_%d/%s/%s",
+                        coursId, chapitreId,contentBlockId, typeFolder, filename));
                 try {
                     fileInfo.put("fileSize", String.valueOf(Files.size(filePath)));
                 } catch (IOException e) {

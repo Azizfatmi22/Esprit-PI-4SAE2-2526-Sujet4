@@ -80,13 +80,14 @@ public class CourseAttachmentServiceImpl implements ICourseAttachmentService {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + courseId));
 
-        // Get file extension
+        // Get original filename and extension
         String originalFilename = file.getOriginalFilename();
-        String extension = originalFilename != null ?
-                originalFilename.substring(originalFilename.lastIndexOf(".")) : "";
+        if (originalFilename == null || originalFilename.isEmpty()) {
+            throw new ValidationException("File name is required");
+        }
         
-        // Filename: {courseId}.{ext}
-        String filename = courseId + extension;
+        // Keep the original filename instead of overwriting with courseId
+        String safeFilename = originalFilename.replaceAll("[^a-zA-Z0-9.-]", "_");
 
         // Create directory structure: uploads/cours_{courseId}/attachments/
         Path uploadPath = Paths.get(uploadDir, "cours_" + courseId, "attachments");
@@ -94,8 +95,15 @@ public class CourseAttachmentServiceImpl implements ICourseAttachmentService {
             Files.createDirectories(uploadPath);
         }
 
-        // Save file (will overwrite if exists)
-        Path filePath = uploadPath.resolve(filename);
+        // Save file with original filename (or append timestamp if exists to avoid overwrite)
+        Path filePath = uploadPath.resolve(safeFilename);
+        if (Files.exists(filePath)) {
+            // File exists, append timestamp to preserve both
+            String nameWithoutExt = safeFilename.substring(0, safeFilename.lastIndexOf("."));
+            String extension = safeFilename.substring(safeFilename.lastIndexOf("."));
+            safeFilename = nameWithoutExt + "_" + System.currentTimeMillis() + extension;
+            filePath = uploadPath.resolve(safeFilename);
+        }
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
         // Create attachment record with proper URL
@@ -103,7 +111,7 @@ public class CourseAttachmentServiceImpl implements ICourseAttachmentService {
         attachment.setFileName(originalFilename);
         attachment.setFileType(file.getContentType());
         attachment.setFileSize(file.getSize());
-        attachment.setFileUrl("/api/courses/uploads/cours_" + courseId + "/attachments/" + filename);
+        attachment.setFileUrl("/api/courses/uploads/cours_" + courseId + "/attachments/" + safeFilename);
         attachment.setCategory(category);
         attachment.setDescription(description);
 
@@ -177,6 +185,85 @@ public class CourseAttachmentServiceImpl implements ICourseAttachmentService {
     }
 
     @Override
+    public CourseAttachmentDTO updateAttachmentFile(Long courseId, Long attachmentId, MultipartFile file, AttachmentCategory category, String description) throws IOException {
+        log.info("Updating attachment file for ID: {}", attachmentId);
+
+        CourseAttachment attachment = attachmentRepository.findById(attachmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Attachment not found with id: " + attachmentId));
+
+        // If a new file is provided, handle the file replacement
+        if (file != null && !file.isEmpty()) {
+            // Delete old file
+            try {
+                String oldFileUrl = attachment.getFileUrl();
+                if (oldFileUrl != null) {
+                    String oldFilePath = oldFileUrl.replace("/api/courses/uploads/", uploadDir + "/");
+                    Path oldPath = Paths.get(oldFilePath);
+                    Files.deleteIfExists(oldPath);
+                    log.info("Deleted old attachment file: {}", oldPath);
+                }
+            } catch (IOException e) {
+                log.warn("Failed to delete old attachment file", e);
+            }
+
+            // Validate new file
+            if (file.isEmpty()) {
+                throw new ValidationException("File cannot be empty");
+            }
+
+            long maxSize = 500 * 1024 * 1024; // 500MB
+            if (file.getSize() > maxSize) {
+                throw new ValidationException("File size exceeds maximum allowed size of 500MB");
+            }
+
+            // Get original filename
+            String originalFilename = file.getOriginalFilename();
+            if (originalFilename == null || originalFilename.isEmpty()) {
+                throw new ValidationException("File name is required");
+            }
+
+            String safeFilename = originalFilename.replaceAll("[^a-zA-Z0-9.-]", "_");
+
+            // Create directory structure
+            Path uploadPath = Paths.get(uploadDir, "cours_" + courseId, "attachments");
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            // Save new file (append timestamp if exists)
+            Path filePath = uploadPath.resolve(safeFilename);
+            if (Files.exists(filePath)) {
+                String nameWithoutExt = safeFilename.substring(0, safeFilename.lastIndexOf("."));
+                String extension = safeFilename.substring(safeFilename.lastIndexOf("."));
+                safeFilename = nameWithoutExt + "_" + System.currentTimeMillis() + extension;
+                filePath = uploadPath.resolve(safeFilename);
+            }
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            // Update attachment with new file info
+            attachment.setFileName(originalFilename);
+            attachment.setFileType(file.getContentType());
+            attachment.setFileSize(file.getSize());
+            attachment.setFileUrl("/api/courses/uploads/cours_" + courseId + "/attachments/" + safeFilename);
+            log.info("Updated attachment file: {}", filePath);
+        }
+
+        // Update metadata if provided
+        if (category != null) {
+            attachment.setCategory(category);
+        }
+
+        if (description != null) {
+            attachment.setDescription(description);
+        }
+
+        CourseAttachment updatedAttachment = attachmentRepository.save(attachment);
+        log.info("Attachment file updated successfully");
+
+        return mapToDTO(updatedAttachment);
+    }
+
+    @Override
     public void deleteAttachment(Long id) {
         log.info("Deleting attachment with ID: {}", id);
 
@@ -186,13 +273,25 @@ public class CourseAttachmentServiceImpl implements ICourseAttachmentService {
         // Delete physical file
         try {
             String fileUrl = attachment.getFileUrl();
-            if (fileUrl != null && fileUrl.startsWith("/uploads/")) {
-                String filePath = fileUrl.replace("/uploads/", uploadDir + "/");
-                Path path = Paths.get(filePath);
-                Files.deleteIfExists(path);
+            if (fileUrl != null) {
+                // Handle both old and new URL formats
+                String relativePath;
+                if (fileUrl.startsWith("/api/courses/uploads/")) {
+                    relativePath = fileUrl.replace("/api/courses/uploads/", "");
+                } else if (fileUrl.startsWith("/uploads/")) {
+                    relativePath = fileUrl.replace("/uploads/", "");
+                } else {
+                    relativePath = fileUrl;
+                }
+                
+                Path filePath = Paths.get(uploadDir, relativePath);
+                if (Files.exists(filePath)) {
+                    Files.delete(filePath);
+                    log.info("Deleted attachment file: {}", filePath);
+                }
             }
         } catch (IOException e) {
-            log.warn("Could not delete physical file for attachment: {}", id);
+            log.warn("Failed to delete physical attachment file for ID: {}", id, e);
         }
 
         attachmentRepository.delete(attachment);
@@ -208,13 +307,25 @@ public class CourseAttachmentServiceImpl implements ICourseAttachmentService {
         for (CourseAttachment attachment : attachments) {
             try {
                 String fileUrl = attachment.getFileUrl();
-                if (fileUrl != null && fileUrl.startsWith("/uploads/")) {
-                    String filePath = fileUrl.replace("/uploads/", uploadDir + "/");
-                    Path path = Paths.get(filePath);
-                    Files.deleteIfExists(path);
+                if (fileUrl != null) {
+                    // Handle both old and new URL formats
+                    String relativePath;
+                    if (fileUrl.startsWith("/api/courses/uploads/")) {
+                        relativePath = fileUrl.replace("/api/courses/uploads/", "");
+                    } else if (fileUrl.startsWith("/uploads/")) {
+                        relativePath = fileUrl.replace("/uploads/", "");
+                    } else {
+                        relativePath = fileUrl;
+                    }
+                    
+                    Path filePath = Paths.get(uploadDir, relativePath);
+                    if (Files.exists(filePath)) {
+                        Files.delete(filePath);
+                        log.info("Deleted attachment file: {}", filePath);
+                    }
                 }
             } catch (IOException e) {
-                log.warn("Could not delete physical file for attachment: {}", attachment.getId());
+                log.warn("Failed to delete physical file for attachment: {}", attachment.getId(), e);
             }
         }
 
@@ -230,18 +341,38 @@ public class CourseAttachmentServiceImpl implements ICourseAttachmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Attachment not found with id: " + id));
 
         String fileUrl = attachment.getFileUrl();
-        if (fileUrl == null || !fileUrl.startsWith("/uploads/")) {
+        if (fileUrl == null || fileUrl.trim().isEmpty()) {
             throw new ValidationException("Attachment file not found");
         }
 
-        String filePath = fileUrl.replace("/uploads/", uploadDir + "/");
-        Path path = Paths.get(filePath);
+        Path path = resolveAttachmentPath(fileUrl);
 
         if (!Files.exists(path)) {
             throw new ResourceNotFoundException("Attachment file not found on disk");
         }
 
         return Files.readAllBytes(path);
+    }
+
+    private Path resolveAttachmentPath(String fileUrl) {
+        String normalized = fileUrl.replace("\\", "/").trim();
+        String relativePath;
+
+        if (normalized.startsWith("/api/courses/uploads/")) {
+            relativePath = normalized.replace("/api/courses/uploads/", "");
+        } else if (normalized.startsWith("/uploads/")) {
+            relativePath = normalized.replace("/uploads/", "");
+        } else if (normalized.contains("/uploads/")) {
+            relativePath = normalized.substring(normalized.indexOf("/uploads/") + "/uploads/".length());
+        } else {
+            relativePath = normalized;
+        }
+
+        if (relativePath.isEmpty()) {
+            throw new ValidationException("Attachment file path is invalid");
+        }
+
+        return Paths.get(uploadDir, relativePath).normalize();
     }
 
     @Override

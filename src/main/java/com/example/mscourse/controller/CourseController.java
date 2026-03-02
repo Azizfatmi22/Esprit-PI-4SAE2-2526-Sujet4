@@ -44,14 +44,33 @@ public class CourseController {
             @RequestParam Double price,
             @RequestParam(required = false) Integer durationMinutes,
             @RequestParam(required = false, defaultValue = "DRAFT") String status,
-            @RequestParam Long trainerId,
+            @RequestParam String trainerId,
             @RequestParam(required = false) MultipartFile thumbnail) {
 
         log.info("REST request to create course: {} with status: {}", title, status);
         log.info("File upload directory: {}", fileUploadDir);
 
         try {
-            // Process thumbnail
+            // Create course first WITHOUT thumbnail (to get the courseId)
+            CreateCourseRequestDTO courseDTO = CreateCourseRequestDTO.builder()
+                    .title(title)
+                    .description(description)
+                    .level(level)
+                    .price(price)
+                    .durationMinutes(durationMinutes)
+                    .status(status)
+                    .trainerId(trainerId)
+                    .thumbnailUrl(null) // Will be set after course creation
+                    .build();
+
+            CourseDTO createdCourse = courseService.createCourse(courseDTO);
+            Long courseId = createdCourse.getId();
+            log.info("Course created with ID: {}", courseId);
+
+            // Ensure standard folder structure exists for each course
+            ensureCourseDirectoryStructureSafely(courseId);
+
+            // Process thumbnail AFTER course creation (so we have the courseId)
             String thumbnailFilename = null;
             if (thumbnail != null && !thumbnail.isEmpty()) {
                 // Generate unique filename
@@ -66,8 +85,8 @@ public class CourseController {
                 thumbnailFilename = System.currentTimeMillis() + "_" +
                         (originalFilename != null ? originalFilename.replaceAll("[^a-zA-Z0-9.-]", "_") : "image") + extension;
 
-                // Create directory if it doesn't exist
-                String thumbnailDir = fileUploadDir + "/thumbnails/";
+                // Create course-specific thumbnail directory: uploads/cours_{courseId}/thumbnails/
+                String thumbnailDir = fileUploadDir + "/cours_" + courseId + "/thumbnails/";
                 Path dirPath = Paths.get(thumbnailDir);
                 if (!Files.exists(dirPath)) {
                     Files.createDirectories(dirPath);
@@ -79,21 +98,12 @@ public class CourseController {
                 Files.write(filePath, thumbnail.getBytes());
 
                 log.info("Thumbnail saved: {} ({} bytes)", thumbnailFilename, thumbnail.getSize());
+
+                // Update course with thumbnail URL
+                createdCourse = courseService.updateCourseThumbnail(courseId, thumbnailFilename);
             }
 
-            CreateCourseRequestDTO courseDTO = CreateCourseRequestDTO.builder()
-                    .title(title)
-                    .description(description)
-                    .level(level)
-                    .price(price)
-                    .durationMinutes(durationMinutes)
-                    .status(status)
-                    .trainerId(trainerId)
-                    .thumbnailUrl(thumbnailFilename) // Store ONLY the filename
-                    .build();
-
-            CourseDTO result = courseService.createCourse(courseDTO);
-            return new ResponseEntity<>(result, HttpStatus.CREATED);
+            return new ResponseEntity<>(createdCourse, HttpStatus.CREATED);
 
         } catch (IOException e) {
             log.error("Error processing file upload: {}", e.getMessage());
@@ -134,7 +144,7 @@ public class CourseController {
     }
 
     @GetMapping("/trainer/{trainerId}")
-    public ResponseEntity<List<CourseSummaryDTO>> getCoursesByTrainer(@PathVariable Long trainerId) {
+    public ResponseEntity<List<CourseSummaryDTO>> getCoursesByTrainer(@PathVariable String trainerId) {
         log.info("REST request to get courses by trainer: {}", trainerId);
         List<CourseSummaryDTO> result = courseService.getCoursesByTrainer(trainerId);
         return ResponseEntity.ok(result);
@@ -164,7 +174,7 @@ public class CourseController {
     }
 
     @GetMapping("/trainer/{trainerId}/statistics")
-    public ResponseEntity<CourseStatisticsDTO> getCourseStatistics(@PathVariable Long trainerId) {
+    public ResponseEntity<CourseStatisticsDTO> getCourseStatistics(@PathVariable String trainerId) {
         log.info("REST request to get course statistics for trainer: {}", trainerId);
         CourseStatisticsDTO result = courseService.getCourseStatistics(trainerId);
         return ResponseEntity.ok(result);
@@ -173,7 +183,7 @@ public class CourseController {
     @GetMapping("/exists")
     public ResponseEntity<Boolean> checkCourseExists(
             @RequestParam String title,
-            @RequestParam Long trainerId) {
+            @RequestParam String trainerId) {
         log.info("REST request to check if course exists with title: {} for trainer: {}", title, trainerId);
         boolean exists = courseService.existsByTitleAndTrainer(title, trainerId);
         return ResponseEntity.ok(exists);
@@ -189,11 +199,14 @@ public class CourseController {
             @RequestParam Level level,
             @RequestParam Double price,
             @RequestParam(required = false) Integer durationMinutes,
+            @RequestParam(required = false) String status,
             @RequestParam(required = false) MultipartFile thumbnail) {
 
         log.info("REST request to update course with ID: {} (multipart)", id);
 
         try {
+            ensureCourseDirectoryStructureSafely(id);
+
             // Process thumbnail if provided
             String thumbnailFilename = null;
             if (thumbnail != null && !thumbnail.isEmpty()) {
@@ -208,7 +221,8 @@ public class CourseController {
                 thumbnailFilename = System.currentTimeMillis() + "_" +
                         (originalFilename != null ? originalFilename.replaceAll("[^a-zA-Z0-9.-]", "_") : "image") + extension;
 
-                String thumbnailDir = fileUploadDir + "/thumbnails/";
+                // Save to course-specific directory: uploads/cours_{courseId}/thumbnails/
+                String thumbnailDir = fileUploadDir + "/cours_" + id + "/thumbnails/";
                 Path dirPath = Paths.get(thumbnailDir);
                 if (!Files.exists(dirPath)) {
                     Files.createDirectories(dirPath);
@@ -225,6 +239,7 @@ public class CourseController {
                     .level(level)
                     .price(price)
                     .durationMinutes(durationMinutes)
+                    .status(status)
                     .thumbnailUrl(thumbnailFilename)
                     .build();
 
@@ -242,6 +257,7 @@ public class CourseController {
             @PathVariable Long id,
             @Valid @RequestBody UpdateCourseRequestDTO courseDTO) {
         log.info("REST request to update course with ID: {} (JSON)", id);
+        ensureCourseDirectoryStructureSafely(id);
         CourseDTO result = courseService.updateCourse(id, courseDTO);
         return ResponseEntity.ok(result);
     }
@@ -270,9 +286,38 @@ public class CourseController {
             @RequestParam MultipartFile thumbnail) throws IOException {
         log.info("REST request to update thumbnail of course: {}", id);
 
-        String thumbnailUrl = "/uploads/thumbnails/" + System.currentTimeMillis() + "_" + thumbnail.getOriginalFilename();
-        CourseDTO result = courseService.updateCourseThumbnail(id, thumbnailUrl);
-        return ResponseEntity.ok(result);
+        try {
+            ensureCourseDirectoryStructureSafely(id);
+
+            // Generate unique filename
+            String originalFilename = thumbnail.getOriginalFilename();
+            String extension = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            } else {
+                extension = ".jpg";
+            }
+
+            String thumbnailFilename = System.currentTimeMillis() + "_" +
+                    (originalFilename != null ? originalFilename.replaceAll("[^a-zA-Z0-9.-]", "_") : "image") + extension;
+
+            // Save to course-specific directory: uploads/cours_{courseId}/thumbnails/
+            String thumbnailDir = fileUploadDir + "/cours_" + id + "/thumbnails/";
+            Path dirPath = Paths.get(thumbnailDir);
+            if (!Files.exists(dirPath)) {
+                Files.createDirectories(dirPath);
+            }
+
+            Path filePath = Paths.get(thumbnailDir + thumbnailFilename);
+            Files.write(filePath, thumbnail.getBytes());
+            log.info("Thumbnail updated: {}", thumbnailFilename);
+
+            CourseDTO result = courseService.updateCourseThumbnail(id, thumbnailFilename);
+            return ResponseEntity.ok(result);
+        } catch (IOException e) {
+            log.error("Error uploading thumbnail: {}", e.getMessage());
+            throw e;
+        }
     }
 
     // ==================== DELETE OPERATIONS ====================
@@ -282,5 +327,33 @@ public class CourseController {
         log.info("REST request to delete course with ID: {}", id);
         courseService.deleteCourse(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private void ensureCourseDirectoryStructureSafely(Long courseId) {
+        try {
+            Path courseRoot = Paths.get(fileUploadDir, "cours_" + courseId);
+            Path thumbnailsDir = courseRoot.resolve("thumbnails");
+            Path chaptersDir = courseRoot.resolve("chapters");
+            Path attachmentsDir = courseRoot.resolve("attachments");
+
+            if (!Files.exists(courseRoot)) {
+                Files.createDirectories(courseRoot);
+                log.info("Created course root directory: {}", courseRoot);
+            }
+            if (!Files.exists(thumbnailsDir)) {
+                Files.createDirectories(thumbnailsDir);
+                log.info("Created thumbnails directory: {}", thumbnailsDir);
+            }
+            if (!Files.exists(chaptersDir)) {
+                Files.createDirectories(chaptersDir);
+                log.info("Created chapters directory: {}", chaptersDir);
+            }
+            if (!Files.exists(attachmentsDir)) {
+                Files.createDirectories(attachmentsDir);
+                log.info("Created attachments directory: {}", attachmentsDir);
+            }
+        } catch (IOException e) {
+            log.warn("Failed to ensure course folder structure for course {}", courseId, e);
+        }
     }
 }

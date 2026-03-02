@@ -17,7 +17,7 @@ public class CourseSummaryDTO {
     private Level level;
     private Double price;
     private String status;
-    private Long trainerId;
+    private String trainerId;
     private Integer enrolledStudents;
     private Double rating;
     private String thumbnailUrl;

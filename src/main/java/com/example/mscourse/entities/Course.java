@@ -43,7 +43,7 @@ public class Course {
     private String status;
 
     @Column(name = "trainer_id", nullable = false)
-    private Long trainerId;
+    private String trainerId;
 
     @Column(name = "enrolled_students")
     private Integer enrolledStudents;

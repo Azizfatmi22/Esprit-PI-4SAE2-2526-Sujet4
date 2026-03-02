@@ -117,6 +117,18 @@ public class CourseAttachmentController {
         return ResponseEntity.ok(result);
     }
 
+    @PutMapping(value = "/{attachmentId}/file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<CourseAttachmentDTO> updateAttachmentFile(
+            @PathVariable Long courseId,
+            @PathVariable Long attachmentId,
+            @RequestParam(required = false) MultipartFile file,
+            @RequestParam(required = false) AttachmentCategory category,
+            @RequestParam(required = false) String description) throws IOException {
+        log.info("REST request to update attachment file for ID: {}", attachmentId);
+        CourseAttachmentDTO result = attachmentService.updateAttachmentFile(courseId, attachmentId, file, category, description);
+        return ResponseEntity.ok(result);
+    }
+
     // ==================== DELETE OPERATIONS ====================
 
     @DeleteMapping("/{attachmentId}")

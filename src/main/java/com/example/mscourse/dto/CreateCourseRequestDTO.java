@@ -33,7 +33,7 @@ public class CreateCourseRequestDTO {
     private String status; // DRAFT, PUBLISHED, ARCHIVED
 
     @NotNull(message = "Trainer ID is required")
-    private Long trainerId;
+    private String trainerId;
 
     private String thumbnailUrl;
 }

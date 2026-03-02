@@ -14,10 +14,16 @@ import com.example.mscourse.repositories.CourseRepository;
 import com.example.mscourse.services.interfaces.IChapterService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,6 +35,9 @@ public class ChapterServiceImpl implements IChapterService {
 
     private final ChapterRepository chapterRepository;
     private final CourseRepository courseRepository;
+
+    @Value("${file.upload.dir:./uploads}")
+    private String uploadDir;
 
     public ChapterDTO createChapter(Long courseId, CreateChapterRequestDTO chapterDTO) {
         log.info("Creating new chapter for course ID: {}", courseId);
@@ -130,13 +139,32 @@ public class ChapterServiceImpl implements IChapterService {
     @Override
     public void deleteChapter(Long id) {
         log.info("Deleting chapter with ID: {}", id);
+        Chapter chapter = chapterRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Chapter not found with id: " + id));
 
-        if (!chapterRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Chapter not found with id: " + id);
+        // Delete the physical folder for this chapter (including all content block files)
+        try {
+            Long courseId = chapter.getCourse().getId();
+            Path chapterDir = Paths.get(uploadDir, "cours_" + courseId, "chapitre_" + id);
+            if (Files.exists(chapterDir)) {
+                log.info("Deleting chapter directory and all its files: {}", chapterDir.toAbsolutePath());
+                Files.walk(chapterDir)
+                        .sorted(Comparator.reverseOrder())
+                        .forEach(path -> {
+                            try {
+                                Files.deleteIfExists(path);
+                            } catch (IOException e) {
+                                log.warn("Failed to delete path during chapter cleanup: {}", path, e);
+                            }
+                        });
+            }
+        } catch (IOException e) {
+            log.warn("Failed to delete chapter directory for chapter {}", id, e);
         }
 
-        chapterRepository.deleteById(id);
-        log.info("Chapter deleted successfully");
+        // JPA cascade + orphanRemoval will delete content blocks from DB
+        chapterRepository.delete(chapter);
+        log.info("Chapter deleted successfully (DB + files)");
     }
 
     @Override

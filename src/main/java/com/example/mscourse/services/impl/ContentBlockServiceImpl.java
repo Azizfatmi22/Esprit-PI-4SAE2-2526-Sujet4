@@ -13,9 +13,14 @@ import com.example.mscourse.repositories.ContentBlockRepository;
 import com.example.mscourse.services.interfaces.IContentBlockService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,6 +32,9 @@ public class ContentBlockServiceImpl implements IContentBlockService {
 
     private final ContentBlockRepository contentBlockRepository;
     private final ChapterRepository chapterRepository;
+
+    @Value("${file.upload.dir:./uploads}")
+    private String uploadDir;
 
     @Override
     public ContentBlockDTO createContentBlock(Long chapterId, CreateContentBlockRequestDTO contentBlockDTO) {
@@ -134,8 +142,23 @@ public class ContentBlockServiceImpl implements IContentBlockService {
     public void deleteContentBlock(Long id) {
         log.info("Deleting content block with ID: {}", id);
 
-        if (!contentBlockRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Content block not found with id: " + id);
+        ContentBlock contentBlock = contentBlockRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Content block not found with id: " + id));
+
+        // Delete physical file if it exists
+        try {
+            String fileUrl = contentBlock.getData();
+            if (fileUrl != null && fileUrl.startsWith("/api/courses/uploads/")) {
+                // Extract the relative path from the URL
+                String relativePath = fileUrl.replace("/api/courses/uploads/", "");
+                Path filePath = Paths.get(uploadDir, relativePath);
+                if (Files.exists(filePath)) {
+                    Files.delete(filePath);
+                    log.info("Deleted content block file: {}", filePath);
+                }
+            }
+        } catch (IOException e) {
+            log.warn("Failed to delete content block file", e);
         }
 
         contentBlockRepository.deleteById(id);

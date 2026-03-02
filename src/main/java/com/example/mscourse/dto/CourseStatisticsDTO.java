@@ -13,7 +13,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CourseStatisticsDTO {
-    private Long trainerId;
+    private String trainerId;
     private Long totalCourses;
     private Long publishedCourses;
     private Long draftCourses;

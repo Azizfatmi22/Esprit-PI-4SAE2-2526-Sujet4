@@ -22,6 +22,7 @@ public interface ICourseAttachmentService {
 
     // Update operations
     CourseAttachmentDTO updateAttachment(Long id, UpdateAttachmentRequestDTO attachmentDTO);
+    CourseAttachmentDTO updateAttachmentFile(Long courseId, Long attachmentId, MultipartFile file, AttachmentCategory category, String description) throws IOException;
 
     // Delete operations
     void deleteAttachment(Long id);

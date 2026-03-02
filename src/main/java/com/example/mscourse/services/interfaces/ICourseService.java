@@ -18,7 +18,7 @@ public interface ICourseService {
     CourseDTO getCourseWithChapters(Long id);
     Page<CourseSummaryDTO> getAllCourses(Pageable pageable);
     List<CourseSummaryDTO> getCoursesByLevel(Level level);
-    List<CourseSummaryDTO> getCoursesByTrainer(Long trainerId);
+    List<CourseSummaryDTO> getCoursesByTrainer(String trainerId);
     List<CourseSummaryDTO> searchCourses(String keyword);
 
     // Update operations
@@ -31,10 +31,10 @@ public interface ICourseService {
     void deleteCourse(Long id);
 
     // Statistics
-    CourseStatisticsDTO getCourseStatistics(Long trainerId);
+    CourseStatisticsDTO getCourseStatistics(String trainerId);
     List<CourseSummaryDTO> getTopRatedCourses(int limit);
     List<CourseSummaryDTO> getMostEnrolledCourses(int limit);
 
     // Validation
-    boolean existsByTitleAndTrainer(String title, Long trainerId);
+    boolean existsByTitleAndTrainer(String title, String trainerId);
 }

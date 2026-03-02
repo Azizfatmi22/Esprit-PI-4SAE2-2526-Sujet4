@@ -21,7 +21,7 @@ public class CourseDTO {
     private Double price;
     private Integer durationMinutes;
     private String status;
-    private Long trainerId;
+    private String trainerId;
     private Integer enrolledStudents;
     private Double rating;
     private String thumbnailUrl;

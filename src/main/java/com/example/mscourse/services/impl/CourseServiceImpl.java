@@ -99,7 +99,7 @@ public class CourseServiceImpl implements ICourseService {
     }
 
     @Override
-    public List<CourseSummaryDTO> getCoursesByTrainer(Long trainerId) {
+    public List<CourseSummaryDTO> getCoursesByTrainer(String trainerId) {
         log.info("Fetching courses by trainer: {}", trainerId);
         return courseRepository.findByTrainerId(trainerId).stream()
                 .map(this::mapToSummaryDTO)
@@ -217,7 +217,7 @@ public class CourseServiceImpl implements ICourseService {
     }
 
     @Override
-    public CourseStatisticsDTO getCourseStatistics(Long trainerId) {
+    public CourseStatisticsDTO getCourseStatistics(String trainerId) {
         log.info("Getting course statistics for trainer: {}", trainerId);
 
         List<Course> courses = courseRepository.findByTrainerId(trainerId);
@@ -286,7 +286,7 @@ public class CourseServiceImpl implements ICourseService {
     }
 
     @Override
-    public boolean existsByTitleAndTrainer(String title, Long trainerId) {
+    public boolean existsByTitleAndTrainer(String title, String trainerId) {
         return courseRepository.existsByTitleAndTrainerId(title, trainerId);
     }
 
