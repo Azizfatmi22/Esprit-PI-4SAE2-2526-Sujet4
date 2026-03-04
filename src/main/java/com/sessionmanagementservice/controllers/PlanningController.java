@@ -19,7 +19,8 @@ public class PlanningController {
         this.planningService = planningService;
     }
 
-    // ✅ CREATE
+    // ==================== CRUD BASIQUE ====================
+
     @PostMapping
     public ResponseEntity<Planning> create(
             @RequestParam Long sessionId,
@@ -31,7 +32,6 @@ public class PlanningController {
         );
     }
 
-    // ✅ GET BY SESSION
     @GetMapping("/session/{sessionId}")
     public ResponseEntity<List<Planning>> getBySession(@PathVariable Long sessionId) {
         return ResponseEntity.ok(
@@ -39,7 +39,6 @@ public class PlanningController {
         );
     }
 
-    // ✅ GET BY ID
     @GetMapping("/{id}")
     public ResponseEntity<Planning> getById(@PathVariable int id) {
         return ResponseEntity.ok(
@@ -47,7 +46,6 @@ public class PlanningController {
         );
     }
 
-    // ✅ UPDATE
     @PutMapping("/{id}")
     public ResponseEntity<Planning> update(
             @PathVariable int id,
@@ -58,41 +56,35 @@ public class PlanningController {
         );
     }
 
-    // ✅ DELETE
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable int id) {
         planningService.deletePlanning(id);
         return ResponseEntity.noContent().build();
     }
 
-    // =====================================================
-    // 🔥 ADVANCED FUNCTIONS (MATCHED EXACTLY)
-    // =====================================================
+    // ==================== FONCTIONS AVANCÉES ====================
+    // ✅ Ces méthodes retournent maintenant un seul Planning
 
-    // ✅ Generate planning automatically
     @PostMapping("/generate")
-    public ResponseEntity<List<Planning>> generatePlanning(
-            @RequestParam Long sessionId,
-            @RequestParam Long locationId) {
+    public ResponseEntity<Planning> generatePlanning(  // ✅ Retourne Planning (plus List)
+                                                       @RequestParam Long sessionId) {
 
         return ResponseEntity.ok(
-                planningService.generatePlanning(sessionId, locationId)
+                planningService.generatePlanning(sessionId)
         );
     }
 
-    // ✅ Distribute planning across days
     @PostMapping("/distribute")
-    public ResponseEntity<List<Planning>> distributePlanning(
-            @RequestParam Long sessionId,
-            @RequestParam Long locationId,
-            @RequestParam int numberOfDays) {
+    public ResponseEntity<Planning> distributePlanning(  // ✅ Retourne Planning (plus List)
+                                                         @RequestParam Long sessionId,
+                                                         @RequestParam Long locationId,
+                                                         @RequestParam int numberOfDays) {
 
         return ResponseEntity.ok(
                 planningService.distributePlanning(sessionId, locationId, numberOfDays)
         );
     }
 
-    // ✅ Check conflict
     @GetMapping("/conflict")
     public ResponseEntity<Boolean> hasConflict(
             @RequestParam Long locationId,
@@ -108,7 +100,6 @@ public class PlanningController {
         );
     }
 
-    // ✅ Suggest next available date
     @GetMapping("/suggest-date")
     public ResponseEntity<LocalDate> suggestDate(
             @RequestParam Long locationId,
@@ -122,17 +113,15 @@ public class PlanningController {
         );
     }
 
-    // ✅ Optimize planning
     @PostMapping("/optimize")
-    public ResponseEntity<List<Planning>> optimizePlanning(
-            @RequestParam Long sessionId) {
+    public ResponseEntity<Planning> optimizePlanning(  // ✅ Retourne Planning (plus List)
+                                                       @RequestParam Long sessionId) {
 
         return ResponseEntity.ok(
                 planningService.optimizePlanning(sessionId)
         );
     }
 
-    // ✅ Count plannings by location
     @GetMapping("/count-by-location")
     public ResponseEntity<Long> countByLocation(
             @RequestParam Long locationId) {
@@ -142,29 +131,27 @@ public class PlanningController {
         );
     }
 
-    // ✅ Fill gaps between sessions
     @PostMapping("/fill-gaps")
-    public ResponseEntity<List<Planning>> fillGaps(
-            @RequestParam Long sessionId,
-            @RequestParam Long locationId) {
+    public ResponseEntity<Planning> fillGaps(  // ✅ Retourne Planning (plus List)
+                                               @RequestParam Long sessionId,
+                                               @RequestParam Long locationId) {
 
         return ResponseEntity.ok(
                 planningService.fillGaps(sessionId, locationId)
         );
     }
 
-    // ✅ Maintain rolling planning
     @PostMapping("/rolling")
-    public ResponseEntity<List<Planning>> maintainRollingPlanning(
-            @RequestParam Long sessionId,
-            @RequestParam Long locationId,
-            @RequestParam int daysAhead) {
+    public ResponseEntity<Planning> maintainRollingPlanning(  // ✅ Retourne Planning (plus List)
+                                                              @RequestParam Long sessionId,
+                                                              @RequestParam Long locationId,
+                                                              @RequestParam int daysAhead) {
 
         return ResponseEntity.ok(
                 planningService.maintainRollingPlanning(sessionId, locationId, daysAhead)
         );
     }
-    // ✅ Suggest best location (least busy)
+
     @GetMapping("/best-location")
     public ResponseEntity<?> suggestBestLocation(
             @RequestParam String date) {
@@ -174,10 +161,6 @@ public class PlanningController {
         );
     }
 
-    // ✅ Get busy days (analytics)
-
-
-    // ✅ Detect risky planning
     @GetMapping("/busy-days")
     public ResponseEntity<Map<String, Object>> getBusyDays(
             @RequestParam Long locationId) {
@@ -187,7 +170,6 @@ public class PlanningController {
         );
     }
 
-    // ✅ Detect risky planning - CORRIGÉ
     @GetMapping("/high-risk")
     public ResponseEntity<Map<String, Object>> isHighRisk(
             @RequestParam Long sessionId) {
@@ -196,7 +178,7 @@ public class PlanningController {
                 planningService.isHighRiskPlanning(sessionId)
         );
     }
-    // ✅ Smart date suggestion (skip weekends + conflicts)
+
     @GetMapping("/smart-date")
     public ResponseEntity<LocalDate> smartSuggestDate(
             @RequestParam Long locationId,

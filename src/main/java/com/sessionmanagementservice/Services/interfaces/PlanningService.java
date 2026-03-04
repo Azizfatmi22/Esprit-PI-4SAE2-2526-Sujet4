@@ -9,7 +9,7 @@ import java.util.Map;
 
 public interface PlanningService {
 
-    Planning createPlanning(Planning planning, Long  sessionId, Long locationId);
+    Planning createPlanning(Planning planning, Long sessionId, Long locationId);
 
     Planning updatePlanning(int id, Planning planning);
 
@@ -20,33 +20,34 @@ public interface PlanningService {
     List<Planning> getPlanningsBySession(Long sessionId);
 
     // Generate planning automatically based on duration
-    List<Planning> generatePlanning(Long sessionId, Long locationId);
+    Planning generatePlanning(Long sessionId);
 
     // Distribute sessions across available days
-    List<Planning> distributePlanning(Long sessionId, Long locationId, int numberOfDays);
+    Planning distributePlanning(Long sessionId, Long locationId, int numberOfDays);
 
     // Detect overlapping planning
-    boolean hasPlanningConflict(Long locationId, java.time.LocalDate startDate, java.time.LocalDate endDate);
+    boolean hasPlanningConflict(Long locationId, LocalDate startDate, LocalDate endDate);
 
     // Suggest next available time slot
-    java.time.LocalDate suggestNextAvailableDate(Long locationId, java.time.LocalDate startDate);
+    LocalDate suggestNextAvailableDate(Long locationId, LocalDate startDate);
+
+    boolean isValidDay(LocalDate date);
 
     // Optimize planning (avoid conflicts & overload)
-    List<Planning> optimizePlanning(Long sessionId);
+    Planning optimizePlanning(Long sessionId);
 
     // Get location usage statistics
     long countPlanningsByLocation(Long locationId);
 
-    public List<Planning> fillGaps(Long sessionId, Long locationId);
+    Planning fillGaps(Long sessionId, Long locationId);
 
-    public List<Planning> maintainRollingPlanning(Long sessionId, Long locationId, int daysAhead);
+    Planning maintainRollingPlanning(Long sessionId, Long locationId, int daysAhead);
 
-    public Location suggestBestLocation(LocalDate date);
+    Location suggestBestLocation(LocalDate date);
 
-    public Map<String, Object>  getBusyDays(Long locationId) ;
+    Map<String, Object> getBusyDays(Long locationId);
 
-    public LocalDate smartSuggestDate(Long locationId, LocalDate start);
-    public Map<String, Object> isHighRiskPlanning(Long sessionId);
+    LocalDate smartSuggestDate(Long locationId, LocalDate start);
 
-
+    Map<String, Object> isHighRiskPlanning(Long sessionId);
 }

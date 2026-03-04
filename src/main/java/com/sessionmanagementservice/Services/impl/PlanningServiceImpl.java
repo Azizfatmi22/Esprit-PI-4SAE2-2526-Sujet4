@@ -5,11 +5,9 @@ import com.sessionmanagementservice.Repositories.PlanningRepository;
 import com.sessionmanagementservice.Repositories.SessionRepository;
 import com.sessionmanagementservice.Services.interfaces.PlanningService;
 import com.sessionmanagementservice.Services.interfaces.SessionService;
-import com.sessionmanagementservice.entities.Location;
-import com.sessionmanagementservice.entities.LocationType;
-import com.sessionmanagementservice.entities.Planning;
-import com.sessionmanagementservice.entities.Session;
+import com.sessionmanagementservice.entities.*;
 import jakarta.transaction.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -19,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -28,6 +27,12 @@ public class PlanningServiceImpl implements PlanningService {
     private final SessionRepository sessionRepository;
     private final LocationRepository locationRepository;
     private final SessionService sessionService;
+
+    // Constantes
+    private static final int MAX_HOURS_PER_DAY = 7;
+    private static final int DEFAULT_TOTAL_HOURS = 35;
+    private static final int MAX_ATTEMPTS = 60;
+
     public PlanningServiceImpl(PlanningRepository planningRepository,
                                SessionRepository sessionRepository,
                                LocationRepository locationRepository,
@@ -40,51 +45,58 @@ public class PlanningServiceImpl implements PlanningService {
 
     @Override
     public Planning createPlanning(Planning planning, Long sessionId, Long locationId) {
+        validateDateRange(planning.getStartDate(), planning.getEndDate());
 
-        if (planning.getStartDate().isAfter(planning.getEndDate())) {
-            throw new RuntimeException("Invalid date range");
-        }
-
-        // Fetch session
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new RuntimeException("Session not found"));
 
-        Location location = null;
 
-        // Online session via platformUrl
-        if (planning.getLocation() != null && planning.getLocation().getPlatformUrl() != null) {
-            String platformUrl = planning.getLocation().getPlatformUrl();
-            location = locationRepository.findByPlatformUrl(platformUrl)
-                    .orElseGet(() -> {
-                        Location newLoc = new Location();
-                        newLoc.setName("Online Platform");
-                        newLoc.setType(LocationType.ONLINE_PLATFORM);
-                        newLoc.setCapacity(0);
-                        newLoc.setAddress("Online");
-                        newLoc.setPlatformUrl(platformUrl);
-                        return locationRepository.save(newLoc);
-                    });
+        if (planning.getStartDate().isBefore(session.getCreatedAt())) {
+            throw new RuntimeException("Start date cannot be before session creation date");
         }
-        // Offline session via locationId
-        else if (locationId != null) {
-            location = locationRepository.findById(locationId)
-                    .orElseThrow(() -> new RuntimeException("Location not found"));
-        }
-        // If still null, use default "Unassigned" location
-        else {
-            location = new Location();
-            location.setName("Unassigned Location");
-            location.setType(LocationType.ONLINE_PLATFORM);
-            location.setCapacity(0);
-            location.setAddress("Unknown");
-            location = locationRepository.save(location);
-        }
+        Location location = determineLocation(planning, locationId);
 
-        // Attach session and location
         planning.setSession(session);
         planning.setLocation(location);
 
         return planningRepository.save(planning);
+    }
+
+    private Location determineLocation(Planning planning, Long locationId) {
+        // Online session via platformUrl
+        if (planning.getLocation() != null && planning.getLocation().getPlatformUrl() != null) {
+            String platformUrl = planning.getLocation().getPlatformUrl();
+            return locationRepository.findByPlatformUrl(platformUrl)
+                    .orElseGet(() -> createOnlineLocation(platformUrl));
+        }
+        // Offline session via locationId
+        else if (locationId != null) {
+            return locationRepository.findById(locationId)
+                    .orElseThrow(() -> new RuntimeException("Location not found"));
+        }
+        // Default unassigned location
+        else {
+            return createUnassignedLocation();
+        }
+    }
+
+    private Location createOnlineLocation(String platformUrl) {
+        Location newLoc = new Location();
+        newLoc.setName("Online Platform");
+        newLoc.setType(LocationType.ONLINE_PLATFORM);
+        newLoc.setCapacity(0);
+        newLoc.setAddress("Online");
+        newLoc.setPlatformUrl(platformUrl);
+        return locationRepository.save(newLoc);
+    }
+
+    private Location createUnassignedLocation() {
+        Location newLoc = new Location();
+        newLoc.setName("Unassigned Location");
+        newLoc.setType(LocationType.ONLINE_PLATFORM);
+        newLoc.setCapacity(0);
+        newLoc.setAddress("Unknown");
+        return locationRepository.save(newLoc);
     }
 
     @Override
@@ -92,9 +104,7 @@ public class PlanningServiceImpl implements PlanningService {
         Planning existing = planningRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Planning not found"));
 
-        if (planning.getStartDate().isAfter(planning.getEndDate())) {
-            throw new RuntimeException("Invalid date range");
-        }
+        validateDateRange(planning.getStartDate(), planning.getEndDate());
 
         // Update session if provided
         if (planning.getSession() != null && planning.getSession().getId() != null) {
@@ -105,26 +115,7 @@ public class PlanningServiceImpl implements PlanningService {
 
         // Update location
         if (planning.getLocation() != null) {
-            if (planning.getLocation().getId() != null) {
-                // Offline location
-                Location location = locationRepository.findById(planning.getLocation().getId())
-                        .orElseThrow(() -> new RuntimeException("Location not found"));
-                existing.setLocation(location);
-            } else if (planning.getLocation().getPlatformUrl() != null) {
-                // Online location
-                String platformUrl = planning.getLocation().getPlatformUrl();
-                Location location = locationRepository.findByPlatformUrl(platformUrl)
-                        .orElseGet(() -> {
-                            Location newLoc = new Location();
-                            newLoc.setName("Online Platform");
-                            newLoc.setType(LocationType.ONLINE_PLATFORM);
-                            newLoc.setCapacity(0);
-                            newLoc.setAddress("Online");
-                            newLoc.setPlatformUrl(platformUrl);
-                            return locationRepository.save(newLoc);
-                        });
-                existing.setLocation(location);
-            }
+            updatePlanningLocation(existing, planning);
         }
 
         // Update simple fields
@@ -134,6 +125,19 @@ public class PlanningServiceImpl implements PlanningService {
         existing.setEndDate(planning.getEndDate());
 
         return planningRepository.save(existing);
+    }
+
+    private void updatePlanningLocation(Planning existing, Planning planning) {
+        if (planning.getLocation().getId() != null) {
+            Location location = locationRepository.findById(planning.getLocation().getId())
+                    .orElseThrow(() -> new RuntimeException("Location not found"));
+            existing.setLocation(location);
+        } else if (planning.getLocation().getPlatformUrl() != null) {
+            String platformUrl = planning.getLocation().getPlatformUrl();
+            Location location = locationRepository.findByPlatformUrl(platformUrl)
+                    .orElseGet(() -> createOnlineLocation(platformUrl));
+            existing.setLocation(location);
+        }
     }
 
     @Override
@@ -151,209 +155,215 @@ public class PlanningServiceImpl implements PlanningService {
     public List<Planning> getPlanningsBySession(Long sessionId) {
         return planningRepository.findBySessionId(sessionId);
     }
+
+    // ==================== MÉTHODES CORRIGÉES (UN SEUL PLANNING) ====================
+
     @Override
-    public List<Planning> generatePlanning(Long sessionId, Long locationId) {
+    public Planning generatePlanning(Long sessionId) {
         Session session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new RuntimeException("Session not found"));
+
+        // 🔍 Meilleur lieu
+        Location bestLocation = findBestLocationForSession(session);
+
+        // Supprimer l'ancien planning
+        planningRepository.deleteBySessionId(sessionId);
+        planningRepository.flush();
+
+        // ⏱️ Calculer la durée
+        int totalHours = DEFAULT_TOTAL_HOURS;
+        int daysNeeded = (int) Math.ceil((double) totalHours / MAX_HOURS_PER_DAY);
+
+        // 📅 Trouver la date de début
+        LocalDate startDate = findNextAvailableStartDate(bestLocation.getId(), daysNeeded);
+        LocalDate endDate = startDate.plusDays(daysNeeded - 1);
+
+        // 📝 Créer le planning
+        Planning planning = new Planning();
+        planning.setSession(session);
+        planning.setLocation(bestLocation);
+        planning.setStartDate(startDate);
+        planning.setEndDate(endDate);
+        planning.setTotalHours(totalHours);
+        planning.setMode(PlanningMode.ONSITE);
+
+        return planning;
+    }
+
+    private LocalDate findNextAvailableStartDate(Long locationId, int daysNeeded) {
+        LocalDate date = LocalDate.now().plusDays(1);
+        int attempts = 0;
+
+        while (attempts < MAX_ATTEMPTS) {
+            boolean available = true;
+            for (int i = 0; i < daysNeeded; i++) {
+                LocalDate checkDate = date.plusDays(i);
+                if (!isValidDay(checkDate) || hasPlanningConflict(locationId, checkDate, checkDate)) {
+                    available = false;
+                    break;
+                }
+            }
+            if (available) return date;
+            date = date.plusDays(1);
+            attempts++;
+        }
+
+        throw new RuntimeException("Impossible de trouver " + daysNeeded +
+                " jours consécutifs disponibles dans les " + MAX_ATTEMPTS + " prochains jours");
+    }
+
+    @Override
+    public Planning distributePlanning(Long sessionId, Long locationId, int numberOfDays) {
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new RuntimeException("Session non trouvée"));
         Location location = locationRepository.findById(locationId)
-                .orElseThrow(() -> new RuntimeException("Location not found"));
+                .orElseThrow(() -> new RuntimeException("Lieu non trouvé"));
 
-        List<Planning> plannings = new ArrayList<>();
+        // Supprimer l'ancien planning
+        planningRepository.deleteBySessionId(sessionId);
+        planningRepository.flush();
 
-        // Récupérer le nombre de participants de la session
-        int participants = session.getMaxParticipants();
+        int totalHours = DEFAULT_TOTAL_HOURS;
 
-        // Calculer le nombre de jours nécessaires (valeur par défaut)
-        int totalDays = 5; // Valeur par défaut
+        // 📅 Trouver la date de début
+        LocalDate startDate = findNextAvailableStartDate(locationId, numberOfDays);
+        LocalDate endDate = startDate.plusDays(numberOfDays - 1);
 
-        LocalDate start = LocalDate.now(); // Ou une date par défaut
-        int daysAdded = 0;
+        // 📝 Créer un seul planning
+        Planning planning = new Planning();
+        planning.setSession(session);
+        planning.setLocation(location);
+        planning.setStartDate(startDate);
+        planning.setEndDate(endDate);
+        planning.setTotalHours(totalHours);
+        planning.setMode(PlanningMode.ONSITE);
 
-        // Heures totales à répartir (valeur par défaut)
-        int totalHoursToDistribute = 35; // 5 jours * 7h
-
-        for (int i = 0; i < totalDays; i++) {
-            LocalDate date = start.plusDays(daysAdded);
-
-            // Éviter les weekends
-            while (!isValidDay(date)) {
-                date = date.plusDays(1);
-                daysAdded++;
-            }
-
-            // Éviter les conflits
-            while (hasPlanningConflict(locationId, date, date)) {
-                date = date.plusDays(1);
-                daysAdded++;
-            }
-
-            Planning p = new Planning();
-            p.setSession(session);
-            p.setLocation(location);
-            p.setStartDate(date);
-            p.setEndDate(date);
-            p.setTotalHours(7); // 7 heures par jour par défaut
-
-            plannings.add(p);
-            daysAdded++;
-        }
-
-        return planningRepository.saveAll(plannings);
+        return planningRepository.save(planning);
     }
 
-    private int calculateMaxSessionsPerDay(Location location, int participants) {
-        if (location.getType() == LocationType.ONLINE_PLATFORM) {
-            return 10; // Les plateformes en ligne peuvent gérer plus de sessions
+    @Override
+    public Planning optimizePlanning(Long sessionId) {
+        Planning planning = planningRepository.findFirstBySessionId(sessionId)
+                .orElseThrow(() -> new RuntimeException("Planning non trouvé pour cette session"));
+
+        boolean hasConflict = hasPlanningConflict(
+                planning.getLocation().getId(),
+                planning.getStartDate(),
+                planning.getEndDate()
+        );
+
+        if (hasConflict) {
+            // Calculer la durée en jours
+            long daysBetween = ChronoUnit.DAYS.between(planning.getStartDate(), planning.getEndDate()) + 1;
+            int daysNeeded = (int) daysBetween;
+
+            // Trouver une nouvelle plage de dates
+            LocalDate newStartDate = findNextAvailableStartDate(planning.getLocation().getId(), daysNeeded);
+            LocalDate newEndDate = newStartDate.plusDays(daysNeeded - 1);
+
+            planning.setStartDate(newStartDate);
+            planning.setEndDate(newEndDate);
+
+            System.out.println("Planning optimisé: nouvelle période du " + newStartDate + " au " + newEndDate);
         }
-        // Pour les salles physiques, limiter selon la capacité
-        return Math.max(1, location.getCapacity() / participants);
+
+        return planningRepository.save(planning);
     }
+
+    @Override
+    public Planning fillGaps(Long sessionId, Long locationId) {
+        // Cette méthode n'a pas de sens avec un seul planning
+        // On retourne le planning existant ou on lève une exception
+        return planningRepository.findFirstBySessionId(sessionId)
+                .orElseThrow(() -> new RuntimeException("Aucun planning trouvé"));
+    }
+
+    @Override
+    public Planning maintainRollingPlanning(Long sessionId, Long locationId, int daysAhead) {
+        Planning existing = planningRepository.findFirstBySessionId(sessionId)
+                .orElseThrow(() -> new RuntimeException("Planning non trouvé"));
+
+        // Étendre la date de fin
+        LocalDate newEndDate = existing.getEndDate().plusDays(daysAhead);
+
+        // Vérifier que les nouvelles dates sont disponibles
+        LocalDate currentDate = existing.getEndDate().plusDays(1);
+        while (!currentDate.isAfter(newEndDate)) {
+            if (!isValidDay(currentDate) || hasPlanningConflict(locationId, currentDate, currentDate)) {
+                throw new RuntimeException("La date " + currentDate + " n'est pas disponible");
+            }
+            currentDate = currentDate.plusDays(1);
+        }
+
+        existing.setEndDate(newEndDate);
+
+        // Ajuster les heures totales (optionnel)
+        int additionalHours = daysAhead * MAX_HOURS_PER_DAY;
+        existing.setTotalHours(existing.getTotalHours() + additionalHours);
+
+        return planningRepository.save(existing);
+    }
+
+    // ==================== MÉTHODES UTILITAIRES ====================
+
+    private LocalDate findNextAvailableDate(Long locationId, LocalDate startDate) {
+        LocalDate date = startDate;
+        int attempts = 0;
+
+        while (attempts < MAX_ATTEMPTS) {
+            if (isValidDay(date) && !hasPlanningConflict(locationId, date, date)) {
+                return date;
+            }
+            date = date.plusDays(1);
+            attempts++;
+        }
+
+        throw new RuntimeException("Aucune date disponible trouvée dans les " + MAX_ATTEMPTS + " prochains jours");
+    }
+
     @Override
     public boolean hasPlanningConflict(Long locationId, LocalDate startDate, LocalDate endDate) {
+        if (locationId == null || startDate == null || endDate == null) {
+            return false;
+        }
 
-        List<Planning> existing = planningRepository.findByLocationId(locationId);
-
-        return existing.stream().anyMatch(p ->
-                !(p.getEndDate().isBefore(startDate) || p.getStartDate().isAfter(endDate))
+        List<Planning> conflicts = planningRepository.findConflictingPlannings(
+                locationId, startDate, endDate
         );
+
+        return !conflicts.isEmpty();
     }
 
     @Override
     public LocalDate suggestNextAvailableDate(Long locationId, LocalDate startDate) {
-
         LocalDate date = startDate;
+        int attempts = 0;
 
-        while (hasPlanningConflict(locationId, date, date)) {
-            date = date.plusDays(1);
-        }
-
-        return date;
-    }
-    @Override
-    public List<Planning> distributePlanning(Long sessionId, Long locationId, int numberOfDays) {
-
-        Session session = sessionRepository.findById(sessionId)
-                .orElseThrow(() -> new RuntimeException("Session not found"));
-
-        Location location = locationRepository.findById(locationId)
-                .orElseThrow(() -> new RuntimeException("Location not found"));
-
-        List<Planning> result = new java.util.ArrayList<>();
-
-        LocalDate start = session.getCreatedAt();
-
-        for (int i = 0; i < numberOfDays; i++) {
-
-            LocalDate date = suggestNextAvailableDate(locationId, start.plusDays(i));
-
-            Planning p = new Planning();
-            p.setSession(session);
-            p.setLocation(location);
-            p.setStartDate(date);
-            p.setEndDate(date);
-            p.setTotalHours(2);
-
-            result.add(p);
-        }
-
-        return planningRepository.saveAll(result);
-    }
-
-    @Override
-    public List<Planning> optimizePlanning(Long sessionId) {
-
-        List<Planning> plannings = planningRepository.findBySessionId(sessionId);
-
-        for (Planning p : plannings) {
-
-            if (hasPlanningConflict(
-                    p.getLocation().getId(),
-                    p.getStartDate(),
-                    p.getEndDate())) {
-
-                LocalDate newDate = suggestNextAvailableDate(
-                        p.getLocation().getId(),
-                        p.getStartDate()
-                );
-
-                p.setStartDate(newDate);
-                p.setEndDate(newDate);
+        while (attempts < MAX_ATTEMPTS) {
+            if (isValidDay(date) && !hasPlanningConflict(locationId, date, date)) {
+                return date;
             }
+            date = date.plusDays(1);
+            attempts++;
         }
 
-        return planningRepository.saveAll(plannings);
+        throw new RuntimeException("Aucune date disponible trouvée dans les " + MAX_ATTEMPTS + " prochains jours");
     }
+
+    @Override
+    public boolean isValidDay(LocalDate date) {
+        if (date == null) return false;
+        DayOfWeek day = date.getDayOfWeek();
+        return day != DayOfWeek.SATURDAY && day != DayOfWeek.SUNDAY;
+    }
+
     @Override
     public long countPlanningsByLocation(Long locationId) {
         return planningRepository.countByLocationId(locationId);
     }
-    @Override
-    public List<Planning> fillGaps(Long sessionId, Long locationId) {
 
-        List<Planning> plannings = planningRepository.findBySessionId(sessionId)
-                .stream()
-                .sorted((a, b) -> a.getStartDate().compareTo(b.getStartDate()))
-                .toList();
-
-        List<Planning> result = new java.util.ArrayList<>();
-
-        for (int i = 0; i < plannings.size() - 1; i++) {
-
-            LocalDate currentEnd = plannings.get(i).getEndDate();
-            LocalDate nextStart = plannings.get(i + 1).getStartDate();
-
-            if (currentEnd.plusDays(1).isBefore(nextStart)) {
-
-                LocalDate gapDate = currentEnd.plusDays(1);
-
-                if (!hasPlanningConflict(locationId, gapDate, gapDate)) {
-                    Planning p = new Planning();
-                    p.setSession(plannings.get(i).getSession());
-                    p.setLocation(plannings.get(i).getLocation());
-                    p.setStartDate(gapDate);
-                    p.setEndDate(gapDate);
-                    p.setTotalHours(2);
-
-                    result.add(p);
-                }
-            }
-        }
-
-        return planningRepository.saveAll(result);
-    }
-
-    public boolean isValidDay(LocalDate date) {
-        return !(date.getDayOfWeek().getValue() == 6 || date.getDayOfWeek().getValue() == 7);
-    }
-    @Override
-    public List<Planning> maintainRollingPlanning(Long sessionId, Long locationId, int daysAhead) {
-
-        List<Planning> existing = planningRepository.findBySessionId(sessionId);
-
-        LocalDate lastDate = existing.stream()
-                .map(Planning::getEndDate)
-                .max(LocalDate::compareTo)
-                .orElse(LocalDate.now());
-
-        List<Planning> newPlans = new java.util.ArrayList<>();
-
-        for (int i = 1; i <= daysAhead; i++) {
-
-            LocalDate date = suggestNextAvailableDate(locationId, lastDate.plusDays(i));
-
-            Planning p = new Planning();
-            p.setStartDate(date);
-            p.setEndDate(date);
-            p.setTotalHours(2);
-
-            newPlans.add(p);
-        }
-
-        return planningRepository.saveAll(newPlans);
-    }
     @Override
     public Location suggestBestLocation(LocalDate date) {
-
         List<Location> locations = locationRepository.findAll();
 
         return locations.stream()
@@ -363,51 +373,64 @@ public class PlanningServiceImpl implements PlanningService {
                 ))
                 .orElseThrow(() -> new RuntimeException("No locations available"));
     }
-    @Override
-    public Map<String, Object>  getBusyDays(Long locationId) {
 
+    @Override
+    public Map<String, Object> getBusyDays(Long locationId) {
         List<Planning> plannings = planningRepository.findByLocationId(locationId);
 
-        // Compter les sessions par date en prenant en compte la durée
-        Map<LocalDate, Long> sessionsByDate = new HashMap<>();
+        Map<LocalDate, Integer> sessionsByDate = new HashMap<>();
+        Map<LocalDate, Integer> hoursByDate = new HashMap<>();
 
         for (Planning p : plannings) {
             LocalDate current = p.getStartDate();
             while (!current.isAfter(p.getEndDate())) {
-                sessionsByDate.merge(current, 1L, Long::sum);
+                sessionsByDate.merge(current, 1, Integer::sum);
+                hoursByDate.merge(current, p.getTotalHours(), Integer::sum);
                 current = current.plusDays(1);
             }
         }
 
-        // Formater les résultats pour le frontend
-        List<Map<String, Object>> result = new ArrayList<>();
+        List<Map<String, Object>> days = new ArrayList<>();
+        int maxSessionsPerDay = 5;
 
-        for (Map.Entry<LocalDate, Long> entry : sessionsByDate.entrySet()) {
+        for (Map.Entry<LocalDate, Integer> entry : sessionsByDate.entrySet()) {
+            LocalDate date = entry.getKey();
+            int sessionCount = entry.getValue();
+            int totalHours = hoursByDate.getOrDefault(date, 0);
+
             Map<String, Object> dayInfo = new HashMap<>();
-            dayInfo.put("date", entry.getKey().toString());
-            dayInfo.put("sessionCount", entry.getValue());
+            dayInfo.put("date", date.toString());
+            dayInfo.put("sessionCount", sessionCount);
+            dayInfo.put("totalHours", totalHours);
 
-            // Calculer le taux d'occupation (estimation)
-            double occupancyRate = Math.min(entry.getValue() * 20.0, 100.0); // 5 sessions max = 100%
+            double occupancyRate = Math.min((sessionCount * 100.0) / maxSessionsPerDay, 100.0);
             dayInfo.put("occupancyRate", Math.round(occupancyRate));
 
-            // Marquer comme suroccupé si plus de 3 sessions
-            dayInfo.put("isOverbooked", entry.getValue() > 3);
+            String busyLevel;
+            if (sessionCount <= 2) busyLevel = "FAIBLE";
+            else if (sessionCount <= 4) busyLevel = "MOYEN";
+            else busyLevel = "ELEVE";
+            dayInfo.put("busyLevel", busyLevel);
 
-            result.add(dayInfo);
+            dayInfo.put("isOverbooked", sessionCount > maxSessionsPerDay);
+
+            days.add(dayInfo);
         }
 
-        // Trier par date
-        result.sort((a, b) -> a.get("date").toString().compareTo(b.get("date").toString()));
+        days.sort((a, b) -> a.get("date").toString().compareTo(b.get("date").toString()));
 
         Map<String, Object> response = new HashMap<>();
-        response.put("days", result);
-        response.put("totalDays", result.size());
-        response.put("averageOccupancy", calculateAverageOccupancy(result));
+        response.put("days", days);
+        response.put("totalDays", days.size());
+        response.put("averageOccupancy", calculateAverageOccupancy(days));
+
+        if (!days.isEmpty()) {
+            long overbookedCount = days.stream().filter(d -> (boolean)d.get("isOverbooked")).count();
+            response.put("overbookedDays", overbookedCount);
+        }
 
         return response;
     }
-
 
     private double calculateAverageOccupancy(List<Map<String, Object>> days) {
         if (days.isEmpty()) return 0;
@@ -418,108 +441,134 @@ public class PlanningServiceImpl implements PlanningService {
     }
 
     @Override
-    public Map<String, Object> isHighRiskPlanning(Long sessionId)  {
-
-        List<Planning> plannings = planningRepository.findBySessionId(sessionId);
+    public Map<String, Object> isHighRiskPlanning(Long sessionId) {
+        Planning planning = planningRepository.findFirstBySessionId(sessionId)
+                .orElseThrow(() -> new RuntimeException("Planning non trouvé"));
 
         Map<String, Object> result = new HashMap<>();
         List<String> riskFactors = new ArrayList<>();
         List<String> recommendations = new ArrayList<>();
         int riskScore = 0;
 
-        if (plannings.isEmpty()) {
-            result.put("isHighRisk", false);
-            result.put("riskScore", 0);
-            result.put("riskFactors", riskFactors);
-            result.put("recommendations", recommendations);
-            return result;
-        }
+        Session session = planning.getSession();
 
-        Planning mainPlanning = plannings.get(0);
+        // Analyse de la charge horaire
+        riskScore += analyzeHourlyLoad(planning, riskFactors, recommendations);
 
-        // 1. Analyser la charge horaire
-        long daysBetween = ChronoUnit.DAYS.between(mainPlanning.getStartDate(), mainPlanning.getEndDate()) + 1;
-        int totalHours = mainPlanning.getTotalHours();
-        double hoursPerDay = (double) totalHours / daysBetween;
+        // Analyse de la capacité
+        riskScore += analyzeCapacity(planning, session, riskFactors, recommendations);
 
-        if (hoursPerDay > 8) {
-            riskScore += 30;
-            riskFactors.add(String.format("Charge trop élevée: %.1fh/jour", hoursPerDay));
-            recommendations.add(String.format("Répartir sur %d jours", (int)Math.ceil(totalHours / 8.0)));
-        } else if (hoursPerDay < 4 && daysBetween > 1) {
-            riskScore += 10;
-            riskFactors.add(String.format("Charge trop faible: %.1fh/jour", hoursPerDay));
-            recommendations.add("Regrouper sur moins de jours");
-        }
+        // Analyse de la proximité
+        riskScore += analyzeProximity(planning, riskFactors, recommendations);
 
-        // 2. Sessions rapprochées (votre logique)
-        long closeSessions = plannings.stream()
-                .filter(p -> p.getStartDate().plusDays(1).equals(p.getEndDate()))
-                .count();
+        // Analyse des weekends
+        riskScore += analyzeWeekends(planning, riskFactors, recommendations);
 
-        if (closeSessions > 3) {
-            riskScore += 25;
-            riskFactors.add("Trop de sessions consécutives");
-            recommendations.add("Espacer les sessions");
-        }
-
-        // 3. Proximité avec la date actuelle
-        LocalDate now = LocalDate.now();
-        if (mainPlanning.getStartDate().isBefore(now.plusDays(7))) {
-            riskScore += 15;
-            riskFactors.add("Planning trop proche");
-            recommendations.add("Prévoir plus de délai");
-        }
-
-        // 4. Vérifier les weekends
-        boolean hasWeekend = false;
-        LocalDate current = mainPlanning.getStartDate();
-        while (!current.isAfter(mainPlanning.getEndDate())) {
-            if (current.getDayOfWeek() == DayOfWeek.SATURDAY ||
-                    current.getDayOfWeek() == DayOfWeek.SUNDAY) {
-                hasWeekend = true;
-                break;
-            }
-            current = current.plusDays(1);
-        }
-
-        if (hasWeekend) {
-            riskScore += 10;
-            riskFactors.add("Inclut des weekends");
-        }
-
-        // 5. Conflits de lieu
-        if (mainPlanning.getLocation() != null) {
-            List<Planning> conflicts = planningRepository
-                    .findByLocationIdAndDateRange(
-                            mainPlanning.getLocation().getId(),
-                            mainPlanning.getStartDate(),
-                            mainPlanning.getEndDate()
-                    );
-
-            if (conflicts.size() > 1) { // Plus que le planning actuel
-                riskScore += 20;
-                riskFactors.add("Conflit avec d'autres plannings");
-                recommendations.add("Changer de date ou de lieu");
-            }
-        }
+        // Analyse des conflits
+        riskScore += analyzeConflicts(planning, riskFactors, recommendations);
 
         result.put("isHighRisk", riskScore > 50);
         result.put("riskScore", riskScore);
         result.put("riskFactors", riskFactors);
         result.put("recommendations", recommendations);
-        result.put("totalSessions", plannings.size());
-        result.put("hoursPerDay", Math.round(hoursPerDay * 10) / 10.0);
 
         return result;
     }
+
+    private int analyzeHourlyLoad(Planning planning, List<String> riskFactors, List<String> recommendations) {
+        long daysBetween = ChronoUnit.DAYS.between(planning.getStartDate(), planning.getEndDate()) + 1;
+        double hoursPerDay = (double) planning.getTotalHours() / daysBetween;
+
+        if (hoursPerDay > 8) {
+            riskFactors.add(String.format("Charge trop élevée: %.1fh/jour", hoursPerDay));
+            recommendations.add(String.format("Étaler sur %d jours", (int)Math.ceil(planning.getTotalHours() / 8.0)));
+            return 30;
+        } else if (hoursPerDay < 4 && daysBetween > 1) {
+            riskFactors.add(String.format("Charge faible: %.1fh/jour", hoursPerDay));
+            recommendations.add("Regrouper sur moins de jours");
+            return 10;
+        }
+        return 0;
+    }
+
+    private int analyzeCapacity(Planning planning, Session session,
+                                List<String> riskFactors, List<String> recommendations) {
+        if (planning.getLocation() == null) return 0;
+
+        int capacity = planning.getLocation().getCapacity();
+        int participants = session.getMaxParticipants();
+
+        if (participants > capacity) {
+            riskFactors.add(String.format("Capacité insuffisante: %d > %d", participants, capacity));
+            recommendations.add("Changer pour un lieu plus grand");
+            return 40;
+        } else if (participants > capacity * 0.9) {
+            riskFactors.add(String.format("Capacité limite: %d/%d", participants, capacity));
+            recommendations.add("Prévoir un plan B");
+            return 20;
+        }
+        return 0;
+    }
+
+    private int analyzeProximity(Planning planning, List<String> riskFactors, List<String> recommendations) {
+        LocalDate now = LocalDate.now();
+        if (planning.getStartDate().isBefore(now.plusDays(3))) {
+            riskFactors.add("Planning urgent (< 3 jours)");
+            recommendations.add("Confirmer rapidement");
+            return 20;
+        } else if (planning.getStartDate().isBefore(now.plusDays(7))) {
+            riskFactors.add("Planning proche (< 1 semaine)");
+            return 10;
+        }
+        return 0;
+    }
+
+    private int analyzeWeekends(Planning planning, List<String> riskFactors, List<String> recommendations) {
+        long weekendCount = 0;
+        LocalDate current = planning.getStartDate();
+        while (!current.isAfter(planning.getEndDate())) {
+            if (current.getDayOfWeek() == DayOfWeek.SATURDAY ||
+                    current.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                weekendCount++;
+            }
+            current = current.plusDays(1);
+        }
+
+        if (weekendCount > 0) {
+            riskFactors.add(String.format("%d jour(s) de weekend", weekendCount));
+            return (int) (weekendCount * 5);
+        }
+        return 0;
+    }
+
+    private int analyzeConflicts(Planning planning, List<String> riskFactors, List<String> recommendations) {
+        if (planning.getLocation() == null) return 0;
+
+        List<Planning> conflicts = planningRepository
+                .findByLocationIdAndDateRange(
+                        planning.getLocation().getId(),
+                        planning.getStartDate(),
+                        planning.getEndDate()
+                );
+
+        int otherConflicts = (int) conflicts.stream()
+                .filter(p -> !p.getId().equals(planning.getId()))
+                .count();
+
+        if (otherConflicts > 0) {
+            riskFactors.add(String.format("Conflit avec %d autre(s) planning(s)", otherConflicts));
+            recommendations.add("Vérifier les dates");
+            return otherConflicts * 15;
+        }
+        return 0;
+    }
+
     @Override
     public LocalDate smartSuggestDate(Long locationId, LocalDate start) {
-
         LocalDate date = start;
+        int attempts = 0;
 
-        while (true) {
-
+        while (attempts < MAX_ATTEMPTS) {
             boolean conflict = hasPlanningConflict(locationId, date, date);
             boolean weekend = !isValidDay(date);
 
@@ -528,10 +577,94 @@ public class PlanningServiceImpl implements PlanningService {
             }
 
             date = date.plusDays(1);
+            attempts++;
+        }
+
+        throw new RuntimeException("No suitable date found within " + MAX_ATTEMPTS + " days");
+    }
+
+    private void validateDateRange(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null || endDate == null) {
+            throw new RuntimeException("Dates cannot be null");
+        }
+        if (startDate.isAfter(endDate)) {
+            throw new RuntimeException("Start date cannot be after end date");
         }
     }
 
-    
+    private Location findBestLocationForSession(Session session) {
+        List<Location> allLocations = locationRepository.findAll();
+        int participants = session.getMaxParticipants();
 
+        Location bestLocation = null;
+        int bestScore = -1;
 
+        System.out.println("🔍 Recherche du meilleur lieu pour " + participants + " participants");
+
+        for (Location location : allLocations) {
+            if (location.getCapacity() < participants) {
+                continue;
+            }
+
+            int score = 0;
+
+            if (location.getType() == LocationType.ROOM) {
+                score += 50;
+            } else if (location.getType() == LocationType.HYBRID) {
+                score += 40;
+            } else if (location.getType() == LocationType.ONLINE_PLATFORM) {
+                score += 30;
+            }
+
+            long usageCount = planningRepository.countByLocationId(location.getId());
+            score += Math.max(0, 100 - usageCount * 10);
+
+            double capacityRatio = (double) participants / location.getCapacity();
+            if (capacityRatio > 0.7 && capacityRatio <= 1.0) {
+                score += 30;
+            } else if (capacityRatio > 0.5) {
+                score += 15;
+            } else {
+                score -= 10;
+            }
+
+            int availabilityScore = calculateAvailabilityScore(location.getId());
+            score += availabilityScore;
+
+            if (location.getPlatformUrl() != null && !location.getPlatformUrl().isEmpty()) {
+                score += 20;
+            }
+
+            System.out.println("  📍 " + location.getName() + " (capacité: " + location.getCapacity() +
+                    ", utilisé: " + usageCount + " fois) -> score: " + score);
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestLocation = location;
+            }
+        }
+
+        if (bestLocation == null) {
+            throw new RuntimeException("Aucun lieu disponible avec capacité suffisante (besoin de " + participants + " places)");
+        }
+
+        System.out.println("🏆 MEILLEUR LIEU CHOISI: " + bestLocation.getName() +
+                " (score: " + bestScore + ", capacité: " + bestLocation.getCapacity() + ")");
+
+        return bestLocation;
+    }
+
+    private int calculateAvailabilityScore(Long locationId) {
+        int score = 0;
+        LocalDate today = LocalDate.now();
+
+        for (int i = 1; i <= 7; i++) {
+            LocalDate date = today.plusDays(i);
+            if (!hasPlanningConflict(locationId, date, date)) {
+                score += 10;
+            }
+        }
+
+        return score;
+    }
 }

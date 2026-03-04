@@ -13,6 +13,7 @@ import java.time.LocalDate;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@EqualsAndHashCode(exclude = "planning")
 public class Session {
 
 
@@ -88,11 +89,7 @@ public class Session {
         @OneToOne(mappedBy = "session", cascade = CascadeType.ALL)
         private Attendance attendance;
 
-        @PrePersist
-        public void onCreate() {
-            createdAt = LocalDate.now();
-            status = SessionStatus.PLANNED;
-        }
+
     }
 
 

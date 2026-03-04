@@ -65,7 +65,11 @@ public class SessionController {
         return ResponseEntity.ok().build();
     }
 
-
+    @PostMapping("/status/update-all")
+    public ResponseEntity<String> updateAllSessionsStatus() {
+        sessionService.updateSessionsStatusBasedOnPlanning();
+        return ResponseEntity.ok("Toutes les sessions ont été mises à jour");
+    }
 
 
 
@@ -98,5 +102,13 @@ public class SessionController {
     ) {
         LocalDate localDate = LocalDate.parse(date);
         return ResponseEntity.ok(sessionService.checkTrainerOverload(trainerId, localDate, null));
+    }
+
+    @GetMapping("/trainer")
+    public ResponseEntity<List<Session>> getSessionsByTrainerId(
+            @AuthenticationPrincipal Jwt jwt) {
+
+         // or "sub" depending on your token
+        return ResponseEntity.ok(sessionService.getSessionsByTrainer(jwt));
     }
 }
