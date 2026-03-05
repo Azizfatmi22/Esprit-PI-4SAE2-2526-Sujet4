@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partner Hiring | Register New Partner</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Partner Registration</h1>
+            <p class="subtitle">Complete the form below to join our trainer network</p>
+        </header>
+
+        <form id="partnerForm">
+            <div class="form-grid">
+                <!-- Organization Name -->
+                <div class="form-group">
+                    <label for="organizationName">Organization Name</label>
+                    <input type="text" id="organizationName" name="organizationName"
+                        placeholder="e.g. Acme Training Center" required minlength="3">
+                </div>
+
+                <!-- Email -->
+                <div class="form-group">
+                    <label for="email">Business Email</label>
+                    <input type="email" id="email" name="email" placeholder="email@company.com" required>
+                </div>
+
+                <!-- Phone -->
+                <div class="form-group">
+                    <label for="phone">Phone Number (Tunisia)</label>
+                    <input type="tel" id="phone" name="phone" placeholder="8 digits (starts with 2,5,7,9)" required
+                        pattern="^[2579][0-9]{7}$">
+                </div>
+
+                <!-- Legal Form -->
+                <div class="form-group">
+                    <label for="legalForm">Legal Form</label>
+                    <select id="legalForm" name="legalForm" required>
+                        <option value="" disabled selected>Select legal form</option>
+                        <option value="SARL">SARL</option>
+                        <option value="SUARL">SUARL</option>
+                        <option value="SA">SA</option>
+                        <option value="SAS">SAS</option>
+                        <option value="EURL">EURL</option>
+                    </select>
+                </div>
+
+                <!-- Website -->
+                <div class="form-group">
+                    <label for="website">Website URL (HTTPS)</label>
+                    <input type="url" id="website" name="website" placeholder="https://www.example.com" required
+                        pattern="https://.*">
+                </div>
+
+                <!-- City -->
+                <div class="form-group">
+                    <label for="city">Governorate (City)</label>
+                    <select id="city" name="city" required>
+                        <option value="" disabled selected>Select a city</option>
+                        <option value="ARIANA">ARIANA</option>
+                        <option value="BEJA">BEJA</option>
+                        <option value="BEN_AROUS">BEN_AROUS</option>
+                        <option value="BIZERTE">BIZERTE</option>
+                        <option value="GABES">GABES</option>
+                        <option value="GAFSA">GAFSA</option>
+                        <option value="JENDOUBA">JENDOUBA</option>
+                        <option value="KAIROUAN">KAIROUAN</option>
+                        <option value="KASSERINE">KASSERINE</option>
+                        <option value="KEBILI">KEBILI</option>
+                        <option value="KEF">KEF</option>
+                        <option value="MAHDIA">MAHDIA</option>
+                        <option value="MANOUBA">MANOUBA</option>
+                        <option value="MEDENINE">MEDENINE</option>
+                        <option value="MONASTIR">MONASTIR</option>
+                        <option value="NABEUL">NABEUL</option>
+                        <option value="SFAX">SFAX</option>
+                        <option value="SIDI_BOUZID">SIDI_BOUZID</option>
+                        <option value="SILIANA">SILIANA</option>
+                        <option value="SOUSSE">SOUSSE</option>
+                        <option value="TATAOUINE">TATAOUINE</option>
+                        <option value="TOZEUR">TOZEUR</option>
+                        <option value="TUNIS">TUNIS</option>
+                        <option value="ZAGHOUAN">ZAGHOUAN</option>
+                    </select>
+                </div>
+
+                <!-- Partnership Type -->
+                <div class="form-group">
+                    <label for="partnershipType">Partnership Type</label>
+                    <select id="partnershipType" name="partnershipType" required>
+                        <option value="" disabled selected>Select type</option>
+                        <option value="TRAINING_PARTNER">TRAINING_PARTNER</option>
+                        <option value="SPONSOR">SPONSOR</option>
+                        <option value="CONTENT_PARTNER">CONTENT_PARTNER</option>
+                        <option value="CERTIFICATION_PARTNER">CERTIFICATION_PARTNER</option>
+                    </select>
+                </div>
+
+                <!-- Address -->
+                <div class="form-group full-width">
+                    <label for="address">Full Address</label>
+                    <textarea id="address" name="address" rows="2" placeholder="Street, ZIP Code, etc." required
+                        minlength="5"></textarea>
+                </div>
+
+                <!-- File: Business Registration -->
+                <div class="form-group">
+                    <label>Business Registration (PDF)</label>
+                    <div class="file-upload-area">
+                        <p>Click to upload or drag & drop</p>
+                        <input type="file" id="businessRegistration" name="businessRegistration"
+                            accept="application/pdf" style="display: none;" required>
+                        <div class="file-status">No file chosen</div>
+                    </div>
+                </div>
+
+                <!-- File: Company Profile -->
+                <div class="form-group">
+                    <label>Company Profile (PDF)</label>
+                    <div class="file-upload-area">
+                        <p>Click to upload or drag & drop</p>
+                        <input type="file" id="companyProfile" name="companyProfile" accept="application/pdf"
+                            style="display: none;" required>
+                        <div class="file-status">No file chosen</div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn">
+                <span id="loader" class="loader" style="display: none;"></span>
+                <span id="submitText">Register Partner</span>
+            </button>
+        </form>
+
+        <div id="feedback"></div>
+
+        <section class="partners-list-section"
+            style="margin-top: 3rem; border-top: 1px solid var(--border); padding-top: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="font-size: 1.5rem; color: var(--text-main);">Registered Partners</h2>
+                <button type="button" id="refreshBtn"
+                    style="padding: 0.5rem 1rem; background: var(--text-muted); color: white; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 0.875rem;">Refresh
+                    List</button>
+            </div>
+            <div id="partnersContainer" style="display: grid; gap: 1rem;">
+                <!-- Partners will be loaded here -->
+                <p style="color: var(--text-muted); text-align: center; padding: 2rem;">Click Refresh to see registered
+                    partners</p>
+            </div>
+        </section>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+
+</html>
