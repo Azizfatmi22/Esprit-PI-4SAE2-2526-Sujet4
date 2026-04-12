@@ -22,7 +22,7 @@ public class ContentBlock {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "LONGTEXT")
+    @Column(nullable = false, length = 50)
     private ContentType type;
 
     @Column(name = "order_index")

@@ -30,11 +30,25 @@ import java.util.List;
 public class CourseController {
 
     private final ICourseService courseService;
+    private final com.example.mscourse.services.interfaces.IChapterService chapterService;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     // ==================== CREATE OPERATIONS ====================
 
     @Value("${file.upload.dir}")
     private String fileUploadDir;
+
+    @GetMapping("/{id}/title")
+    public ResponseEntity<String> getCourseTitle(@PathVariable Long id) {
+        log.info("REST request to get title for course ID: {}", id);
+        try {
+            CourseDTO course = courseService.getCourseById(id);
+            return ResponseEntity.ok(course.getTitle());
+        } catch (Exception e) {
+            log.error("Course not found or error occurred: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("formini_course_not_found");
+        }
+    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CourseDTO> createCourse(
@@ -45,7 +59,8 @@ public class CourseController {
             @RequestParam(required = false) Integer durationMinutes,
             @RequestParam(required = false, defaultValue = "DRAFT") String status,
             @RequestParam String trainerId,
-            @RequestParam(required = false) MultipartFile thumbnail) {
+            @RequestParam(required = false) MultipartFile thumbnail,
+            @RequestParam(required = false) String chaptersJson) {
 
         log.info("REST request to create course: {} with status: {}", title, status);
         log.info("File upload directory: {}", fileUploadDir);
@@ -66,6 +81,20 @@ public class CourseController {
             CourseDTO createdCourse = courseService.createCourse(courseDTO);
             Long courseId = createdCourse.getId();
             log.info("Course created with ID: {}", courseId);
+
+            if (chaptersJson != null && !chaptersJson.trim().isEmpty()) {
+                try {
+                    com.fasterxml.jackson.core.type.TypeReference<List<CreateChapterRequestDTO>> typeRef =
+                        new com.fasterxml.jackson.core.type.TypeReference<List<CreateChapterRequestDTO>>() {};
+                    List<CreateChapterRequestDTO> chapters = objectMapper.readValue(chaptersJson, typeRef);
+                    for (CreateChapterRequestDTO chapter : chapters) {
+                        chapterService.createChapter(courseId, chapter);
+                    }
+                    log.info("Created {} chapters for course ID: {}", chapters.size(), courseId);
+                } catch (Exception e) {
+                    log.error("Error parsing or creating chapters from JSON: {}", e.getMessage(), e);
+                }
+            }
 
             // Ensure standard folder structure exists for each course
             ensureCourseDirectoryStructureSafely(courseId);
@@ -103,7 +132,10 @@ public class CourseController {
                 createdCourse = courseService.updateCourseThumbnail(courseId, thumbnailFilename);
             }
 
-            return new ResponseEntity<>(createdCourse, HttpStatus.CREATED);
+            // Fetch the course again so the returned object includes all the newly attached chapters
+            CourseDTO finalCourseData = courseService.getCourseById(courseId);
+
+            return new ResponseEntity<>(finalCourseData, HttpStatus.CREATED);
 
         } catch (IOException e) {
             log.error("Error processing file upload: {}", e.getMessage());
