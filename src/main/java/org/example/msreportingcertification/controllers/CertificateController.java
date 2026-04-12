@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/reporting/certificates")
 @RequiredArgsConstructor
-@CrossOrigin("*")
 public class CertificateController {
 
     private final ICertificateService certificateService;

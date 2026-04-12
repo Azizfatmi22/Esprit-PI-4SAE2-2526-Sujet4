@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/reporting")
 @RequiredArgsConstructor
-@CrossOrigin("*")
 public class ReportingController {
     private final IEvaluationHistoryService evaluationHistoryService;
     private final EvaluationHistoryRepository evaluationHistoryRepository;

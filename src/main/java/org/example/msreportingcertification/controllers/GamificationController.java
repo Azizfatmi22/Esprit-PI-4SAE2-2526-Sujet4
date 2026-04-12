@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/reporting/gamification")
 @RequiredArgsConstructor
-@CrossOrigin("*")
 public class GamificationController {
 
     private final LearnerProgressionRepository progressionRepo;

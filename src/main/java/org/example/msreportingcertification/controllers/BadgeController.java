@@ -13,7 +13,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/reporting/badges")
 @RequiredArgsConstructor
-@CrossOrigin("*")
 public class BadgeController {
 
     private final IBadgeService badgeService;
