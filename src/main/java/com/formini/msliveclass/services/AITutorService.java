@@ -138,10 +138,31 @@ public class AITutorService {
         StringBuilder data = new StringBuilder();
         
         try {
+            // Check if user is asking about their courses/progress
+            boolean askingAboutCourses = message.contains("my courses") || 
+                                        message.contains("my progress") ||
+                                        message.contains("what courses") ||
+                                        message.contains("how many courses") ||
+                                        message.contains("list") ||
+                                        message.contains("show") ||
+                                        message.contains("enrolled");
+            
             // Always show PAID courses from database
             data.append("=== LEARNER'S PAID COURSES (from database) ===\n");
             data.append(paidCoursesData).append("\n");
             data.append("=== END PAID COURSES ===\n\n");
+            
+            // If asking about courses, give explicit instruction to list them
+            if (askingAboutCourses) {
+                data.append("🎯 USER IS ASKING ABOUT THEIR COURSES!\n");
+                data.append("YOU MUST respond by listing the EXACT courses shown above with their progress.\n");
+                data.append("Format your response like this:\n");
+                data.append("\"You have X enrolled courses:\n");
+                data.append("1. [Course Name] - Progress: [X]%\n");
+                data.append("2. [Course Name] - Progress: [X]%\"\n");
+                data.append("Use ONLY the course names and progress from the database data above!\n\n");
+                return data.toString();
+            }
             
             // Check for specific course mentions
             String mentionedCourse = extractCourseMention(message);
@@ -357,11 +378,15 @@ public class AITutorService {
         prompt.append("- Use emojis sparingly to keep it fun\n");
         prompt.append("- Break down complex concepts into simple terms\n\n");
         
-        prompt.append("CRITICAL ACCESS RULES:\n");
-        prompt.append("1. Check the database data below for '✅ ACCESS GRANTED' or '❌ ACCESS DENIED'\n");
-        prompt.append("2. If ACCESS GRANTED: Teach the topic thoroughly using your knowledge\n");
-        prompt.append("3. If ACCESS DENIED: Politely say they need to enroll in that course first\n");
-        prompt.append("4. If no specific topic mentioned: Be friendly and ask what they want to learn\n\n");
+        prompt.append("⚠️ CRITICAL: ONLY USE DATABASE DATA - DO NOT MAKE UP COURSES! ⚠️\n\n");
+        
+        prompt.append("STRICT RULES:\n");
+        prompt.append("1. ONLY mention courses that are listed in the DATABASE DATA below\n");
+        prompt.append("2. NEVER invent or guess course names (like AWS, Python, etc.)\n");
+        prompt.append("3. If asked about courses, list EXACTLY what's in the database data\n");
+        prompt.append("4. Show the progress percentage from the database data\n");
+        prompt.append("5. If ACCESS GRANTED: Teach the topic using your knowledge\n");
+        prompt.append("6. If ACCESS DENIED: Say they need to enroll first\n\n");
         
         prompt.append("HOW TO TEACH:\n");
         prompt.append("- Start with a brief overview of the concept\n");
@@ -372,12 +397,13 @@ public class AITutorService {
         
         // Add real database data
         if (contextData != null && !contextData.trim().isEmpty()) {
-            prompt.append("=== DATABASE DATA ===\n");
+            prompt.append("=== DATABASE DATA (THIS IS THE ONLY TRUTH - DO NOT MAKE UP OTHER COURSES) ===\n");
             prompt.append(contextData);
             prompt.append("=== END DATABASE DATA ===\n\n");
         }
         
-        prompt.append("Now respond to the learner's message. If you see ACCESS GRANTED, teach them about the topic!\n\n");
+        prompt.append("IMPORTANT: When listing courses, copy the EXACT course names and progress from the DATABASE DATA above.\n");
+        prompt.append("DO NOT mention any courses that are not in the database data!\n\n");
         
         return prompt.toString();
     }

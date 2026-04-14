@@ -69,7 +69,7 @@ public class AIFunctionService {
     }
 
     /**
-     * Function: Get learner's enrollments
+     * Function: Get learner's enrollments with real progress
      * Security: PRIVATE - Only learner's own data
      */
     public Function<LearnerRequest, Response> getLearnerEnrollments() {
@@ -81,10 +81,31 @@ public class AIFunctionService {
                     return new Response("Error: Learner ID is required");
                 }
                 
+                // Get enrollments
                 List<Map<String, Object>> enrollments = enrollmentClient.getEnrollmentsByLearnerId(request.learnerId);
                 
                 if (enrollments.isEmpty()) {
                     return new Response("No enrollments found for this learner.");
+                }
+                
+                // Get progress data from MS-COURSE
+                List<Map<String, Object>> progressList = null;
+                try {
+                    progressList = courseClient.getLearnerProgress(request.learnerId);
+                } catch (Exception e) {
+                    logger.warn("Could not fetch progress data: {}", e.getMessage());
+                }
+                
+                // Create a map of courseId -> progress for quick lookup
+                Map<Long, Map<String, Object>> progressMap = new HashMap<>();
+                if (progressList != null) {
+                    for (Map<String, Object> progress : progressList) {
+                        Object courseIdObj = progress.get("courseId");
+                        if (courseIdObj instanceof Number) {
+                            Long courseId = ((Number) courseIdObj).longValue();
+                            progressMap.put(courseId, progress);
+                        }
+                    }
                 }
                 
                 StringBuilder result = new StringBuilder();
@@ -93,15 +114,35 @@ public class AIFunctionService {
                 for (Map<String, Object> enrollment : enrollments) {
                     Long courseId = getCourseIdFromEnrollment(enrollment);
                     String status = (String) enrollment.get("status");
-                    Object progressObj = enrollment.get("progress");
-                    double progress = progressObj instanceof Number ? ((Number) progressObj).doubleValue() : 0.0;
                     
                     if (courseId != null) {
                         try {
                             String courseTitle = courseClient.getCourseTitle(courseId);
                             result.append("- ").append(courseTitle).append("\n");
+                            result.append("  courseId: ").append(courseId).append("\n");
                             result.append("  Status: ").append(status).append("\n");
-                            result.append("  Progress: ").append(String.format("%.1f%%", progress)).append("\n\n");
+                            
+                            // Get real progress from MS-COURSE
+                            Map<String, Object> progress = progressMap.get(courseId);
+                            if (progress != null) {
+                                Object progressPercentObj = progress.get("progressPercent");
+                                Object completedLessonsObj = progress.get("completedLessons");
+                                Object totalLessonsObj = progress.get("totalLessons");
+                                
+                                int progressPercent = progressPercentObj instanceof Number ? 
+                                    ((Number) progressPercentObj).intValue() : 0;
+                                int completedLessons = completedLessonsObj instanceof Number ? 
+                                    ((Number) completedLessonsObj).intValue() : 0;
+                                int totalLessons = totalLessonsObj instanceof Number ? 
+                                    ((Number) totalLessonsObj).intValue() : 0;
+                                
+                                result.append("  Progress: ").append(progressPercent).append("%");
+                                result.append(" (").append(completedLessons).append("/").append(totalLessons).append(" lessons)\n");
+                            } else {
+                                result.append("  Progress: 0% (not started)\n");
+                            }
+                            
+                            result.append("\n");
                         } catch (Exception e) {
                             logger.warn("Could not fetch course title for ID: {}", courseId);
                         }

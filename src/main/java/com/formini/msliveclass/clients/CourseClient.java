@@ -34,4 +34,7 @@ public interface CourseClient {
     ChapterDTO getChapterWithContent(@PathVariable("courseId") Long courseId,
                                      @PathVariable("chapterId") Long chapterId);
 
+    @GetMapping("/api/progress/learner/{learnerId}")
+    List<java.util.Map<String, Object>> getLearnerProgress(@PathVariable("learnerId") String learnerId);
+
 }
