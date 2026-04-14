@@ -1,0 +1,6 @@
+com\mspathandschedule\controllers\ScheduleControllerTest.class
+com\mspathandschedule\services\impl\LearningPathServiceImplTest.class
+com\mspathandschedule\services\impl\TrainerAvailabilityServiceTest.class
+com\mspathandschedule\controllers\LearningPathControllerTest.class
+com\mspathandschedule\MsPathAndScheduleApplicationTests.class
+com\mspathandschedule\services\impl\ScheduleServiceImplTest.class
