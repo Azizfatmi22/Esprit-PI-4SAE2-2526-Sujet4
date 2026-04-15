@@ -57,6 +57,31 @@ public class GatewayConfig {
                 .route("forum-event-service", r -> r
                         .path("/api/events/**")
                         .uri("lb://FORUM-SERVICE"))
+                .route("forum-moderation-service", r -> r
+                        .path("/api/moderation/**")
+                        .uri("lb://FORUM-SERVICE"))
+                .route("forum-reputation-service", r -> r
+                        .path("/api/reputation/**")
+                        .uri("lb://FORUM-SERVICE"))
+                .route("forum-image-service", r -> r
+                        .path("/api/images/**")
+                        .uri("lb://FORUM-SERVICE"))
+                .route("forum-analytics-service", r -> r
+                        .path("/api/backoffice/events/analytics/**")
+                        .uri("lb://FORUM-SERVICE"))
+                .route("forum-backoffice-service", r -> r
+                        .path("/api/backoffice/**")
+                        .uri("lb://FORUM-SERVICE"))
+
+                // MS-CourseProgress Routes
+                .route("course-progress-service", r -> r
+                        .path("/progress/**")
+                        .uri("lb://MS-COURSEPROGRESS"))
+
+                // MS-Certificate Routes
+                .route("certificate-service", r -> r
+                        .path("/api/certificates/**")
+                        .uri("lb://MS-CERTIFICATE"))
 
                 // MS-TrainerHiring Routes
                 .route("trainer-hiring-service", r -> r
