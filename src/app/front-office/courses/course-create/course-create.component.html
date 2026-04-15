@@ -1,0 +1,470 @@
+<div class="course-create-wrapper">
+  <!-- Page Header -->
+  <div class="page-header">
+    
+  </div>
+
+  <!-- Progress Steps -->
+ 
+
+  <!-- Alert Messages -->
+  <div *ngIf="errorMessage" class="alert-box alert-error">
+    <span class="alert-icon">❌</span>
+    <span class="alert-text">{{ errorMessage }}</span>
+  </div>
+  <div *ngIf="successMessage" class="alert-box alert-success">
+    <span class="alert-icon">✅</span>
+    <span class="alert-text">{{ successMessage }}</span>
+  </div>
+
+  <!-- Content Wrapper -->
+  <div class="content-wrapper">
+    <!-- STEP 1: Course Information -->
+    <div *ngIf="currentStep === 1" class="step-panel">
+      <div class="step-card">
+        <div class="section-header">
+          <h2>Course Information</h2>
+        </div>
+
+        <form [formGroup]="courseForm" class="form-modern two-column-layout">
+          <!-- Left Column: Form Fields -->
+          <div class="form-column-left">
+            <!-- Course Title -->
+            <div class="form-group">
+              <label for="title" class="form-label">Course Title *</label>
+              <input 
+                type="text" 
+                id="title" 
+                formControlName="title" 
+                class="form-control"
+                [class.is-invalid]="isFieldInvalid('title')"
+                placeholder="Enter an engaging course title">
+              <div *ngIf="isFieldInvalid('title')" class="form-error">
+                {{ getFieldError('title') }}
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+              <label for="description" class="form-label">Description *</label>
+              <textarea 
+                id="description" 
+                formControlName="description" 
+                class="form-control"
+                [class.is-invalid]="isFieldInvalid('description')"
+                rows="5"
+                placeholder="Describe what students will learn"></textarea>
+              <div *ngIf="isFieldInvalid('description')" class="form-error">
+                {{ getFieldError('description') }}
+              </div>
+            </div>
+
+            <!-- Level -->
+            <div class="form-group">
+              <label class="form-label">Level *</label>
+              <div class="level-selector">
+                <button 
+                  type="button"
+                  *ngFor="let level of levels" 
+                  class="level-btn"
+                  [class.active]="courseForm.get('level')?.value === level"
+                  (click)="courseForm.patchValue({level: level})">
+                  {{ level }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Price -->
+            <div class="form-group">
+              <label for="price" class="form-label">Price (dt) *</label>
+              <input 
+                type="number" 
+                id="price" 
+                formControlName="price" 
+                class="form-control"
+                [class.is-invalid]="isFieldInvalid('price')"
+                placeholder="e.g. 120.00"
+                step="0.01">
+              <div *ngIf="isFieldInvalid('price')" class="form-error">
+                {{ getFieldError('price') }}
+              </div>
+            </div>
+
+            <!-- Duration & Status Row -->
+            <div class="form-row-two">
+              <div class="form-group">
+                <label for="durationMinutes" class="form-label">Duration (minutes)</label>
+                <input 
+                  type="number" 
+                  id="durationMinutes" 
+                  formControlName="durationMinutes" 
+                  class="form-control"
+                  placeholder="e.g. 120">
+              </div>
+
+           
+            </div>
+          </div>
+
+          <!-- Right Column: Thumbnail -->
+          <div class="form-column-right">
+               <div class="form-group">
+              
+                <div class="status-selector">
+                  <button 
+                    type="button"
+                    class="status-btn draft"
+                    [class.active]="courseForm.get('status')?.value === 'DRAFT'"
+                    (click)="courseForm.patchValue({status: 'DRAFT'})">
+                    Draft
+                  </button>
+                  <button 
+                    type="button"
+                    class="status-btn published"
+                    [class.active]="courseForm.get('status')?.value === 'PUBLISHED'"
+                    (click)="courseForm.patchValue({status: 'PUBLISHED'})">
+                    Published
+                  </button>
+                </div>
+              </div>
+            <div class="thumbnail-section">
+              <label class="form-label thumbnail-label">Course Thumbnail</label>
+              
+              <div *ngIf="!thumbnailPreview" class="upload-zone" (click)="thumbnailInput.click()">
+                <input 
+                  #thumbnailInput
+                  type="file" 
+                  style="display: none"
+                  accept="image/png,image/jpeg,image/jpg"
+                  (change)="onThumbnailChange($event)">
+                <div class="upload-content">
+                  <span class="upload-icon">🖼️</span>
+                  <span class="upload-text">Click to upload thumbnail</span>
+                  <small class="upload-hint">Max: 5MB • JPG, PNG</small>
+                </div>
+              </div>
+              
+              <div *ngIf="thumbnailPreview" class="thumbnail-preview-card">
+                <div class="thumbnail-image-container">
+                  <img [src]="thumbnailPreview" alt="Course thumbnail" class="thumbnail-image">
+                  <div class="thumbnail-overlay">
+                    <button type="button" class="btn-overlay" (click)="thumbnailInput.click()">
+                      <span>📷</span>
+                    </button>
+                    <button type="button" class="btn-overlay remove" (click)="resetThumbnail()">
+                      <span>🗑️</span>
+                    </button>
+                  </div>
+                </div>
+                <input 
+                  #thumbnailInput
+                  type="file" 
+                  style="display: none"
+                  accept="image/png,image/jpeg,image/jpg"
+                  (change)="onThumbnailChange($event)">
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- STEP 2: Chapters & Content -->
+    <div *ngIf="currentStep === 2" class="step-panel">
+      <div class="step-card">
+        <div class="section-header">
+          <h2>Chapters & Content</h2>
+          <p class="section-subtitle">Organize your course content</p>
+        </div>
+
+        <div *ngIf="chapters.length === 0" class="empty-state">
+          <span class="empty-icon">📚</span>
+          <p>No chapters yet. Add your first chapter below.</p>
+        </div>
+
+        <div class="chapters-list">
+          <div *ngFor="let chapter of chapters; let chapterIdx = index" class="chapter-item">
+            <div class="chapter-header" (click)="toggleChapter(chapterIdx)">
+              <div class="chapter-info">
+                <span class="toggle-icon" [class.expanded]="chapter.isExpanded">▶</span>
+                <span class="chapter-badge">Ch {{ chapterIdx + 1 }}</span>
+                <input 
+                  type="text" 
+                  [(ngModel)]="chapter.title" 
+                  class="chapter-title"
+                  placeholder="Chapter title"
+                  (click)="$event.stopPropagation()">
+                    <div *ngIf="isFieldInvalid('chapterTitle')" class="form-error">
+                {{ getFieldError('chapterTitle') }}
+              </div>
+              </div>
+              <button type="button" class="btn-delete" (click)="removeChapter(chapterIdx); $event.stopPropagation()">
+                🗑️
+              </button>
+            </div>
+
+            <div class="chapter-content" *ngIf="chapter.isExpanded">
+              <textarea 
+                [(ngModel)]="chapter.description" 
+                class="chapter-desc"
+                rows="2"
+                placeholder="Chapter description (optional)"></textarea>
+
+              <div class="content-blocks">
+                <div class="blocks-header">
+                  <h5>Content Blocks</h5>
+                  <div class="type-buttons-horizontal">
+                    <button 
+                      type="button"
+                      class="type-btn"
+                      *ngFor="let type of contentTypes"
+                      (click)="addContentBlockWithType(chapterIdx, type)"
+                      [title]="'Add ' + type">
+                      {{ type }}
+                    </button>
+                  </div>
+                </div>
+
+                <div *ngIf="chapter.contentBlocks.length === 0" class="empty-blocks">
+                  <p>No content blocks. Click a type above to add one.</p>
+                </div>
+
+                <div class="blocks-list">
+                  <div *ngFor="let block of chapter.contentBlocks; let blockIdx = index" class="block-item">
+                    <div class="block-header">
+                      <span class="block-type" [class]="block.type.toLowerCase()">{{ block.type }}</span>
+                      <input 
+                        type="text" 
+                        [(ngModel)]="block.title" 
+                        class="block-title"
+                        placeholder="Block title">
+                      <div class="block-controls">
+                        <button 
+                          type="button" 
+                          class="btn-order"
+                          (click)="moveContentBlockUp(chapterIdx, blockIdx)"
+                          [disabled]="blockIdx === 0">
+                          ▲
+                        </button>
+                        <button 
+                          type="button" 
+                          class="btn-order"
+                          (click)="moveContentBlockDown(chapterIdx, blockIdx)"
+                          [disabled]="blockIdx === chapter.contentBlocks.length - 1">
+                          ▼
+                        </button>
+                        <button type="button" class="btn-delete" (click)="removeContentBlock(chapterIdx, blockIdx)">
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div class="block-content">
+                      <!-- TEXT content -->
+                      <textarea 
+                        *ngIf="block.type === 'TEXT'"
+                        [(ngModel)]="block.data" 
+                        class="block-textarea"
+                        rows="2"
+                        placeholder="Block content"></textarea>
+                      
+                      <!-- FILE content (Image, Video, PDF, File) -->
+                      <div *ngIf="block.type !== 'TEXT'" class="file-block">
+                        <div *ngIf="!block.filePreview && !block.file" class="file-upload-zone" 
+                             (click)="triggerFileInputForBlock(chapterIdx, blockIdx)">
+                          <span class="upload-icon">📁</span>
+                          <p>Click to select file</p>
+                          <input 
+                            type="file"
+                            style="display: none"
+                            (change)="onContentFileChange($event, chapterIdx, blockIdx)">
+                        </div>
+                        
+                        <!-- File Preview Card -->
+                        <div *ngIf="block.file || block.filePreview" class="file-preview">
+                          <!-- Image Preview -->
+                          <img *ngIf="block.type === 'IMAGE' && block.filePreview" 
+                               [src]="block.filePreview" 
+                               alt="Image preview"
+                               class="file-preview-media">
+                          
+                          <!-- Video Thumbnail Preview -->
+                          <div *ngIf="block.type === 'VIDEO' && block.filePreview" class="video-thumbnail-wrapper">
+                            <video [src]="block.filePreview" class="file-preview-media"></video>
+                            <div class="video-play-icon">
+                              <span>▶</span>
+                            </div>
+                          </div>
+                          
+                          <!-- PDF Preview -->
+                          <div *ngIf="block.type === 'PDF'" class="pdf-preview-wrapper">
+                            <div class="pdf-icon-large">📄</div>
+                            <div class="pdf-info">
+                              <span class="pdf-filename">{{ block.file?.name || (block.title || 'PDF Document') }}</span>
+                              <span class="pdf-size" *ngIf="block.file && block.file.size > 0">{{ (block.file.size / 1024).toFixed(2) }} KB</span>
+                              <span class="pdf-size" *ngIf="!block.file || block.file.size === 0">(Existing file)</span>
+                            </div>
+                          </div>
+                          
+                          <!-- Generic File Preview -->
+                          <div *ngIf="block.type === 'FILE'" class="file-preview-wrapper">
+                            <div class="file-icon-large">📁</div>
+                            <div class="file-info">
+                              <span class="file-filename">{{ block.file?.name || (block.title || 'File') }}</span>
+                              <span class="file-size" *ngIf="block.file && block.file.size > 0">{{ (block.file.size / 1024).toFixed(2) }} KB</span>
+                              <span class="file-size" *ngIf="!block.file || block.file.size === 0">(Existing file)</span>
+                            </div>
+                          </div>
+
+                          <!-- Action Buttons -->
+                          <div>
+                            <button type="button" class="btn-small" (click)="triggerFileInputForBlock(chapterIdx, blockIdx)">📝 Change File</button>
+                            <button type="button" class="btn-small delete" (click)="removeContentFile(chapterIdx, blockIdx)">🗑️ Remove</button>
+                          </div>
+                          
+                          <input 
+                            type="file"
+                            style="display: none"
+                            (change)="onContentFileChange($event, chapterIdx, blockIdx)">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              <!-- Hidden file inputs for adding content blocks with file picker -->
+              <input 
+                #fileInput
+                type="file"
+                [id]="'file-picker-' + chapterIdx"
+                style="display: none"
+                (change)="onPendingFileSelected($event, chapterIdx)">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="btn-add-chapter" (click)="addChapter()">
+          <span>➕</span> Add Chapter
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Attachments -->
+    <div *ngIf="currentStep === 3" class="step-panel">
+      <div class="step-card">
+        <div class="section-header">
+          <h2>Course Attachments</h2>
+          <p class="section-subtitle">Add supporting files and resources</p>
+        </div>
+
+        <div *ngIf="attachments.length === 0" class="empty-state">
+          <span class="empty-icon">📎</span>
+          <p>No attachments yet. Upload course resources below.</p>
+        </div>
+
+        <div class="attachments-grid">
+          <div *ngFor="let attachment of attachments; let idx = index" class="attachment-preview">
+            <!-- File Icon/Preview Section -->
+            <div class="attachment-preview-icon">
+              <div *ngIf="attachment.preview" class="attachment-image">
+                <img [src]="attachment.preview" alt="File preview">
+              </div>
+              <div *ngIf="!attachment.preview" class="attachment-file-icon">
+                📄
+              </div>
+            </div>
+
+            <!-- Attachment Info Section -->
+            <div class="attachment-info">
+              <div class="attachment-category-badge">
+                {{ attachment.category }}
+              </div>
+              <p class="attachment-filename">{{ attachment.file?.name || '(Existing file)' }}</p>
+              <p class="attachment-filesize" *ngIf="attachment.file && attachment.file.size">{{ (attachment.file.size / 1024).toFixed(2) }} KB</p>
+              
+              <!-- Description -->
+              <textarea 
+                [(ngModel)]="attachment.description" 
+                class="attachment-description"
+                rows="2"
+                placeholder="Add description (optional)"></textarea>
+
+              <!-- Action Buttons -->
+              <div class="attachment-footer">
+                <select [(ngModel)]="attachment.category" class="category-select">
+                  <option *ngFor="let cat of attachmentCategories" [value]="cat">{{ cat }}</option>
+                </select>
+                <div class="attachment-actions">
+                  <button type="button" class="btn-icon-small" (click)="changeAttachmentFile(idx); attachmentFileInput.click()" title="Change file">
+                    📝
+                  </button>
+                  <button type="button" class="btn-icon-small delete" (click)="removeAttachment(idx)" title="Delete attachment">
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="btn-add-attachment" (click)="triggerAddAttachmentFileInput(); attachmentFileInput.click()">
+          <span>➕</span> Add Attachment
+        </button>
+        <input 
+          #attachmentFileInput
+          type="file" 
+          style="display: none" 
+          (change)="onPendingAttachmentFileSelected($event)">
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="action-buttons">
+    <button 
+      type="button" 
+      class="btn btn-secondary"
+      (click)="isEditMode ? goBackToCatalog() : prevStep()"
+      [disabled]="currentStep === 1 && !isEditMode">
+      ← {{ isEditMode ? 'Back to Catalog' : 'Back' }}
+    </button>
+    
+    <button 
+      type="button" 
+      class="btn btn-primary"
+      *ngIf="currentStep < 3 && !isEditMode"
+      (click)="nextStep()">
+      Next →
+    </button>
+
+    <!-- For edit mode: Show save and cancel buttons on all steps -->
+    <button 
+      type="button" 
+      class="btn btn-warning"
+      *ngIf="isEditMode && currentStep < 3"
+      (click)="nextStep()">
+      Next →
+    </button>
+
+    <button 
+      type="button" 
+      class="btn btn-success"
+      *ngIf="currentStep === 3"
+      (click)="isEditMode ? saveCourseChanges() : createCourseAndGoToEvaluation()"
+      [disabled]="isSubmitting">
+      <span *ngIf="isSubmitting">{{ isEditMode ? 'Saving changes...' : 'Creating course...' }}</span>
+      <span *ngIf="!isSubmitting">
+        {{ isEditMode ? '💾 Save Changes' : '✨ Create Course & Go to Evaluation' }}
+      </span>
+    </button>
+
+    <!-- Cancel button for edit mode -->
+    <button 
+      type="button" 
+      class="btn btn-cancel"
+      *ngIf="isEditMode && currentStep === 3"
+      (click)="goBackToCatalog()"
+      [disabled]="isSubmitting">
+      Cancel
+    </button>

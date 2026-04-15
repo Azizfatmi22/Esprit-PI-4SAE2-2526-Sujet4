@@ -1,0 +1,414 @@
+<div class="invoices-container">
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <div class="header-top">
+      <h1>📄 Mes Factures & Paiements</h1>
+      <button class="btn-refresh" (click)="loadInvoices(); loadInstallmentSummary()">🔄 Actualiser</button>
+    </div>
+    <div class="success-msg" *ngIf="successMessage">{{ successMessage }}</div>
+    <div class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</div>
+  </div>
+
+  <!-- RÉSUMÉ -->
+  <div class="summary-banner" *ngIf="installmentSummaries.length > 0">
+    <div class="summary-item">
+      <span class="summary-label">Plans actifs</span>
+      <span class="summary-value">{{ installmentSummaries.length }}</span>
+    </div>
+    <div class="summary-item highlight">
+      <span class="summary-label">💰 Reste à payer</span>
+      <span class="summary-value danger">{{ formatCurrency(getTotalRemaining()) }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Total factures</span>
+      <span class="summary-value">{{ directInvoices.length + installmentInvoices.length }}</span>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="selectedTab === 'invoices'" (click)="selectedTab = 'invoices'">
+      🧾 Mes Factures ({{ directInvoices.length }})
+    </button>
+    <button class="tab-btn" [class.active]="selectedTab === 'installments'" (click)="selectedTab = 'installments'">
+      📅 Plans Échelonnés ({{ installmentSummaries.length }})
+    </button>
+  </div>
+
+  <!-- ===== ONGLET FACTURES ===== -->
+  <div *ngIf="selectedTab === 'invoices'">
+
+    <div class="filters-bar">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" class="search-input" placeholder="Numéro, statut, cours..."
+               [(ngModel)]="directSearchTerm" (ngModelChange)="directCurrentPage = 1">
+        <button class="clear-btn" *ngIf="directSearchTerm" (click)="directSearchTerm = ''; directCurrentPage = 1">✕</button>
+      </div>
+      <select class="filter-select" [(ngModel)]="directFilterStatus" (ngModelChange)="directCurrentPage = 1">
+        <option value="all">Tous les statuts</option>
+        <option *ngFor="let s of getDirectStatuses()" [value]="s">{{ s }}</option>
+      </select>
+      <div class="date-group">
+        <input type="date" class="filter-date" [(ngModel)]="directDateFrom" (ngModelChange)="directCurrentPage = 1">
+        <span class="date-sep">→</span>
+        <input type="date" class="filter-date" [(ngModel)]="directDateTo" (ngModelChange)="directCurrentPage = 1">
+      </div>
+      <button class="btn-reset" (click)="resetDirectFilters()">🗑 Reset</button>
+    </div>
+
+    <div class="results-info" *ngIf="filteredDirectInvoices.length !== directInvoices.length">
+      {{ filteredDirectInvoices.length }} résultat(s) sur {{ directInvoices.length }}
+    </div>
+
+    <div *ngIf="loadingDirect" class="loading">⏳ Chargement...</div>
+
+    <div *ngIf="!loadingDirect && filteredDirectInvoices.length === 0" class="empty">
+      <div class="empty-icon">💳</div>
+      <p>{{ directInvoices.length === 0 ? 'Aucune facture de paiement direct' : 'Aucun résultat' }}</p>
+      <button *ngIf="directInvoices.length > 0" class="btn-link" (click)="resetDirectFilters()">Réinitialiser</button>
+    </div>
+
+    <div *ngIf="!loadingDirect && paginatedDirectInvoices.length > 0" class="cards-grid">
+      <div *ngFor="let inv of paginatedDirectInvoices; trackBy: trackById" class="invoice-card invoice-direct">
+        <div class="card-header">
+          <span class="invoice-num">{{ inv.invoiceNumber }}</span>
+          <span class="badge" [class]="'status-' + (inv.status || '').toLowerCase()">{{ inv.status }}</span>
+        </div>
+        <div class="card-body">
+          <div class="card-row">
+            <span class="label">📅 Date</span>
+            <span>{{ formatDate(inv.issueDate) }}</span>
+          </div>
+          <div class="card-row">
+            <span class="label">💰 Montant</span>
+            <span class="amount">{{ formatCurrency(inv.totalAmount) }}</span>
+          </div>
+          <div class="courses-section">
+            <span class="label">📚 Cours</span>
+            <div class="courses-tags">
+              <span *ngFor="let c of inv.purchasedCourses" class="course-tag">{{ c }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <button class="btn-action btn-detail" (click)="openDetail(inv)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+            Détails
+          </button>
+          <button class="btn-action btn-pdf" (click)="downloadInvoicePDF(inv)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
+            </svg>
+            PDF
+          </button>
+          <button class="btn-action btn-delete" (click)="deleteInvoice(inv)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+              <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
+            </svg>
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pagination" *ngIf="directTotalPages > 1">
+      <button class="page-btn" (click)="goToDirectPage(directCurrentPage - 1)" [disabled]="directCurrentPage === 1">← Précédent</button>
+      <div class="page-numbers">
+        <button *ngFor="let p of getDirectPagesArray()" class="page-num"
+                [class.active]="directCurrentPage === p" (click)="goToDirectPage(p)">{{ p }}</button>
+      </div>
+      <button class="page-btn" (click)="goToDirectPage(directCurrentPage + 1)" [disabled]="directCurrentPage === directTotalPages">Suivant →</button>
+      <span class="page-info">Page {{ directCurrentPage }}/{{ directTotalPages }}</span>
+    </div>
+
+  </div>
+  <!-- FIN ONGLET FACTURES -->
+
+  <!-- ===== ONGLET PLANS ===== -->
+  <div *ngIf="selectedTab === 'installments'">
+
+    <div class="filters-bar">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" class="search-input" placeholder="Plan ID, statut..."
+               [(ngModel)]="planSearchTerm" (ngModelChange)="planCurrentPage = 1">
+        <button class="clear-btn" *ngIf="planSearchTerm" (click)="planSearchTerm = ''; planCurrentPage = 1">✕</button>
+      </div>
+      <select class="filter-select" [(ngModel)]="planFilterStatus" (ngModelChange)="planCurrentPage = 1">
+        <option value="all">Tous les statuts</option>
+        <option value="ACTIVE">ACTIVE</option>
+        <option value="COMPLETED">COMPLETED</option>
+        <option value="DEFAULTED">DEFAULTED</option>
+      </select>
+      <button class="btn-reset" (click)="resetPlanFilters()">🗑 Reset</button>
+    </div>
+
+    <div class="results-info" *ngIf="filteredPlans.length !== installmentSummaries.length">
+      {{ filteredPlans.length }} résultat(s) sur {{ installmentSummaries.length }}
+    </div>
+
+    <div *ngIf="loadingSummary" class="loading">⏳ Chargement...</div>
+
+    <div *ngIf="!loadingSummary && filteredPlans.length === 0" class="empty">
+      <div class="empty-icon">📋</div>
+      <p>{{ installmentSummaries.length === 0 ? 'Aucun plan trouvé' : 'Aucun résultat' }}</p>
+      <button *ngIf="installmentSummaries.length > 0" class="btn-link" (click)="resetPlanFilters()">Réinitialiser</button>
+    </div>
+
+    <!-- CARTES UNIFIÉES plan + factures -->
+    <div *ngIf="!loadingSummary && paginatedPlans.length > 0" class="unified-plans-list">
+
+      <div *ngFor="let s of paginatedPlans; trackBy: trackByPlanId" class="unified-plan-card">
+
+        <!-- HEADER DU PLAN -->
+        <div class="upc-header">
+          <div class="upc-title">
+            <span class="plan-id">Plan #{{ s.planId }}</span>
+            <span class="badge" [class]="'status-' + s.status.toLowerCase()">{{ s.status }}</span>
+          </div>
+          <div class="upc-actions">
+            <button class="btn-action btn-detail" (click)="openPlanDetail(s)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+              Détails
+            </button>
+            <button class="btn-action btn-pdf" (click)="downloadPlanPDF(s)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
+              </svg>
+              PDF
+            </button>
+            <button class="btn-action btn-delete" (click)="deletePlan(s)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
+              </svg>
+              Supprimer
+            </button>
+          </div>
+        </div>
+
+        <!-- PROGRESS -->
+        <div class="upc-progress">
+          <div class="progress-labels">
+            <span>{{ s.paidInstallments }}/{{ s.totalInstallments }} payées</span>
+            <span>{{ ((s.paidInstallments / s.totalInstallments) * 100).toFixed(0) }}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="(s.paidInstallments / s.totalInstallments) * 100"></div>
+          </div>
+        </div>
+
+        <!-- CORPS : infos plan à gauche + factures à droite -->
+        <div class="upc-body">
+
+          <!-- INFOS DU PLAN -->
+          <div class="upc-info">
+            <div class="upc-info-row">
+              <span class="label">Total</span>
+              <span>{{ formatCurrency(s.totalAmount) }}</span>
+            </div>
+            <div class="upc-info-row">
+              <span class="label">✅ Payé</span>
+              <span class="paid">{{ formatCurrency(s.amountPaid) }}</span>
+            </div>
+            <div class="upc-info-row">
+              <span class="label">⏳ Reste</span>
+              <span class="remaining">{{ formatCurrency(s.amountRemaining) }}</span>
+            </div>
+            <div class="upc-info-row" *ngIf="s.nextDueDate">
+              <span class="label">📅 Prochaine</span>
+              <span [class.overdue]="isOverdue(s.nextDueDate)">
+                {{ formatDate(s.nextDueDate) }}<span *ngIf="isOverdue(s.nextDueDate)"> ⚠️</span>
+              </span>
+            </div>
+            <div class="upc-info-row" *ngIf="s.nextInstallmentAmount">
+              <span class="label">Montant dû</span>
+              <span class="amount">{{ formatCurrency(s.nextInstallmentAmount) }}</span>
+            </div>
+          </div>
+
+          <!-- SÉPARATEUR -->
+          <div class="upc-divider"></div>
+
+          <!-- FACTURES DU PLAN -->
+          <div class="upc-invoices">
+            <div class="upc-invoices-label">📄 Factures</div>
+
+            <div *ngIf="getInvoicesForPlan(s.planId).length === 0" class="upc-no-invoices">
+              Aucune facture
+            </div>
+
+            <div *ngFor="let inv of getInvoicesForPlan(s.planId); trackBy: trackById" class="upc-invoice-row">
+              <div class="upc-inv-top">
+                <span class="invoice-num small">{{ inv.invoiceNumber }}</span>
+                <span class="badge" [class]="'status-' + (inv.status || '').toLowerCase()">{{ inv.status }}</span>
+              </div>
+              <div class="upc-inv-details">
+                <span class="upc-inv-date">📅 {{ formatDate(inv.issueDate) }}</span>
+                <span class="upc-inv-amount">{{ formatCurrency(inv.totalAmount) }}</span>
+              </div>
+              <div class="courses-tags" *ngIf="inv.purchasedCourses.length">
+                <span *ngFor="let c of inv.purchasedCourses" class="course-tag">{{ c }}</span>
+              </div>
+              <div class="upc-inv-actions">
+                <button class="btn-action btn-detail btn-xs" (click)="openDetail(inv)">Détails</button>
+                <button class="btn-action btn-pdf btn-xs" (click)="downloadInvoicePDF(inv)">PDF</button>
+                <button class="btn-action btn-delete btn-xs" (click)="deleteInvoice(inv)">Supprimer</button>
+              </div>
+            </div>
+
+          </div>
+          <!-- FIN FACTURES -->
+
+        </div>
+        <!-- FIN CORPS -->
+
+      </div>
+      <!-- FIN *ngFor plans -->
+
+    </div>
+    <!-- FIN liste plans -->
+
+    <div class="pagination" *ngIf="planTotalPages > 1">
+      <button class="page-btn" (click)="goToPlanPage(planCurrentPage - 1)" [disabled]="planCurrentPage === 1">← Précédent</button>
+      <div class="page-numbers">
+        <button *ngFor="let p of getPlanPagesArray()" class="page-num"
+                [class.active]="planCurrentPage === p" (click)="goToPlanPage(p)">{{ p }}</button>
+      </div>
+      <button class="page-btn" (click)="goToPlanPage(planCurrentPage + 1)" [disabled]="planCurrentPage === planTotalPages">Suivant →</button>
+      <span class="page-info">Page {{ planCurrentPage }}/{{ planTotalPages }}</span>
+    </div>
+
+  </div>
+  <!-- FIN ONGLET PLANS -->
+
+</div>
+<!-- FIN CONTAINER -->
+
+<!-- ===== MODAL DÉTAIL FACTURE ===== -->
+<div class="modal-overlay" *ngIf="showDetailModal" (click)="closeDetail()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>📄 {{ selectedInvoice?.invoiceNumber }}</h2>
+      <button class="modal-close" (click)="closeDetail()">✕</button>
+    </div>
+    <div class="modal-body" *ngIf="selectedInvoice">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">Numéro</span>
+          <span class="detail-value mono">{{ selectedInvoice!.invoiceNumber }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Montant</span>
+          <span class="detail-value purple bold">{{ formatCurrency(selectedInvoice!.totalAmount) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Devise</span>
+          <span class="detail-value">{{ selectedInvoice!.currency || 'TND' }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Statut</span>
+          <span class="badge" [class]="'status-' + (selectedInvoice!.status || '').toLowerCase()">{{ selectedInvoice!.status }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Date émission</span>
+          <span class="detail-value">{{ formatDate(selectedInvoice!.issueDate) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Learner</span>
+          <span class="detail-value">#{{ selectedInvoice!.learnerId }}</span>
+        </div>
+        <div class="detail-item" *ngIf="selectedInvoice.installmentPlanId">
+          <span class="detail-label">Plan associé</span>
+          <span class="detail-value purple">#{{ selectedInvoice!.installmentPlanId }}</span>
+        </div>
+      </div>
+      <div class="modal-section-title">📚 Cours achetés</div>
+      <div class="courses-tags">
+        <span *ngFor="let c of selectedInvoice.purchasedCourses" class="course-tag">{{ c }}</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-action btn-delete modal-btn" (click)="deleteInvoice(selectedInvoice!)">🗑 Supprimer</button>
+      <button class="btn-secondary modal-btn" (click)="closeDetail()">Fermer</button>
+      <button class="btn-action btn-pdf modal-btn" (click)="downloadInvoicePDF(selectedInvoice!)">📄 Télécharger PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL PLAN ===== -->
+<div class="modal-overlay" *ngIf="showPlanModal" (click)="closePlanDetail()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>📅 Plan #{{ selectedPlan?.planId }}</h2>
+      <button class="modal-close" (click)="closePlanDetail()">✕</button>
+    </div>
+    <div class="modal-body" *ngIf="selectedPlan">
+      <div class="detail-grid">
+        <div class="detail-item">
+          <span class="detail-label">Plan ID</span>
+          <span class="detail-value mono">#{{ selectedPlan.planId }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Statut</span>
+          <span class="badge" [class]="'status-' + selectedPlan.status.toLowerCase()">{{ selectedPlan.status }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Total</span>
+          <span class="detail-value">{{ formatCurrency(selectedPlan.totalAmount) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Reste à payer</span>
+          <span class="detail-value purple bold">{{ formatCurrency(selectedPlan.amountRemaining) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Déjà payé</span>
+          <span class="detail-value" style="color:#10b981;font-weight:700">{{ formatCurrency(selectedPlan.amountPaid) }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Échéances</span>
+          <span class="detail-value">{{ selectedPlan.paidInstallments }}/{{ selectedPlan.totalInstallments }}</span>
+        </div>
+        <div class="detail-item" *ngIf="selectedPlan.nextDueDate">
+          <span class="detail-label">Prochaine échéance</span>
+          <span class="detail-value" [class.overdue]="isOverdue(selectedPlan.nextDueDate)">{{ formatDate(selectedPlan.nextDueDate) }}</span>
+        </div>
+        <div class="detail-item" *ngIf="selectedPlan.nextInstallmentAmount">
+          <span class="detail-label">Montant dû</span>
+          <span class="detail-value purple bold">{{ formatCurrency(selectedPlan.nextInstallmentAmount) }}</span>
+        </div>
+      </div>
+      <div class="modal-progress">
+        <div class="progress-labels">
+          <span>Progression du remboursement</span>
+          <span>{{ ((selectedPlan.paidInstallments / selectedPlan.totalInstallments) * 100).toFixed(0) }}%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="(selectedPlan.paidInstallments / selectedPlan.totalInstallments) * 100"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-action btn-delete modal-btn" (click)="deletePlan(selectedPlan)">🗑 Supprimer</button>
+      <button class="btn-secondary modal-btn" (click)="closePlanDetail()">Fermer</button>
+      <button class="btn-action btn-pdf modal-btn" (click)="downloadPlanPDF(selectedPlan)">📄 PDF</button>
+    </div>
+  </div>
+</div>

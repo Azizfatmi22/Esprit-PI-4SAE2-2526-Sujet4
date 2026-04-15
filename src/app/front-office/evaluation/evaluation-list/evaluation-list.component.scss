@@ -1,0 +1,91 @@
+/* Conteneur principal */
+.container {
+  max-width: 800px;
+  margin-bottom: 3rem;
+}
+
+h2 {
+  color: #2c3e50;
+  font-weight: 700;
+  border-bottom: 3px solid #3498db;
+  display: inline-block;
+  padding-bottom: 10px;
+}
+
+/* Style de la liste */
+.list-group {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  overflow: hidden; // Pour que les bords arrondis s'appliquent aux éléments enfants
+}
+
+.list-group-item {
+  border: none;
+  border-bottom: 1px solid #edf2f7;
+  padding: 1.25rem;
+  transition: all 0.3s ease;
+  background-color: #ffffff;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  // Effet au survol
+  &:hover {
+    background-color: #f8fafc;
+    transform: translateY(-2px);
+    box-shadow: inset 4px 0 0 #3498db; // Petite barre bleue à gauche au survol
+    z-index: 1;
+  }
+}
+
+/* Titre de l'évaluation */
+strong {
+  font-size: 1.1rem;
+  color: #334155;
+}
+
+/* Badge personnalisé selon le type */
+.badge {
+  padding: 0.5em 0.8em;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 6px;
+  
+  &-secondary {
+    background-color: #e2e8f0;
+    color: #475569;
+  }
+}
+
+/* Section droite (Durée et Bouton) */
+.text-end {
+  .text-muted {
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+  }
+
+  .btn-outline-primary {
+    border-radius: 20px;
+    padding: 0.4rem 1.2rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: #3498db;
+      color: white;
+      transform: scale(1.05);
+    }
+  }
+}
+
+/* Animation d'entrée pour la liste */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.list-group-item {
+  animation: fadeIn 0.4s ease-out forwards;
+}

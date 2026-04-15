@@ -1,0 +1,69 @@
+<div class="editor-container">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <button class="btn-back" (click)="backToDashboard()">←</button>
+      <div class="header-text">
+        <h3>Certificate Editor</h3>
+        <span>ID: #{{ evaluationId }}</span>
+      </div>
+    </div>
+
+    <div class="scrollable-controls">
+      <div class="control-group">
+        <label>Certificate Title</label>
+        <input
+          type="text"
+          [(ngModel)]="template.certificateTitle"
+          (input)="generateFinalHtml()"
+        />
+      </div>
+
+      <div class="control-group">
+        <label>Theme Color (Borders & Text)</label>
+        <div class="color-picker-box">
+          <input
+            type="color"
+            [(ngModel)]="template.borderColor"
+            (change)="generateFinalHtml()"
+          />
+          <span>{{ template.borderColor }}</span>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label>Trainer Signature</label>
+        <div class="upload-wrapper">
+          <input type="file" (change)="onFileChange($event)" accept="image/*" />
+          <div class="upload-content">
+            <svg
+              *ngIf="!template.trainerSignatureBase64"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"
+              />
+            </svg>
+            <span *ngIf="!template.trainerSignatureBase64"
+              >Upload Signature PNG</span
+            >
+            <span *ngIf="template.trainerSignatureBase64" class="text-success"
+              >✓ Image Loaded</span
+            >
+          </div>
+        </div>
+      </div>
+      <button class="btn-save" (click)="save()">Save Template</button>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <div class="page-container">
+      <div class="a4-sheet" [innerHTML]="template.htmlContent | safeHtml"></div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,245 @@
+<!-- src/app/components/location-list/location-list.component.html -->
+<div class="location-manager">
+  <!-- En-tête -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">
+        <span class="title-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke-width="2"/>
+            <circle cx="12" cy="10" r="3" stroke-width="2"/>
+          </svg>
+        </span>
+        <span class="title-text">Gestion des lieux</span>
+      </h1>
+      <p class="page-subtitle">{{ locations.length }} lieu(x) de formation</p>
+    </div>
+    <button class="btn-create" routerLink="/admin/locations/new">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M12 5v14M5 12h14" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Nouveau lieu
+    </button>
+  </div>
+
+  <!-- Barre de recherche et filtres -->
+  <div class="search-section">
+    <div class="search-box">
+      <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="11" cy="11" r="8" stroke-width="2"/>
+        <path d="M21 21l-4.35-4.35" stroke-width="2"/>
+      </svg>
+      <input 
+        type="text" 
+        placeholder="Rechercher un lieu..." 
+        [(ngModel)]="searchText"
+        (input)="applyFilters()"
+        class="search-input"
+        #searchInput
+      />
+      <button *ngIf="searchText" class="clear-search" (click)="clearSearch()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M18 6L6 18M6 6l12 12" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="filter-tabs">
+      <button class="filter-tab" 
+              [class.active]="selectedType === ''"
+              (click)="selectedType = ''; applyFilters()">
+        Tous
+        <span class="tab-badge">{{ locations.length }}</span>
+      </button>
+      <button class="filter-tab" 
+              *ngFor="let type of locationTypes"
+              [class.active]="selectedType === type.value"
+              (click)="selectedType = type.value; applyFilters()">
+        <span class="tab-icon">{{ type.icon }}</span>
+        {{ type.label }}
+        <span class="tab-badge">{{ getCountByType(type.value) }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Statistiques -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon total">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ locations.length }}</span>
+        <span class="stat-label">Total lieux</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon rooms">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <rect x="2" y="2" width="20" height="20" rx="2.18" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ getCountByType(LocationType.ROOM) }}</span>
+        <span class="stat-label">Salles</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon buildings">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ getCountByType(LocationType.ROOM) }}</span>
+        <span class="stat-label">Bâtiments</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon campuses">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ getCountByType(LocationType.HYBRID) }}</span>
+        <span class="stat-label">Campus</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon online">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="2" stroke-width="2"/>
+          <path d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7z" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{  getCountByType(LocationType.ONLINE_PLATFORM) }}</span>
+        <span class="stat-label">En ligne</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Résultats de recherche -->
+  <div class="results-header" *ngIf="searchText || selectedType">
+    <div class="results-info">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="11" cy="11" r="8" stroke-width="2"/>
+        <path d="M21 21l-4.35-4.35" stroke-width="2"/>
+      </svg>
+      <span>
+        <strong>{{ filteredLocations.length }}</strong> lieu(x) trouvé(s)
+        <span *ngIf="searchText">pour "{{ searchText }}"</span>
+      </span>
+    </div>
+    <button class="clear-filters" (click)="resetFilters()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M18 6L6 18M6 6l12 12" stroke-width="2"/>
+      </svg>
+      Effacer les filtres
+    </button>
+  </div>
+
+  <!-- Liste des lieux -->
+  <div class="locations-list">
+    <!-- État vide -->
+    <div class="empty-state" *ngIf="filteredLocations.length === 0">
+      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke-width="1.5"/>
+        <circle cx="12" cy="10" r="3" stroke-width="1.5"/>
+      </svg>
+      <h3>Aucun lieu trouvé</h3>
+      <p *ngIf="searchText || selectedType">
+        Aucun lieu ne correspond à vos critères de recherche.
+      </p>
+      <p *ngIf="!searchText && !selectedType">
+        Commencez par créer un nouveau lieu.
+      </p>
+      <button class="btn-create-empty" routerLink="admin/locations/new" *ngIf="!searchText && !selectedType">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M12 5v14M5 12h14" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Créer un lieu
+      </button>
+    </div>
+
+    <!-- Cartes des lieux -->
+    <div class="location-cards" *ngIf="filteredLocations.length > 0">
+      <div class="location-card" *ngFor="let location of filteredLocations">
+        <!-- En-tête avec type -->
+        <div class="card-header" [style.background-color]="getTypeColor(location.type) + '15'">
+          <div class="type-badge">
+            <span class="type-icon">{{ getTypeIcon(location.type) }}</span>
+            <span class="type-label">{{ getTypeLabel(location.type) }}</span>
+          </div>
+          <div class="card-actions">
+            <button class="action-btn edit" [routerLink]="['/admin/locations/edit', location.id]" title="Modifier">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke-width="2"/>
+              </svg>
+            </button>
+            <button class="action-btn delete" (click)="deleteLocation(location.id!)" title="Supprimer">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke-width="2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Corps de la carte -->
+        <div class="card-body">
+          <h3 class="location-name">{{ location.name }}</h3>
+          <div class="location-details">
+            <div class="detail-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke-width="2"/>
+              </svg>
+              <span>{{ location.address }}</span>
+            </div>
+            <div class="detail-item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke-width="2"/>
+              </svg>
+              <span>{{ location.city }}</span>
+            </div>
+            <div class="detail-item capacity">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-width="2"/>
+                <circle cx="9" cy="7" r="4" stroke-width="2"/>
+              </svg>
+              <span>{{ location.capacity }} personnes</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pied de carte -->
+        <div class="card-footer">
+          <button class="btn-view" [routerLink]="['/admin/locations', location.id]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="3" stroke-width="2"/>
+              <path d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7z" stroke-width="2"/>
+            </svg>
+            Voir détails
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message de confirmation -->
+  <div class="message-container" *ngIf="message.show">
+    <div class="message" [class.success]="message.type === 'success'" [class.error]="message.type === 'error'">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path *ngIf="message.type === 'success'" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        <path *ngIf="message.type === 'error'" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      {{ message.text }}
+    </div>
+  </div>
+</div>

@@ -1,0 +1,847 @@
+<p>admin-installments works!</p>
+<div class="admin-container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-top">
+      <h1>Gestion des Paiements Echelonnes</h1>
+      <div class="header-actions">
+        <button class="btn-icon" (click)="triggerOverdueCheck()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          Verifier retards
+        </button>
+        <button class="btn-icon" (click)="showFilters = !showFilters" [class.active]="showFilters">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+          </svg>
+          Filtres
+        </button>
+        <button class="btn-icon" (click)="exportToCSV()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          Exporter CSV
+        </button>
+      </div>
+    </div>
+
+    <div class="success-message" *ngIf="successMessage">{{ successMessage }}</div>
+    <div class="error-message" *ngIf="error">{{ error }}</div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(124,58,237,0.1); color: #7c3aed;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect x="2" y="3" width="20" height="14" rx="2"/>
+            <line x1="8" y1="21" x2="16" y2="21"/>
+            <line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Total Plans</span>
+          <span class="stat-value">{{ plans.length }}</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(16,185,129,0.1); color: #10b981;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Plans Actifs</span>
+          <span class="stat-value">{{ getActivePlans() }}</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(59,130,246,0.1); color: #3b82f6;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Plans Completes</span>
+          <span class="stat-value">{{ getCompletedPlans() }}</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(239,68,68,0.1); color: #ef4444;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Plans en Defaut</span>
+          <span class="stat-value danger">{{ getDefaultedPlans() }}</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(245,158,11,0.1); color: #f59e0b;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Revenus Total</span>
+          <span class="stat-value">{{ getTotalRevenue() | number:'1.2-2' }} TND</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTRES -->
+  <div class="filters-panel" *ngIf="showFilters">
+    <div class="filters-grid">
+      <div class="filter-group">
+        <label>Recherche</label>
+        <input type="text" placeholder="Plan ID, Learner ID, statut..."
+               [(ngModel)]="searchTerm" class="filter-input">
+      </div>
+      <div class="filter-group">
+        <label>Statut</label>
+        <select [(ngModel)]="filterStatus" class="filter-select">
+          <option value="all">Tous</option>
+          <option value="ACTIVE">Actif</option>
+          <option value="COMPLETED">Completé</option>
+          <option value="DEFAULTED">En défaut</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Nombre d'écheances</label>
+        <select [(ngModel)]="filterInstallments" class="filter-select">
+          <option value="all">Tous</option>
+          <option value="3">3x</option>
+          <option value="6">6x</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Date de début</label>
+        <input type="date" [(ngModel)]="dateFrom" class="filter-input">
+      </div>
+      <div class="filter-group">
+        <label>Date de fin</label>
+        <input type="date" [(ngModel)]="dateTo" class="filter-input">
+      </div>
+      <div class="filter-group">
+        <label>Elements par page</label>
+        <select [(ngModel)]="itemsPerPage" (change)="currentPage = 1" class="filter-select">
+          <option value="10">10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+        </select>
+      </div>
+    </div>
+    <div class="filters-actions">
+      <button class="btn-secondary" (click)="resetFilters()">Reinitialiser</button>
+      <button class="btn-primary" (click)="showFilters = false">Appliquer</button>
+    </div>
+  </div>
+
+  <!-- CHARTS — seulement dans l'onglet plans -->
+  <div class="charts-section" *ngIf="plans.length > 0 && selectedTab === 'plans'">
+    <div class="chart-card">
+      <h3>Plans par statut</h3>
+      <div class="chart-bars">
+        <div *ngFor="let item of getPlansByStatus()" class="chart-bar-item">
+          <div class="chart-bar-label">{{ item.status }}</div>
+          <div class="chart-bar">
+            <div class="chart-bar-fill"
+                 [style.width.%]="(item.count / plans.length) * 100"
+                 [style.background]="getStatusColor(item.status)">
+            </div>
+          </div>
+          <div class="chart-bar-value">{{ item.count }} ({{ formatCurrency(item.total) }})</div>
+        </div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Plans par nombre d'echeances</h3>
+      <div class="chart-bars">
+        <div *ngFor="let item of getPlansByInstallments()" class="chart-bar-item">
+          <div class="chart-bar-label">{{ item.nb }}x</div>
+          <div class="chart-bar">
+            <div class="chart-bar-fill"
+                 [style.width.%]="(item.count / plans.length) * 100"
+                 style="background: #7c3aed;">
+            </div>
+          </div>
+          <div class="chart-bar-value">{{ item.count }} ({{ formatCurrency(item.total) }})</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TABS ===== -->
+  <div class="tabs">
+    <button class="tab-button"
+            [class.active]="selectedTab === 'plans'"
+            (click)="selectedTab = 'plans'">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <rect x="2" y="3" width="20" height="14" rx="2"/>
+        <line x1="8" y1="21" x2="16" y2="21"/>
+      </svg>
+      Plans Echelonnés ({{ plans.length }})
+    </button>
+    <button class="tab-button"
+            [class.active]="selectedTab === 'invoices'"
+            (click)="selectedTab = 'invoices'; loadInstallmentInvoices()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+      Factures Echelonnées ({{ invoicesInstallment.length }})
+    </button>
+    <button class="tab-button bakchich-tab"
+            [class.active]="selectedTab === 'bakchich'"
+            (click)="selectedTab = 'bakchich'; loadBakchichInstallmentPending()">
+      💙 Bakchich en attente
+      <span class="pending-badge" *ngIf="bakchichPending.length > 0">
+        {{ bakchichPending.length }}
+      </span>
+    </button>
+    <button class="tab-button"
+            [class.active]="selectedTab === 'refunds'"
+            (click)="selectedTab = 'refunds'; loadAllInstallmentRefunds()">
+      💸 Remboursements
+      <span class="pending-badge" *ngIf="pendingInstallmentRefunds.length > 0">
+        {{ pendingInstallmentRefunds.length }}
+      </span>
+    </button>
+  </div>
+
+  <!-- ===== ONGLET PLANS ===== -->
+  <div *ngIf="selectedTab === 'plans'" class="table-container">
+    <div *ngIf="loading" class="loading">
+      <div class="spinner"></div>
+      Chargement des plans...
+    </div>
+
+    <div *ngIf="!loading && filteredPlans.length === 0" class="empty-state">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <p>Aucun plan trouve</p>
+      <button class="btn-secondary" (click)="resetFilters()">Reinitialiser</button>
+    </div>
+
+    <div *ngIf="!loading && filteredPlans.length > 0" class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th (click)="sort('planId')" class="sortable">Plan ID {{ getSortIcon('planId') }}</th>
+            <th (click)="sort('learnerId')" class="sortable">Learner {{ getSortIcon('learnerId') }}</th>
+            <th (click)="sort('numberOfInstallments')" class="sortable">Plan {{ getSortIcon('numberOfInstallments') }}</th>
+            <th (click)="sort('totalAmount')" class="sortable">Total {{ getSortIcon('totalAmount') }}</th>
+            <th>Par echeance</th>
+            <th>Frais</th>
+            <th>Progression</th>
+            <th (click)="sort('status')" class="sortable">Statut {{ getSortIcon('status') }}</th>
+            <th (click)="sort('createdAt')" class="sortable">Date {{ getSortIcon('createdAt') }}</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let plan of paginatedPlans" [class.row-defaulted]="plan.status === 'DEFAULTED'">
+            <td class="plan-id">#{{ plan.planId }}</td>
+            <td>Learner #{{ plan.learnerId }}</td>
+            <td>
+              <span class="badge installment-badge">{{ plan.numberOfInstallments }}x</span>
+            </td>
+            <td class="amount">{{ formatCurrency(plan.amountWithFees) }}</td>
+            <td>{{ formatCurrency(plan.installmentAmount) }}</td>
+            <td>
+              <span *ngIf="plan.feePercentage > 0" class="fee-badge">+{{ plan.feePercentage }}%</span>
+              <span *ngIf="plan.feePercentage === 0" class="free-badge">GRATUIT</span>
+            </td>
+            <td>
+              <div class="progress-container">
+                <div class="progress-bar">
+                  <div class="progress-fill"
+                       [style.width.%]="(getPaidCount(plan) / plan.numberOfInstallments) * 100">
+                  </div>
+                </div>
+                <span class="progress-text">
+                  {{ getPaidCount(plan) }}/{{ plan.numberOfInstallments }}
+                </span>
+              </div>
+            </td>
+            <td>
+              <span class="badge status-badge" [class]="'status-' + plan.status.toLowerCase()">
+                {{ plan.status }}
+              </span>
+            </td>
+            <td>{{ formatDate(plan.createdAt) }}</td>
+            <td class="actions-cell">
+              <button class="btn-action" (click)="openDetail(plan)" title="Voir details">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+              <button class="btn-action btn-pdf" (click)="downloadPlanPDF(plan)" title="Telecharger PDF">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                </svg>
+              </button>
+              <button class="btn-action btn-delete" (click)="deletePlan(plan)" title="Supprimer plan">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                  <path d="M10 11v6M14 11v6"/>
+                  <path d="M9 6V4h6v2"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="pagination" *ngIf="totalPages > 1">
+        <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+          Precedent
+        </button>
+        <div class="page-numbers">
+          <button *ngFor="let p of getPagesArray()"
+                  class="page-number" [class.active]="currentPage === p"
+                  (click)="goToPage(p)">{{ p }}</button>
+        </div>
+        <button class="page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+          Suivant
+        </button>
+        <span class="page-info">Page {{ currentPage }}/{{ totalPages }} ({{ filteredPlans.length }} resultats)</span>
+      </div>
+    </div>
+  </div>
+  <!-- ===== FIN ONGLET PLANS ===== -->
+
+  <!-- ===== ONGLET FACTURES INSTALLMENT ===== -->
+  <div *ngIf="selectedTab === 'invoices'" class="table-container">
+
+    <div class="bakchich-admin-header">
+      <h2>📄 Factures — Plans Echelonnés</h2>
+      <button class="btn-icon" (click)="loadInstallmentInvoices()">
+        🔄 Actualiser
+      </button>
+    </div>
+
+    <div *ngIf="loadingInvoices" class="loading">
+      <div class="spinner"></div>
+      Chargement des factures...
+    </div>
+
+    <div *ngIf="!loadingInvoices && invoicesInstallment.length === 0" class="empty-state">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+      <p>Aucune facture échelonnée trouvée</p>
+    </div>
+
+    <div *ngIf="!loadingInvoices && invoicesInstallment.length > 0" class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Numéro Facture</th>
+            <th>Learner ID</th>
+            <th>Plan ID</th>
+            <th>Montant</th>
+            <th>Devise</th>
+            <th>Statut</th>
+            <th>Date</th>
+            <th>Cours</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let inv of paginatedInvoices">
+            <td class="plan-id">{{ inv.invoiceNumber }}</td>
+            <td>Learner #{{ inv.learnerId }}</td>
+            <td>
+              <span class="badge installment-badge">
+                Plan #{{ inv.installmentPlanId }}
+              </span>
+            </td>
+            <td class="amount">{{ formatCurrency(inv.totalAmount) }}</td>
+            <td>{{ inv.currency }}</td>
+            <td>
+              <span class="badge status-badge"
+                    [class]="'status-' + (inv.status || '').toLowerCase()">
+                {{ inv.status }}
+              </span>
+            </td>
+            <td>{{ formatDate(inv.issueDate) }}</td>
+            <td>
+              <div class="courses-list">
+                <span *ngFor="let course of inv.purchasedCourses" class="course-tag">
+                  {{ course }}
+                </span>
+              </div>
+            </td>
+            <td class="actions-cell">
+              <button class="btn-action" (click)="openInvoiceDetail(inv)" title="Voir détails">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+              <button class="btn-action btn-pdf" (click)="openInstallmentInvoicePDF(inv)" title="Voir PDF">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="12" y1="18" x2="12" y2="12"/>
+                  <line x1="9" y1="15" x2="15" y2="15"/>
+                </svg>
+              </button>
+              <button class="btn-action btn-delete" (click)="deleteInstallmentInvoice(inv)" title="Supprimer">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                  <path d="M10 11v6M14 11v6"/>
+                  <path d="M9 6V4h6v2"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="pagination" *ngIf="invoiceTotalPages > 1">
+        <button class="page-btn"
+                (click)="goToInvoicePage(invoiceCurrentPage - 1)"
+                [disabled]="invoiceCurrentPage === 1">
+          ← Précédent
+        </button>
+        <div class="page-numbers">
+          <button *ngFor="let p of getInvoicePagesArray()"
+                  class="page-number"
+                  [class.active]="invoiceCurrentPage === p"
+                  (click)="goToInvoicePage(p)">
+            {{ p }}
+          </button>
+        </div>
+        <button class="page-btn"
+                (click)="goToInvoicePage(invoiceCurrentPage + 1)"
+                [disabled]="invoiceCurrentPage === invoiceTotalPages">
+          Suivant →
+        </button>
+        <span class="page-info">
+          Page {{ invoiceCurrentPage }}/{{ invoiceTotalPages }}
+          ({{ filteredInvoices.length }} factures)
+        </span>
+      </div>
+    </div>
+
+    <!-- MODAL DÉTAILS FACTURE INSTALLMENT -->
+    <div class="modal-overlay" *ngIf="showInvoiceModal" (click)="closeInvoiceDetail()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Facture {{ selectedInvoiceDetail?.invoiceNumber }}</h2>
+          <button class="modal-close" (click)="closeInvoiceDetail()">x</button>
+        </div>
+        <div class="modal-body" *ngIf="selectedInvoiceDetail">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">Numéro</span>
+              <span class="detail-value">{{ selectedInvoiceDetail.invoiceNumber }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Learner ID</span>
+              <span class="detail-value">#{{ selectedInvoiceDetail.learnerId }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Plan ID</span>
+              <span class="detail-value">#{{ selectedInvoiceDetail.installmentPlanId }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Montant</span>
+              <span class="detail-value purple">{{ formatCurrency(selectedInvoiceDetail.totalAmount) }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Devise</span>
+              <span class="detail-value">{{ selectedInvoiceDetail.currency }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Statut</span>
+              <span class="badge status-badge" [class]="'status-' + (selectedInvoiceDetail.status || '').toLowerCase()">
+                {{ selectedInvoiceDetail.status }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Date émission</span>
+              <span class="detail-value">{{ formatDate(selectedInvoiceDetail.issueDate) }}</span>
+            </div>
+          </div>
+          <h3 class="echeances-title">Cours achetés</h3>
+          <div class="courses-list" style="padding: 0 0 16px 0;">
+            <span *ngFor="let course of selectedInvoiceDetail.purchasedCourses" class="course-tag">
+              {{ course }}
+            </span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" (click)="closeInvoiceDetail()">Fermer</button>
+          <button class="btn-primary" (click)="openInstallmentInvoicePDF(selectedInvoiceDetail)">
+            📄 Voir PDF
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <!-- ===== FIN ONGLET FACTURES ===== -->
+
+  <!-- ===== ONGLET BAKCHICH INSTALLMENT ===== -->
+  <div *ngIf="selectedTab === 'bakchich'" class="table-container">
+
+    <div class="bakchich-admin-header">
+      <h2>💙 Bakchich — Plans Echelonnés en attente</h2>
+      <button class="btn-icon" (click)="loadBakchichInstallmentPending()">
+        🔄 Actualiser
+      </button>
+    </div>
+
+    <div *ngIf="loadingBakchich" class="loading">
+      <div class="spinner"></div>
+      Chargement...
+    </div>
+
+    <div *ngIf="!loadingBakchich && bakchichPending.length === 0" class="empty-state">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      <p>✅ Aucun paiement Bakchich en attente</p>
+    </div>
+
+    <div *ngIf="!loadingBakchich && bakchichPending.length > 0" class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Learner ID</th>
+            <th>Téléphone</th>
+            <th>Montant total</th>
+            <th>Cours</th>
+            <th>Créé le</th>
+            <th>Expire le</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of bakchichPending">
+            <td>
+              <span class="badge method-badge method-bakchich">{{ p.paymentCode }}</span>
+            </td>
+            <td>Learner #{{ p.learnerId }}</td>
+            <td>{{ p.phoneNumber }}</td>
+            <td class="amount">{{ formatCurrency(p.amount) }}</td>
+            <td>
+              <div class="courses-list">
+                <span class="course-tag">{{ p.courseTitles }}</span>
+              </div>
+            </td>
+            <td>{{ formatDate(p.createdAt) }}</td>
+            <td [class.expiring-soon]="isExpiringSoon(p.expiresAt)">
+              {{ formatDate(p.expiresAt) }}
+              <span *ngIf="isExpiringSoon(p.expiresAt)" class="expiring-label">⚠️ Bientôt expiré</span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-confirm-bakchich"
+                        (click)="confirmBakchichInstallment(p.id)"
+                        [disabled]="confirmingBakchich === p.id">
+                  <span *ngIf="confirmingBakchich !== p.id">✅ Confirmer</span>
+                  <span *ngIf="confirmingBakchich === p.id">⏳ ...</span>
+                </button>
+                <button class="btn-cancel-bakchich"
+                        (click)="cancelBakchichInstallment(p.id)"
+                        [disabled]="confirmingBakchich === p.id">
+                  ❌ Annuler
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+  <!-- ===== FIN ONGLET BAKCHICH ===== -->
+
+  <!-- ===== ONGLET REMBOURSEMENTS INSTALLMENT ===== -->
+  <div *ngIf="selectedTab === 'refunds'">
+
+    <!-- KPI Cards -->
+    <div class="refund-stats-row">
+      <div class="stat-card pending" (click)="setRefundFilter('PENDING')">
+        <div class="stat-number">{{ pendingInstallmentRefunds.length }}</div>
+        <div class="stat-label">⏳ En attente</div>
+      </div>
+      <div class="stat-card approved" (click)="setRefundFilter('PROCESSED')">
+        <div class="stat-number">{{ approvedInstallmentCount }}</div>
+        <div class="stat-label">✅ Approuvés</div>
+      </div>
+      <div class="stat-card rejected" (click)="setRefundFilter('REJECTED')">
+        <div class="stat-number">{{ rejectedInstallmentCount }}</div>
+        <div class="stat-label">❌ Rejetés</div>
+      </div>
+    </div>
+
+    <!-- Filter Pills -->
+    <div class="filter-tabs" style="margin: 16px 0;">
+      <button class="filter-tab" [class.active]="refundFilterStatus==='ALL'"
+              (click)="setRefundFilter('ALL')">
+        Tous <span class="count">{{ allInstallmentRefunds.length }}</span>
+      </button>
+      <button class="filter-tab" [class.active]="refundFilterStatus==='PENDING'"
+              (click)="setRefundFilter('PENDING')">
+        ⏳ En attente <span class="count pending-count">{{ pendingInstallmentRefunds.length }}</span>
+      </button>
+      <button class="filter-tab" [class.active]="refundFilterStatus==='PROCESSED'"
+              (click)="setRefundFilter('PROCESSED')">
+        ✅ Approuvés <span class="count">{{ approvedInstallmentCount }}</span>
+      </button>
+      <button class="filter-tab" [class.active]="refundFilterStatus==='REJECTED'"
+              (click)="setRefundFilter('REJECTED')">
+        ❌ Rejetés <span class="count">{{ rejectedInstallmentCount }}</span>
+      </button>
+    </div>
+
+    <div *ngIf="loadingRefunds" class="loading">
+      <div class="spinner"></div> Chargement...
+    </div>
+
+    <div *ngIf="!loadingRefunds && filteredInstallmentRefunds.length === 0" class="empty-state">
+      <p>Aucune demande dans cette catégorie</p>
+    </div>
+
+    <div class="table-container" *ngIf="!loadingRefunds && filteredInstallmentRefunds.length > 0">
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Apprenant</th>
+              <th>Plan</th>
+              <th>Facture</th>
+              <th>Montant</th>
+              <th>Raison</th>
+              <th>Date demande</th>
+              <th>Statut</th>
+              <th>Actions / Info</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let refund of filteredInstallmentRefunds"
+                [class]="'row-' + refund.status.toLowerCase()">
+              <td><strong>#{{ refund.learnerId }}</strong></td>
+              <td>
+                <span class="badge installment-badge">#{{ refund.planId }}</span>
+              </td>
+              <td><span class="plan-id">#{{ refund.invoiceId }}</span></td>
+              <td class="amount">{{ formatCurrency(refund.refundAmount) }}</td>
+              <td style="max-width:180px; font-size:12px; color:#64748b;">
+                {{ truncate(refund.reason) }}
+              </td>
+              <td>{{ formatDate(refund.requestDate) }}</td>
+              <td>
+                <span class="badge status-badge"
+                  [class]="refund.status==='PENDING'   ? 'status-pending' :
+                           refund.status==='PROCESSED' ? 'status-paid'    : 'status-cancelled'">
+                  <span *ngIf="refund.status==='PENDING'">⏳ En attente</span>
+                  <span *ngIf="refund.status==='PROCESSED'">✅ Approuvé</span>
+                  <span *ngIf="refund.status==='REJECTED'">❌ Rejeté</span>
+                </span>
+              </td>
+              <td>
+                <div class="action-buttons" *ngIf="refund.status==='PENDING'">
+                  <button class="btn-confirm-bakchich"
+                          (click)="openApproveRefundModal(refund)">✅ Approuver</button>
+                  <button class="btn-cancel-bakchich"
+                          (click)="openRejectRefundModal(refund)">❌ Rejeter</button>
+                </div>
+                <div *ngIf="refund.status==='PROCESSED'" style="font-size:12px; color:#16a34a;">
+                  📄 {{ refund.creditNoteNumber }}<br>
+                  <small>par {{ refund.processedBy }}</small>
+                </div>
+                <div *ngIf="refund.status==='REJECTED'" style="font-size:12px; color:#dc2626;">
+                  {{ truncate(refund.rejectionReason, 40) }}<br>
+                  <small>par {{ refund.processedBy }}</small>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+  <!-- ===== FIN ONGLET REMBOURSEMENTS ===== -->
+
+  <!-- ===== MODAL APPROBATION REMBOURSEMENT ===== -->
+  <div class="modal-overlay" *ngIf="showApproveRefundModal" (click)="closeInstallmentRefundModals()">
+    <div class="refund-modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header approve">
+        <h2>✅ Approuver le remboursement</h2>
+        <button class="modal-close" (click)="closeInstallmentRefundModals()">✕</button>
+      </div>
+      <div class="modal-body" *ngIf="selectedRefund">
+        <div class="refund-summary">
+          <div class="summary-row">
+            <span>Apprenant</span><strong>#{{ selectedRefund.learnerId }}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Plan</span>
+            <strong><span class="badge installment-badge">#{{ selectedRefund.planId }}</span></strong>
+          </div>
+          <div class="summary-row">
+            <span>Facture</span><strong>#{{ selectedRefund.invoiceId }}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Montant</span>
+            <strong class="amount-green">{{ formatCurrency(selectedRefund.refundAmount) }}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Raison</span><strong>{{ selectedRefund.reason }}</strong>
+          </div>
+        </div>
+        <div class="approve-warning">
+          ⚠️ Cette action va :
+          <ul>
+            <li>Rembourser <strong>{{ formatCurrency(selectedRefund.refundAmount) }}</strong></li>
+            <li>Annuler le plan d'échelonnement</li>
+            <li>Révoquer l'accès aux cours achetés</li>
+            <li>Générer un avoir (crédit note)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeInstallmentRefundModals()">Annuler</button>
+        <button class="btn-confirm-approve"
+                (click)="confirmInstallmentApprove()"
+                [disabled]="processingRefund">
+          <span *ngIf="processingRefund">⏳ Traitement...</span>
+          <span *ngIf="!processingRefund">✅ Confirmer</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL REJET REMBOURSEMENT ===== -->
+  <div class="modal-overlay" *ngIf="showRejectRefundModal" (click)="closeInstallmentRefundModals()">
+    <div class="refund-modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header reject">
+        <h2>❌ Rejeter la demande</h2>
+        <button class="modal-close" (click)="closeInstallmentRefundModals()">✕</button>
+      </div>
+      <div class="modal-body" *ngIf="selectedRefund">
+        <div class="refund-summary">
+          <div class="summary-row">
+            <span>Apprenant</span><strong>#{{ selectedRefund.learnerId }}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Plan</span>
+            <strong><span class="badge installment-badge">#{{ selectedRefund.planId }}</span></strong>
+          </div>
+          <div class="summary-row">
+            <span>Montant</span>
+            <strong class="amount-red">{{ formatCurrency(selectedRefund.refundAmount) }}</strong>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Motif du rejet <span class="required">*</span></label>
+          <textarea [(ngModel)]="rejectionReason"
+                    placeholder="Expliquez pourquoi la demande est rejetée..."
+                    rows="3" class="reason-input"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeInstallmentRefundModals()">Annuler</button>
+        <button class="btn-confirm-reject"
+                (click)="confirmInstallmentReject()"
+                [disabled]="!rejectionReason.trim() || processingRefund">
+          <span *ngIf="processingRefund">⏳ Traitement...</span>
+          <span *ngIf="!processingRefund">❌ Confirmer le rejet</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL DETAIL PLAN ===== -->
+  <div class="modal-overlay" *ngIf="showDetailModal" (click)="closeDetail()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Detail Plan #{{ selectedPlan?.planId }}</h2>
+        <button class="modal-close" (click)="closeDetail()">x</button>
+      </div>
+      <div class="modal-body" *ngIf="selectedPlan">
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">Learner ID</span>
+            <span class="detail-value">#{{ selectedPlan.learnerId }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Plan</span>
+            <span class="detail-value">{{ selectedPlan.numberOfInstallments }}x</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Montant total</span>
+            <span class="detail-value">{{ formatCurrency(selectedPlan.totalAmount) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Frais</span>
+            <span class="detail-value">{{ selectedPlan.feePercentage }}%</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Total avec frais</span>
+            <span class="detail-value purple">{{ formatCurrency(selectedPlan.amountWithFees) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Par echeance</span>
+            <span class="detail-value">{{ formatCurrency(selectedPlan.installmentAmount) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Statut</span>
+            <span class="badge status-badge" [class]="'status-' + selectedPlan.status.toLowerCase()">
+              {{ selectedPlan.status }}
+            </span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Date creation</span>
+            <span class="detail-value">{{ formatDate(selectedPlan.createdAt) }}</span>
+          </div>
+        </div>
+
+        <h3 class="echeances-title">Echeances</h3>
+        <div class="echeances-list">
+          <div *ngFor="let inst of selectedPlan.installments"
+               class="echeance-row"
+               [class.paid]="inst.status === 'PAID'"
+               [class.overdue]="inst.status === 'OVERDUE'">
+            <span class="inst-num">#{{ inst.installmentNumber }}</span>
+            <span class="inst-date">{{ inst.dueDate | date:'dd/MM/yyyy' }}</span>
+            <span class="inst-amount">{{ formatCurrency(inst.amount) }}</span>
+            <span class="inst-paid">{{ inst.paidDate ? (inst.paidDate | date:'dd/MM/yyyy') : '-' }}</span>
+            <span class="badge inst-status" [class]="'status-' + inst.status.toLowerCase()">
+              {{ inst.status }}
+            </span>
+            <span class="inst-invoice" *ngIf="inst.invoiceNumber">{{ inst.invoiceNumber }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeDetail()">Fermer</button>
+        <button class="btn-primary" (click)="downloadPlanPDF(selectedPlan!)">Telecharger PDF</button>
+      </div>
+    </div>
+  </div>
+
+</div>

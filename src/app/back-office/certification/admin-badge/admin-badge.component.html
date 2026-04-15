@@ -1,0 +1,123 @@
+<div class="admin-container">
+  <header class="main-header">
+    <h1>Gamification Engine <span class="badge">Admin</span></h1>
+    <p>Create and manage rewards for Formini learners</p>
+  </header>
+
+  <section class="glass-card form-section">
+    <div class="card-header">
+      <h3>
+        {{ isEditMode ? "Update Badge Details" : "Configure New Achievement" }}
+      </h3>
+    </div>
+
+    <form (submit)="onSubmit()">
+      <div class="grid-layout">
+        <div class="field">
+          <label>Badge Name</label>
+          <input
+            type="text"
+            [(ngModel)]="badgeForm.name"
+            name="name"
+            placeholder="Ex: Java Expert"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label>Target Task (Type)</label>
+          <select [(ngModel)]="badgeForm.badgeType" name="badgeType">
+            <option value="SCORE_EXCELLENCE">Score Excellence (%)</option>
+            <option value="CERTIFICATE_COUNT">Certificate Count</option>
+            <option value="LEVEL_REACHED">Level Progression</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Threshold / Value Required</label>
+          <input
+            type="number"
+            [(ngModel)]="badgeForm.threshold"
+            name="threshold"
+            placeholder="Ex: 90 or 5"
+          />
+        </div>
+
+        <div class="field">
+          <label>Icon Upload</label>
+          <div class="upload-zone">
+            <input
+              type="file"
+              (change)="handleImage($event)"
+              id="file"
+              hidden
+            />
+            <label for="file" class="file-label">Choose Graphic</label>
+            <div class="mini-preview" *ngIf="badgeForm.iconBase64">
+              <img [src]="badgeForm.iconBase64" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field full-width">
+        <label>Description (Will be shown to learners)</label>
+        <textarea
+          [(ngModel)]="badgeForm.description"
+          name="description"
+          rows="2"
+        ></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn-ghost"
+          (click)="resetForm()"
+          *ngIf="isEditMode"
+        >
+          Cancel
+        </button>
+        <button type="submit" class="btn-submit">
+          {{ isEditMode ? "Update Badge" : "Save Achievement" }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section class="list-section">
+    <div class="list-header">
+      <h3>Current Badges Library</h3>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Visual</th>
+            <th>Name</th>
+            <th>Rule Type</th>
+            <th>Threshold</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let b of badges">
+            <td><img [src]="b.iconBase64" class="table-img" /></td>
+            <td>
+              <strong>{{ b.name }}</strong>
+            </td>
+            <td>
+              <span class="tag">{{ b.badgeType }}</span>
+            </td>
+            <td>{{ b.threshold }}</td>
+            <td class="btn-group">
+              <button class="edit" (click)="prepareUpdate(b)">Edit</button>
+              <button class="delete" (click)="onDelete(b.id)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

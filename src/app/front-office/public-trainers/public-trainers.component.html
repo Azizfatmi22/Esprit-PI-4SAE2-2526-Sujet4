@@ -1,0 +1,55 @@
+<div class="trainers-container">
+    <div class="header-section">
+        <h1>Meet our <span class="highlight">Experts</span></h1>
+        <p>Our certified trainers are here to guide you through your learning journey with industry-leading expertise.
+        </p>
+    </div>
+
+    <div *ngIf="isLoading" class="loader-container">
+        <div class="spinner"></div>
+        <p>Loading our experts...</p>
+    </div>
+
+    <div *ngIf="errorMessage" class="error-container">
+        <i class="fas fa-exclamation-circle"></i>
+        <p>{{ errorMessage }}</p>
+        <button (click)="loadAcceptedTrainers()" class="retry-btn">Retry</button>
+    </div>
+
+    <div *ngIf="!isLoading && !errorMessage" class="trainers-grid" [class.empty]="trainers.length === 0">
+        <div *ngFor="let trainer of trainers" class="trainer-card">
+            <div class="glass-background"></div>
+
+            <div class="card-content">
+                <div class="profile-wrapper">
+                    <img [src]="getPictureUrl(trainer)" [alt]="trainer.forename + ' ' + trainer.name"
+                        onerror="this.src='images/avatar.jpg'">
+                </div>
+
+                <div class="trainer-info">
+                    <div class="badge-tech" *ngIf="trainer.technology">{{ trainer.technology }}</div>
+                    <h3>{{ trainer.forename }} {{ trainer.name }}</h3>
+                    <p class="partner-name">
+                        <i class="fas fa-building"></i> {{ trainer.partnerName || 'Independent Expert' }}
+                    </p>
+                    <p class="experience">
+                        <i class="fas fa-graduation-cap"></i> {{ trainer.yearsOfExperience || 0 }} Years of Experience
+                    </p>
+                    <p class="location">
+                        <i class="fas fa-map-marker-alt"></i> {{ trainer.location }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="decorative-triangle"></div>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="trainers.length === 0" class="no-trainers">
+            <i class="fas fa-chalkboard-teacher"></i>
+            <h3>Join our Faculty</h3>
+            <p>No trainers listed yet. Share your expertise and join our ecosystem!</p>
+            <a routerLink="/trainer-partner-hiring" class="join-btn">Become a Trainer</a>
+        </div>
+    </div>
+</div>

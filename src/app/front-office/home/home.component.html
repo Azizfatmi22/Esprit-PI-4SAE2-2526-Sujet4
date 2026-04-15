@@ -1,0 +1,151 @@
+<div class="home-page">
+  <!-- Hero Section with image -->
+  <section class="hero-section">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-text">
+        <h1 class="hero-title">
+          <span class="gradient-text">Certify</span> your skills,
+          <span class="gradient-text">Accelerate</span> your career
+        </h1>
+        <p class="hero-description">
+          Formini offers industry-recognized professional certifications to
+          validate your skills and boost your career in the digital world.
+        </p>
+        <div class="hero-buttons">
+          <button
+            class="btn-primary"
+            (click)="scrollToSection('certifications')"
+          >
+            Discover Certifications
+          </button>
+          <button class="btn-secondary" (click)="scrollToSection('features')">
+            How it works?
+          </button>
+        </div>
+      </div>
+      <div class="hero-image">
+        <div class="certificate-badge">
+          <div class="badge-icon">🏆</div>
+          <div class="badge-text">
+            <span>Certified</span>
+            <span>Formini Pro</span>
+          </div>
+        </div>
+        <div class="floating-card">
+          <div class="card-header">
+            <div class="card-icon">📜</div>
+            <h4>Certification Validated</h4>
+          </div>
+          <div class="card-content">
+            <p>Skills verified by experts</p>
+            <div class="card-stats">
+              <div class="stat">
+                <span class="stat-number">98%</span>
+                <span class="stat-label">Recognition</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick stats -->
+    <div class="hero-stats">
+      <div class="stats-container">
+        <div class="stat-item" *ngFor="let stat of stats">
+          <span class="stat-number">{{ stat.number }}</span>
+          <span class="stat-label">{{ stat.label }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="features-section">
+    <div class="section-header">
+      <h2>Why choose Formini?</h2>
+      <p>A complete platform for your professional development</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card" *ngFor="let feature of features">
+        <div class="feature-icon">{{ feature.icon }}</div>
+        <h3>{{ feature.title }}</h3>
+        <p>{{ feature.description }}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Certifications Section -->
+  <section id="certifications" class="certifications-section">
+    <div class="section-header">
+      <h2>Popular Certifications</h2>
+      <p>Choose from our most in-demand certification programs</p>
+    </div>
+
+    <div class="certifications-grid">
+      <div class="certification-card" *ngFor="let cert of certifications">
+        <div class="cert-header">
+          <span class="cert-category">{{ cert.category }}</span>
+          <span
+            class="cert-level"
+            [class]="'level-' + cert.level.toLowerCase()"
+          >
+            {{ cert.level }}
+          </span>
+        </div>
+        <h3>{{ cert.title }}</h3>
+        <div class="cert-meta">
+          <span class="meta-item">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <circle cx="12" cy="12" r="10" stroke-width="2" />
+              <polyline points="12 6 12 12 16 14" stroke-width="2" />
+            </svg>
+            {{ cert.duration }}
+          </span>
+        </div>
+        <button class="btn-cert-details">
+          Learn more
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <path
+              d="M5 12h14M12 5l7 7-7 7"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="cta-content">
+      <h2>Ready to transform your career?</h2>
+      <p>Start your certification journey today</p>
+      <div class="cta-buttons">
+        <button class="btn-cta-primary">Sign up for free</button>
+        <button class="btn-cta-secondary">View programs</button>
+      </div>
+    </div>
+    <div class="cta-graphic">
+      <div class="graphic-circle"></div>
+      <div class="graphic-circle"></div>
+      <div class="graphic-circle"></div>
+    </div>
+  </section>
+</div>

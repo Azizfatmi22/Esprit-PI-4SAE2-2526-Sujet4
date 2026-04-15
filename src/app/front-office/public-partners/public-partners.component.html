@@ -1,0 +1,52 @@
+<div class="partners-container">
+    <div class="header-section">
+        <h1>Our <span class="highlight">Partners</span></h1>
+        <p>We work with the best organizations to provide top-quality education and certification.</p>
+    </div>
+
+    <div *ngIf="isLoading" class="loader-container">
+        <div class="spinner"></div>
+        <p>Loading our network...</p>
+    </div>
+
+    <div *ngIf="errorMessage" class="error-container">
+        <i class="fas fa-exclamation-circle"></i>
+        <p>{{ errorMessage }}</p>
+        <button (click)="loadAcceptedPartners()" class="retry-btn">Retry</button>
+    </div>
+
+    <div *ngIf="!isLoading && !errorMessage" class="partners-grid" [class.empty]="partners.length === 0">
+        <div *ngFor="let partner of partners" class="partner-card">
+            <div class="glass-background"></div>
+
+            <div class="card-content">
+                <div class="logo-wrapper">
+                    <img [src]="getLogoUrl(partner)" [alt]="partner.organizationName"
+                        onerror="this.src='images/avatar.jpg'">
+                </div>
+
+                <div class="partner-info">
+                    <h3>{{ partner.organizationName }}</h3>
+                    <div class="badge">{{ partner.partnershipType.replace('_', ' ') }}</div>
+                    <p class="city"><i class="fas fa-map-marker-alt"></i> {{ partner.city }}</p>
+                </div>
+
+                <div class="card-footer">
+                    <a [href]="partner.website" target="_blank" class="visit-btn">
+                        Visit Website <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="decorative-triangle"></div>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="partners.length === 0" class="no-partners">
+            <i class="fas fa-handshake"></i>
+            <h3>Joining our local community</h3>
+            <p>No accepted partners found yet. Be the first to join our network!</p>
+            <a routerLink="/trainer-partner-hiring" class="join-btn">Become a Partner</a>
+        </div>
+    </div>
+</div>

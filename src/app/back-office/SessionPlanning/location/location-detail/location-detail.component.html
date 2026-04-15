@@ -1,0 +1,52 @@
+<div class="location-detail-page">
+  <div class="page-header">
+    <button type="button" class="btn-back" (click)="backToList()">Retour</button>
+    <h1>Détails du lieu</h1>
+  </div>
+
+  <div class="state" *ngIf="isLoading">Chargement...</div>
+
+  <div class="state error" *ngIf="!isLoading && errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="detail-card" *ngIf="!isLoading && location">
+    <div class="card-top" [style.border-left-color]="getTypeColor(location.type)">
+      <span class="type-chip">
+        {{ getTypeIcon(location.type) }} {{ getTypeLabel(location.type) }}
+      </span>
+      <h2>{{ location.name }}</h2>
+    </div>
+
+    <div class="rows">
+      <div class="row">
+        <span class="label">Adresse</span>
+        <span class="value">{{ location.address }}</span>
+      </div>
+      <div class="row">
+        <span class="label">Ville</span>
+        <span class="value">{{ location.city }}</span>
+      </div>
+      <div class="row">
+        <span class="label">Capacité</span>
+        <span class="value">{{ location.capacity }} personnes</span>
+      </div>
+      <div class="row" *ngIf="location.platformUrl">
+        <span class="label">Plateforme</span>
+        <a class="value link" [href]="location.platformUrl" target="_blank" rel="noopener noreferrer">
+          {{ location.platformUrl }}
+        </a>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn-secondary" (click)="backToList()">Fermer</button>
+      <button
+        type="button"
+        class="btn-primary"
+        [routerLink]="['/admin/locations/edit', location.id]">
+        Modifier
+      </button>
+    </div>
+  </div>
+</div>

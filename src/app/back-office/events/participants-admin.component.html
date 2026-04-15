@@ -1,0 +1,235 @@
+<div class="admin-events-container">
+  <div class="ribbons-bg-container">
+    <app-ribbons [colors]="['#FC8EAC']" [baseSpring]="0.03" [baseFriction]="0.9" [baseThickness]="30"
+      [offsetFactor]="0.05" [maxAge]="500" [pointCount]="50" [speedMultiplier]="0.6" [enableFade]="true"
+      [enableShaderEffect]="true" [effectAmplitude]="1.5">
+    </app-ribbons>
+  </div>
+
+  <div class="admin-content">
+    <header class="admin-header">
+      <div class="header-titles">
+        <h1>Events Management</h1>
+        <p>Review events and manage their participants</p>
+      </div>
+      <div class="header-actions">
+        <div class="events-selector" *ngIf="events.length">
+          <select [(ngModel)]="selectedEventId" (change)="loadParticipants()">
+            <option [ngValue]="null">Select an event</option>
+            <option *ngFor="let e of events" [ngValue]="e.id">{{ e.name }}</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon posts">📅</div>
+        <div class="stat-info">
+          <span class="stat-label">Total Events</span>
+          <span class="stat-value">{{ analytics?.totalEvents || events.length || 0 }}</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon comments">👥</div>
+        <div class="stat-info">
+          <span class="stat-label">Participants</span>
+          <span class="stat-value">{{ statsTotal }}</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon upcoming">⏳</div>
+        <div class="stat-info">
+          <span class="stat-label">Upcoming</span>
+          <span class="stat-value">{{ analytics?.upcomingEvents || 0 }}</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon ongoing">▶️</div>
+        <div class="stat-info">
+          <span class="stat-label">Ongoing</span>
+          <span class="stat-value">{{ analytics?.ongoingEvents || 0 }}</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon finished">✅</div>
+        <div class="stat-info">
+          <span class="stat-label">Finished</span>
+          <span class="stat-value">{{ analytics?.finishedEvents || 0 }}</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon rate">📊</div>
+        <div class="stat-info">
+          <span class="stat-label">Avg Rate</span>
+          <span class="stat-value">{{ (analytics?.averageParticipationRate || 0) | percent:'1.0-1' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event Participation Analytics Section -->
+    <div class="table-container" *ngIf="analytics?.eventParticipations?.length">
+      <div class="table-header">
+        <h2>Participation Analytics</h2>
+        <div class="badge-total">{{ analytics?.eventParticipations?.length || 0 }} stats</div>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Event Name</th>
+              <th>Current Participants</th>
+              <th>Max Participants</th>
+              <th>Occupancy</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let stat of analytics?.eventParticipations">
+              <td>{{ stat.eventName }}</td>
+              <td>{{ stat.currentParticipants }}</td>
+              <td>{{ stat.maxParticipants === 2147483647 ? '∞' : stat.maxParticipants }}</td>
+              <td>
+                <div class="progress-bar-container">
+                  <div class="progress-bar"
+                    [style.width.%]="(stat.maxParticipants > 0 && stat.maxParticipants !== 2147483647) ? (stat.currentParticipants / stat.maxParticipants * 100) : 0"
+                    [ngClass]="{'full': stat.currentParticipants >= stat.maxParticipants && stat.maxParticipants !== 2147483647}">
+                  </div>
+                  <span class="progress-text">
+                    {{ (stat.maxParticipants > 0 && stat.maxParticipants !== 2147483647) ? ((stat.currentParticipants /
+                    stat.maxParticipants) | percent:'1.0-0') : 'N/A' }}
+                  </span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <div class="table-header">
+        <h2>Events</h2>
+        <div class="badge-total">{{ events.length || 0 }} events</div>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Location</th>
+              <th>Date</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let e of events">
+              <td>{{ e.id }}</td>
+              <td>{{ e.name }}</td>
+              <td>{{ e.location || '-' }}</td>
+              <td>{{ e.date ? (e.date | date:'medium') : '-' }}</td>
+              <td class="col-actions">
+                <div class="action-btns">
+                  <button class="btn-icon view" (click)="openEvent(e.id)" title="View Participants">👥</button>
+                  <button class="btn-icon edit" (click)="startEditEvent(e)" title="Edit Event">📝</button>
+                  <button class="btn-icon delete" (click)="deleteEvent(e.id)" title="Delete Event">🗑️</button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="!events || events.length === 0">
+              <td colspan="5" class="no-results">
+                <div class="empty-illustration">🗓️</div>
+                <div class="empty-text">No events found</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Edit Event Modal Overlay -->
+    <div class="modal-overlay" *ngIf="editingEvent">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Edit Event #{{ editingEvent.id }}</h2>
+          <button class="btn-close" (click)="cancelEdit()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Event Name</label>
+            <input type="text" [(ngModel)]="editingEvent.name" placeholder="Name" />
+          </div>
+          <div class="form-group">
+            <label>Location</label>
+            <input type="text" [(ngModel)]="editingEvent.location" placeholder="Location" />
+          </div>
+          <div class="form-group">
+            <label>Date & Time</label>
+            <input type="datetime-local" [(ngModel)]="editingEvent.date" />
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select [(ngModel)]="editingEvent.status">
+              <option value="UPCOMING">UPCOMING</option>
+              <option value="ONGOING">ONGOING</option>
+              <option value="FINISHED">FINISHED</option>
+              <option value="CANCELLED">CANCELLED</option>
+              <option value="FULL">FULL</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-light" (click)="cancelEdit()">Cancel</button>
+          <button class="btn-primary" (click)="saveEvent()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-container" *ngIf="selectedEventId">
+      <div class="table-header">
+        <h2>Participants for Event #{{ selectedEventId }}</h2>
+        <div class="header-inline">
+          <div class="badge-total">{{ statsTotal }} total</div>
+          <button class="btn-light" (click)="closeEvent()">Close</button>
+        </div>
+      </div>
+
+      <div class="participants-actions">
+        <input type="text" [(ngModel)]="name" placeholder="Name" />
+        <input type="email" [(ngModel)]="email" placeholder="Email" />
+        <button class="btn-primary" (click)="addParticipant()">Add</button>
+      </div>
+      <div class="msg success" *ngIf="message">{{ message }}</div>
+      <div class="msg error" *ngIf="error">{{ error }}</div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of participants">
+              <td>{{ p.name }}</td>
+              <td>{{ p.email }}</td>
+              <td class="col-actions">
+                <div class="action-btns">
+                  <button class="btn-icon delete" (click)="deleteParticipant(p)" title="Delete">🗑️</button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="participants.length === 0">
+              <td colspan="3" class="no-results">
+                <div class="empty-illustration">👥</div>
+                <div class="empty-text">No participants to display</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

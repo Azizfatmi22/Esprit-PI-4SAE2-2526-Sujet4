@@ -1,0 +1,131 @@
+.editor-container {
+  display: flex;
+  height: 90vh;
+  background: #f1f5f9;
+
+  .sidebar {
+    width: 380px;
+    background: white;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+
+    .sidebar-header {
+      padding: 24px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      .btn-back {
+        border: none;
+        background: #f8fafc;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        cursor: pointer;
+      }
+    }
+
+    .scrollable-controls {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+
+      .control-group {
+        margin-bottom: 24px;
+        label {
+          display: block;
+          font-size: 13px;
+          font-weight: 600;
+          color: #64748b;
+          margin-bottom: 8px;
+        }
+        input[type="text"] {
+          width: 100%;
+          padding: 12px;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+        }
+      }
+    }
+
+    .color-picker-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      input[type="color"] {
+        width: 45px;
+        height: 45px;
+        border: none;
+        cursor: pointer;
+        background: none;
+      }
+    }
+
+    .upload-wrapper {
+      position: relative;
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
+      .text-success {
+        color: #10b981;
+        font-weight: bold;
+      }
+    }
+
+    .sidebar-footer {
+      padding: 24px;
+      border-top: 1px solid #f1f5f9;
+    }
+    .btn-save {
+      width: 100%;
+      padding: 14px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+  }
+
+  .workspace {
+    flex: 1;
+    overflow: auto;
+    padding: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; // Start from top so it's easier to read
+    background: #94a3b8; // Slightly darker grey to make the white "pop"
+
+    .page-container {
+      // This is the trick:
+      // We wrap the sheet in a container that handles the scaled size
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .a4-sheet {
+      background: white;
+      width: 297mm;
+      height: 210mm;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+
+      // SCALE: 0.7 or 0.8 is usually the "Sweet Spot" for 1080p screens
+      // It makes it look big, but fits 80% of the screen width
+      transform: scale(0.75);
+      transform-origin: top center; // Scale from the top so it doesn't fly off-screen
+
+      margin-bottom: -40mm; // Offset the whitespace created by scaling
+    }
+  }
+}

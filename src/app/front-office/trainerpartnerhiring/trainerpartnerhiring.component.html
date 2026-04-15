@@ -1,0 +1,587 @@
+<div class="hiring-container">
+  <div class="hiring-header">
+    <!-- Dynamic Animated Background -->
+    <div class="dynamic-bg">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+      <div class="shape shape-3"></div>
+      <div class="shape shape-4"></div>
+    </div>
+
+    <div class="header-section" *ngIf="!showForm && !showTrainerForm">
+      <h1>Join our <span class="highlight">Ecosystem</span></h1>
+      <p>Whether you're an industry expert or a visionary organization, let's shape the future of professional
+        certification together.</p>
+    </div>
+  </div>
+
+  <div class="hiring-cards" *ngIf="!showForm && !showTrainerForm">
+    <!-- Partner Card -->
+    <div class="hiring-card partner" (click)="toggleForm()">
+      <div class="card-decor">
+        <svg viewBox="0 0 200 200">
+          <path fill="currentColor"
+            d="M45,-76C58.1,-69.1,68.7,-55.8,77.3,-41.4C85.9,-27,92.5,-11.5,91.2,3.3C89.9,18.1,80.7,32.3,71,46.1C61.3,59.9,51.1,73.4,37.3,81C23.6,88.6,6.3,90.3,-11,88.4C-28.3,86.5,-45.7,81,-59.4,70.9C-73.1,60.8,-83.1,46.1,-87.3,30.1C-91.5,14.1,-89.9,-3.3,-84.6,-19.4C-79.3,-35.5,-70.3,-50.3,-57.8,-57.4C-45.3,-64.5,-29.3,-63.9,-15.1,-71.4C-0.8,-79,15.1,-94.7,31.2,-83C36.4,-79.1,40.7,-82.9,45,-76Z"
+            transform="translate(100 100)" />
+        </svg>
+      </div>
+      <div class="card-icon">
+        <i class="fas fa-handshake"></i>
+      </div>
+      <h2>Become a Partner</h2>
+      <p>Elevate your institution's prestige. Partner with us to deliver world-class certifications.</p>
+      <div class="card-footer-info">
+        <button class="action-btn">Register as Partner</button>
+      </div>
+    </div>
+
+
+    <!-- Trainer Card -->
+    <div class="hiring-card trainer" (click)="toggleTrainerForm()">
+      <div class="card-decor">
+        <svg viewBox="0 0 200 200">
+          <path fill="currentColor"
+            d="M44.7,-76.4C58.1,-69.2,69.1,-57.4,77.3,-43.6C85.5,-29.8,91,-14,89.7,1.3C88.4,16.5,80.3,31.2,70.6,44.7C60.9,58.2,49.6,70.5,35.8,77.7C22,84.9,5.7,87, -10.5,85.2C-26.7,83.4,-42.8,77.7,-56.3,68.1C-69.8,58.5,-80.7,45,-85.8,29.7C-90.9,14.4,-90.2,-2.7,-84.9,-18.4C-79.6,-34.1,-69.7,-48.4,-56.9,-55.8C-44.1,-63.2,-28.4,-63.7,-14.8,-71.4C-1.2,-79,15.3,-94.1,30,-83.4C36,-79.1,40.3,-82.9,44.7,-76.4Z"
+            transform="translate(100 100)" />
+        </svg>
+      </div>
+      <div class="card-icon">
+        <i class="fas fa-chalkboard-teacher"></i>
+      </div>
+      <h2>Become a Trainer</h2>
+      <p>Inspire others. Join our elite circle of experts and transform your technical mastery.</p>
+      <div class="card-footer-info">
+        <button class="action-btn">Apply for a Job</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Job Catalog Section (For Trainers) -->
+  <div id="job-catalog-section" class="catalog-section-container" *ngIf="showJobCatalog">
+    <div class="form-header">
+      <button class="back-btn" (click)="toggleTrainerForm()"><i class="fas fa-arrow-left"></i> Back</button>
+      <h2 class="section-title">Available Positions</h2>
+      <p class="section-subtitle">Select a role to start your application</p>
+    </div>
+
+    <div class="jobs-catalog-grid">
+      <div *ngFor="let job of availableJobs" class="glass-job-card" (click)="selectJob(job)">
+        <div class="card-status-badge">Accepting Applications</div>
+        <div class="job-card-header">
+          <div class="job-icon">
+            <i class="fas fa-layer-group"></i>
+          </div>
+          <div class="job-titles">
+            <h3>{{ job.title }}</h3>
+            <span class="tech-tag">{{ job.technology }}</span>
+          </div>
+        </div>
+
+        <div class="job-details-list">
+          <div class="detail-item">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>{{ job.location }}</span>
+          </div>
+          <div class="detail-item">
+            <i class="fas fa-user-clock"></i>
+            <span>{{ job.minExperience }}+ yrs experience</span>
+          </div>
+          <div class="detail-item">
+            <i class="fas fa-money-bill-wave"></i>
+            <span>{{ job.salaryRange || 'Competitive Salary' }}</span>
+          </div>
+        </div>
+
+        <div class="job-card-footer">
+          <button *ngIf="!hasAppliedTo(job.id!)" class="apply-btn-masterpiece">
+            Direct Apply <i class="fas fa-paper-plane"></i>
+          </button>
+
+          <!-- Tracking Dashboard for Applied Jobs -->
+          <div *ngIf="hasAppliedTo(job.id!)" class="tracking-mini-dashboard">
+            <div class="tracking-status" [attr.data-status]="getApplicationFor(job.id!)?.status">
+              <i class="fas fa-info-circle"></i> {{ getApplicationFor(job.id!)?.status }}
+            </div>
+            <div class="tracking-stats">
+              <div class="mini-stat">
+                <span class="label">Match</span>
+                <span class="value">{{ getApplicationFor(job.id!)?.skillSyncScore }}%</span>
+              </div>
+              <div class="mini-stat">
+                <span class="label">Success</span>
+                <span class="value">{{ getApplicationFor(job.id!)?.acceptanceProbability }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="availableJobs.length === 0" class="empty-catalog">
+      <div class="empty-icon"><i class="fas fa-search"></i></div>
+      <h3>No Positions Open</h3>
+      <p>There are no open roles at the moment. Please check back later.</p>
+    </div>
+  </div>
+
+
+  <!-- Partner Registration Form Section -->
+  <div id="partner-form-section" class="form-section-container" *ngIf="showForm">
+    <div class="form-header">
+      <button class="back-btn" (click)="toggleForm()"><i class="fas fa-arrow-left"></i> Back</button>
+      <h2 class="section-title">Partner Registration</h2>
+      <p class="section-subtitle">Please fill in the details below to start our partnership.</p>
+    </div>
+
+    <!-- Masterpiece Progress Stepper -->
+    <div class="progress-stepper">
+      <div class="step" [class.active]="currentStep >= 1" [class.completed]="currentStep > 1">
+        <div class="step-icon"><i class="fas fa-id-card"></i></div>
+        <span class="step-label">Identity</span>
+      </div>
+      <div class="step-line" [class.active]="currentStep > 1"></div>
+      <div class="step" [class.active]="currentStep >= 2" [class.completed]="currentStep > 2">
+        <div class="step-icon"><i class="fas fa-map-marker-alt"></i></div>
+        <span class="step-label">Details</span>
+      </div>
+      <div class="step-line" [class.active]="currentStep > 2"></div>
+      <div class="step" [class.active]="currentStep >= 3" [class.completed]="currentStep > 3">
+        <div class="step-icon"><i class="fas fa-file-alt"></i></div>
+        <span class="step-label">Docs</span>
+      </div>
+    </div>
+
+    <div class="glass-form-card">
+      <form [formGroup]="partnerForm" (ngSubmit)="onSubmit()" class="partner-form">
+
+        <!-- Step 1: Identity -->
+        <div class="step-content animated-step" *ngIf="currentStep === 1">
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="organizationName">Organization Name</label>
+              <div class="input-with-icon">
+                <i class="fas fa-building"></i>
+                <input type="text" id="organizationName" formControlName="organizationName"
+                  placeholder="e.g. Acme EdTech">
+              </div>
+              <div class="error-msg"
+                *ngIf="partnerForm.get('organizationName')?.touched && partnerForm.get('organizationName')?.invalid">
+                Valid organization name is required.
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="legalForm">Legal Form</label>
+              <div class="input-with-icon">
+                <i class="fas fa-balance-scale"></i>
+                <select id="legalForm" formControlName="legalForm">
+                  <option value="" disabled selected>Select legal form</option>
+                  <option *ngFor="let form of legalForms" [value]="form">{{form}}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Business Email</label>
+              <div class="input-with-icon">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="email" formControlName="email" placeholder="contact@organization.com">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Phone Number</label>
+              <div class="input-with-icon">
+                <i class="fas fa-phone"></i>
+                <input type="text" id="phone" formControlName="phone" placeholder="8-digit Tunisian number">
+              </div>
+            </div>
+          </div>
+
+          <div class="step-footer">
+            <button type="button" class="next-btn" (click)="nextStep()" [disabled]="!isStepValid()">
+              Next: Details <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: Location & Type -->
+        <div class="step-content animated-step" *ngIf="currentStep === 2">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="website">Website (HTTPS)</label>
+              <div class="input-with-icon">
+                <i class="fas fa-globe"></i>
+                <input type="text" id="website" formControlName="website" placeholder="https://www.example.com">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="city">City</label>
+              <div class="input-with-icon">
+                <i class="fas fa-city"></i>
+                <select id="city" formControlName="city">
+                  <option value="" disabled selected>Select city</option>
+                  <option *ngFor="let city of cities" [value]="city">{{city}}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="partnershipType">Partnership Type</label>
+              <div class="input-with-icon">
+                <i class="fas fa-handshake"></i>
+                <select id="partnershipType" formControlName="partnershipType">
+                  <option value="" disabled selected>Select type</option>
+                  <option *ngFor="let type of partnershipTypes" [value]="type">{{type}}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="address">Full Address</label>
+              <div class="input-with-icon">
+                <i class="fas fa-map-marker-alt"></i>
+                <input type="text" id="address" formControlName="address" placeholder="Street, ZIP Code, etc.">
+              </div>
+            </div>
+          </div>
+
+          <div class="step-footer">
+            <button type="button" class="prev-btn" (click)="prevStep()">
+              <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <button type="button" class="next-btn" (click)="nextStep()" [disabled]="!isStepValid()">
+              Next: Documents <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 3: Documentation -->
+        <div class="step-content animated-step" *ngIf="currentStep === 3">
+          <div class="form-grid">
+            <!-- Logo Upload -->
+            <div class="form-group full-width logo-upload-section">
+              <label>Organization Logo</label>
+              <div class="logo-upload-container masterpiece">
+                <div class="logo-preview-box" *ngIf="logoPreview">
+                  <img [src]="logoPreview" alt="Logo Preview">
+                  <button type="button" class="remove-logo" (click)="resetFileField('logo')"><i
+                      class="fas fa-times"></i></button>
+                </div>
+                <div class="logo-dropzone" *ngIf="!logoPreview" (click)="logoInput.click()">
+                  <i class="fas fa-upload-cloud"></i>
+                  <span>Upload your organization logo</span>
+                  <input type="file" #logoInput (change)="onFileChange($event, 'logo')" accept="image/*" hidden>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group full-width file-uploads-grid">
+              <div class="file-card" [class.uploaded]="businessFile">
+                <i class="fas fa-file-pdf"></i>
+                <div class="file-info">
+                  <label>Business Registration</label>
+                  <span>{{businessFile?.name || 'Required document (PDF)'}}</span>
+                </div>
+                <input type="file" (change)="onFileChange($event, 'businessRegistration')" accept="application/pdf"
+                  class="hidden-input" #businessInput>
+                <button type="button" class="upload-btn" (click)="businessInput.click()">{{businessFile ? 'Change' :
+                  'Upload'}}</button>
+              </div>
+
+              <div class="file-card" [class.uploaded]="profileFile">
+                <i class="fas fa-file-pdf"></i>
+                <div class="file-info">
+                  <label>Company Profile</label>
+                  <span>{{profileFile?.name || 'Required document (PDF)'}}</span>
+                </div>
+                <input type="file" (change)="onFileChange($event, 'companyProfile')" accept="application/pdf"
+                  class="hidden-input" #profileInput>
+                <button type="button" class="upload-btn" (click)="profileInput.click()">{{profileFile ? 'Change' :
+                  'Upload'}}</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <div class="status-messages">
+              <div class="alert alert-danger" *ngIf="errorMessage">
+                <i class="fas fa-exclamation-circle"></i> {{errorMessage}}
+              </div>
+            </div>
+
+            <div class="step-footer">
+              <button type="button" class="prev-btn" (click)="prevStep()">
+                <i class="fas fa-arrow-left"></i> Back
+              </button>
+              <button type="submit" class="submit-btn masterpiece" [disabled]="partnerForm.invalid || isSubmitting">
+                <span *ngIf="!isSubmitting">Complete Registration <i class="fas fa-check-double"></i></span>
+                <span *ngIf="isSubmitting" class="loader-text"><i class="fas fa-spinner fa-spin"></i>
+                  Submitting...</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Trainer Registration Form Section -->
+  <div id="trainer-form-section" class="form-section-container" *ngIf="showTrainerForm">
+    <div class="form-header">
+      <button class="back-btn" (click)="toggleTrainerForm()"><i class="fas fa-arrow-left"></i> Back</button>
+      <h2 class="section-title">Become a Trainer</h2>
+      <p class="section-subtitle">Share your expertise and grow your career with us.</p>
+    </div>
+
+    <!-- Masterpiece Progress Stepper -->
+    <div class="progress-stepper">
+      <div class="step" [class.active]="currentTrainerStep >= 1" [class.completed]="currentTrainerStep > 1">
+        <div class="step-icon"><i class="fas fa-user-tie"></i></div>
+        <span class="step-label">Identity</span>
+      </div>
+      <div class="step-line" [class.active]="currentTrainerStep > 1"></div>
+      <div class="step" [class.active]="currentTrainerStep >= 2" [class.completed]="currentTrainerStep > 2">
+        <div class="step-icon"><i class="fas fa-brain"></i></div>
+        <span class="step-label">Expertise</span>
+      </div>
+      <div class="step-line" [class.active]="currentTrainerStep > 2"></div>
+      <div class="step" [class.active]="currentTrainerStep >= 3" [class.completed]="currentTrainerStep > 3">
+        <div class="step-icon"><i class="fas fa-clipboard-check"></i></div>
+        <span class="step-label">Review</span>
+      </div>
+    </div>
+
+    <div class="glass-form-card">
+      <!-- Intelligent Tracking Dashboard (Show after submission or for existing apps) -->
+      <div class="intelligence-dashboard animated-step" *ngIf="analysisResult">
+        <div class="dashboard-header">
+          <h3><i class="fas fa-brain"></i> Intelligent Verification Dashboard</h3>
+          <p>Smart Metrics analysis results for your application</p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card" [style.--score]="analysisResult.skillSyncScore">
+            <div class="stat-icon"><i class="fas fa-sync"></i></div>
+            <div class="stat-value">{{analysisResult.skillSyncScore}}%</div>
+            <div class="stat-label">Skill Match</div>
+          </div>
+          <div class="stat-card" [class.danger]="analysisResult.plagiarismFlag">
+            <div class="stat-icon"><i class="fas fa-flag"></i></div>
+            <div class="stat-value">{{analysisResult.plagiarismFlag ? 'RED' : 'CLEAR'}}</div>
+            <div class="stat-label">Plagiarism Flag</div>
+          </div>
+          <div class="stat-card" [style.--score]="analysisResult.toneClarityScore">
+            <div class="stat-icon"><i class="fas fa-feather-alt"></i></div>
+            <div class="stat-value">{{analysisResult.toneClarityScore}}%</div>
+            <div class="stat-label">Tone & Clarity</div>
+          </div>
+          <div class="stat-card highlight" [style.--score]="analysisResult.acceptanceProbability">
+            <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+            <div class="stat-value">{{analysisResult.acceptanceProbability}}%</div>
+            <div class="stat-label">Success Probability</div>
+          </div>
+        </div>
+        <div class="intelligent-context">
+          <strong>Intelligent Analysis Context:</strong>
+          <p>{{analysisResult.intelligentAnalysisContext}}</p>
+        </div>
+        <button class="reset-btn masterpiece"
+          (click)="analysisResult = null; showTrainerForm = false; showJobCatalog = true; currentTrainerStep = 1">Apply
+          for another job</button>
+      </div>
+
+      <form [formGroup]="trainerForm" (ngSubmit)="onTrainerSubmit()" class="partner-form" *ngIf="!analysisResult">
+        <!-- Step 1: Identity -->
+        <div class="step-content animated-step" *ngIf="currentTrainerStep === 1">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="name">Last Name</label>
+              <div class="input-with-icon">
+                <i class="fas fa-user"></i>
+                <input type="text" id="name" formControlName="name" placeholder="Your Last Name">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="forename">First Name</label>
+              <div class="input-with-icon">
+                <i class="fas fa-user"></i>
+                <input type="text" id="forename" formControlName="forename" placeholder="Your First Name">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="trainerEmail">Email Address</label>
+              <div class="input-with-icon">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="trainerEmail" formControlName="email" placeholder="you@email.com"
+                  [readOnly]="!!currentUserEmail">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="trainerPhone">Phone Number</label>
+              <div class="input-with-icon">
+                <i class="fas fa-phone"></i>
+                <input type="text" id="trainerPhone" formControlName="phone" placeholder="8-digit Tunisian number">
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="trainerLocation">Location (City)</label>
+              <div class="input-with-icon">
+                <i class="fas fa-map-marker-alt"></i>
+                <select id="trainerLocation" formControlName="location">
+                  <option value="" disabled selected>Select city</option>
+                  <option *ngFor="let city of cities" [value]="city">{{city}}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-footer">
+            <button type="button" class="next-btn" (click)="nextTrainerStep()" [disabled]="!isTrainerStepValid()">
+              Next: Job Match <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: Job Match -->
+        <div class="step-content animated-step" *ngIf="currentTrainerStep === 2">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Select Partner Organization</label>
+              <div class="input-with-icon">
+                <i class="fas fa-handshake"></i>
+                <select formControlName="partnerId"
+                  style="pointer-events: none; background-color: #f1f5f9; color: #475569; appearance: none; -webkit-appearance: none;">
+                  <option value="" disabled selected>Select a Partner</option>
+                  <option *ngFor="let partner of acceptedPartners" [value]="partner.id">{{partner.organizationName}}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Select Open Position</label>
+              <div class="input-with-icon">
+                <i class="fas fa-briefcase"></i>
+                <select formControlName="jobId"
+                  style="pointer-events: none; background-color: #f1f5f9; color: #475569; appearance: none; -webkit-appearance: none;">
+                  <option value="" disabled selected>Select a Job</option>
+                  <option *ngFor="let job of availableJobs" [value]="job.id">{{job.title}} ({{job.technology}})</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="yearsOfExperience">Years of Experience</label>
+              <div class="input-with-icon">
+                <i class="fas fa-clock"></i>
+                <input type="number" id="yearsOfExperience" formControlName="yearsOfExperience" placeholder="e.g. 5">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="technology">Required Technology</label>
+              <div class="input-with-icon">
+                <i class="fas fa-laptop-code"></i>
+                <input type="text" id="technology" formControlName="technology" readonly
+                  [placeholder]="'Automated from job requirements'">
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="motivationLetter">Motivation Letter (Plagiarism & Tone analyzed)</label>
+              <div class="quill-wrapper masterpiece">
+                <quill-editor formControlName="motivationLetter" theme="snow" [styles]="{height: '250px'}"
+                  placeholder="Tell us why you'd be a great trainer..."></quill-editor>
+              </div>
+            </div>
+          </div>
+
+          <div class="step-footer">
+            <button type="button" class="prev-btn" (click)="prevTrainerStep()">
+              <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <button type="button" class="next-btn" (click)="nextTrainerStep()" [disabled]="!isTrainerStepValid()">
+              Next: Documents <i class="fas fa-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 3: Review & Docs -->
+        <div class="step-content animated-step" *ngIf="currentTrainerStep === 3">
+          <div class="form-grid">
+            <!-- Profile Picture -->
+            <div class="form-group full-width logo-upload-section">
+              <label>Profile Picture</label>
+              <div class="logo-upload-container masterpiece">
+                <div class="logo-preview-box trainer" *ngIf="picturePreview">
+                  <img [src]="picturePreview" alt="Profile Picture">
+                  <button type="button" class="remove-logo" (click)="resetPicture()"><i
+                      class="fas fa-times"></i></button>
+                </div>
+                <div class="logo-dropzone" *ngIf="!picturePreview" (click)="pictureInput.click()">
+                  <i class="fas fa-camera"></i>
+                  <span>Upload a professional photo</span>
+                  <input type="file" #pictureInput (change)="onPictureChange($event)" accept="image/*" hidden>
+                </div>
+              </div>
+            </div>
+
+            <!-- CV Upload -->
+            <div class="form-group full-width file-uploads-grid">
+              <div class="file-card" [class.uploaded]="cvFile">
+                <i class="fas fa-file-pdf"></i>
+                <div class="file-info">
+                  <label>Curriculum Vitae (CV)</label>
+                  <span>{{cvFile?.name || 'Required document (PDF)'}}</span>
+                </div>
+                <input type="file" (change)="onTrainerFileChange($event)" accept="application/pdf" class="hidden-input"
+                  #cvInput>
+                <button type="button" class="upload-btn" (click)="cvInput.click()">{{cvFile ? 'Change' :
+                  'Upload'}}</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <div class="status-messages">
+              <div class="alert alert-danger" *ngIf="errorMessage">
+                <i class="fas fa-exclamation-circle"></i> {{errorMessage}}
+              </div>
+            </div>
+
+            <div class="step-footer">
+              <button type="button" class="prev-btn" (click)="prevTrainerStep()">
+                <i class="fas fa-arrow-left"></i> Back
+              </button>
+              <button type="submit" class="submit-btn masterpiece" [disabled]="trainerForm.invalid || isSubmitting">
+                <span *ngIf="!isSubmitting">Submit Application <i class="fas fa-paper-plane"></i></span>
+                <span *ngIf="isSubmitting" class="loader-text"><i class="fas fa-spinner fa-spin"></i>
+                  Submitting...</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Success Popup -->
+  <div class="popup-overlay" *ngIf="showSuccessPopup" (click)="closePopup()">
+    <div class="popup-card" (click)="$event.stopPropagation()">
+      <div class="popup-icon">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <h2 class="popup-title">{{successPopupTitle || 'Application Received!'}}</h2>
+      <p class="popup-message">
+        {{successPopupMessage || 'Thank you for your interest in joining Formini. Your application has been submitted
+        successfully.'}}
+      </p>
+      <button class="popup-button" (click)="closePopup()">Got it!</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,367 @@
+<div class="partners-management-container">
+    <!-- Background Design Elements -->
+    <div class="triangle-bg triangle-1"></div>
+    <div class="triangle-bg triangle-2"></div>
+    <div class="triangle-bg triangle-3"></div>
+
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">Trainer Applications</h1>
+            <p class="page-subtitle">Elevate your team with expert instructors</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card total">
+                <div class="stat-donut-container">
+                    <svg class="stat-donut" viewBox="0 0 36 36">
+                        <path class="donut-ring"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none" />
+                        <path class="donut-segment" [style.stroke-dasharray]="'100, 100'"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none" />
+                        <text x="18" y="21" class="percentage">{{totalTrainers}}</text>
+                    </svg>
+                </div>
+                <span class="stat-label">Total</span>
+            </div>
+
+            <div class="stat-card accepted">
+                <div class="stat-donut-container">
+                    <svg class="stat-donut" viewBox="0 0 36 36">
+                        <path class="donut-ring"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none" />
+                        <path class="donut-segment"
+                            [style.stroke-dasharray]="getStatsPercentage(acceptedCount) + ', 100'"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none" />
+                        <text x="18" y="21" class="percentage">{{acceptedCount}}</text>
+                    </svg>
+                </div>
+                <span class="stat-label">Accepted</span>
+            </div>
+
+            <div class="stat-card pending">
+                <div class="stat-donut-container">
+                    <svg class="stat-donut" viewBox="0 0 36 36">
+                        <path class="donut-ring"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none" />
+                        <path class="donut-segment"
+                            [style.stroke-dasharray]="getStatsPercentage(pendingCount) + ', 100'"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none" />
+                        <text x="18" y="21" class="percentage">{{pendingCount}}</text>
+                    </svg>
+                </div>
+                <span class="stat-label">Pending</span>
+            </div>
+
+            <div class="stat-card rejected">
+                <div class="stat-donut-container">
+                    <svg class="stat-donut" viewBox="0 0 36 36">
+                        <path class="donut-ring"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none" />
+                        <path class="donut-segment"
+                            [style.stroke-dasharray]="getStatsPercentage(rejectedCount) + ', 100'"
+                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none" />
+                        <text x="18" y="21" class="percentage">{{rejectedCount}}</text>
+                    </svg>
+                </div>
+                <span class="stat-label">Rejected</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label>Keyword search</label>
+            <div class="input-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" [(ngModel)]="filterKeyword" (ngModelChange)="onFilterChange()"
+                    placeholder="Search by name or forename...">
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <label>Specialization</label>
+            <div class="input-wrapper">
+                <i class="fas fa-code"></i>
+                <select [(ngModel)]="selectedTech" (change)="onFilterChange()">
+                    <option value="">All Technologies</option>
+                    <option *ngFor="let tech of technologies" [value]="tech">{{tech}}</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn-clear" (click)="clearFilters()">
+            <i class="fas fa-times"></i> Clear Filters
+        </button>
+    </div>
+
+    <div class="loading-state" *ngIf="isLoading">
+        <div class="loader"></div>
+        <p>Loading applications...</p>
+    </div>
+
+    <div class="error-state" *ngIf="errorMessage">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>{{errorMessage}}</p>
+        <button (click)="loadTrainers()" class="btn-retry">Retry</button>
+    </div>
+
+    <div class="partners-grid" *ngIf="!isLoading && !errorMessage">
+        <div class="partner-card" *ngFor="let trainer of trainers" (click)="selectTrainer(trainer)">
+            <!-- Triangle Decor in Card -->
+            <div class="card-triangle"></div>
+
+            <div class="card-header">
+                <div class="org-icon logo-img">
+                    <img [src]="getPictureUrl(trainer)" [alt]="trainer.forename + ' ' + trainer.name"
+                        onerror="this.src='images/avatar.jpg'">
+                </div>
+                <div class="org-info">
+                    <h3>{{trainer.forename}} {{trainer.name}}</h3>
+                    <span class="legal-form">{{trainer.partnerName || 'No partner'}}</span>
+                </div>
+            </div>
+
+            <!-- Scoring Donut -->
+            <div class="score-container" *ngIf="trainer.score !== undefined">
+                <svg class="score-donut" viewBox="0 0 36 36">
+                    <path class="donut-ring"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" />
+                    <path class="donut-segment" [style.stroke-dasharray]="trainer.score + ', 100'"
+                        [class.excellent]="trainer.score >= 70" [class.good]="trainer.score >= 40 && trainer.score < 70"
+                        [class.poor]="trainer.score < 40"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" />
+                    <text x="18" y="21" class="percentage">{{trainer.score}}%</text>
+                </svg>
+                <div class="score-info">
+                    <span class="score-label">Profile Score</span>
+                    <span class="score-desc" *ngIf="trainer.score >= 70">Strong Match</span>
+                    <span class="score-desc" *ngIf="trainer.score >= 40 && trainer.score < 70">Good Potential</span>
+                    <span class="score-desc" *ngIf="trainer.score < 40">Requires Review</span>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div class="info-row">
+                    <i class="fas fa-envelope"></i>
+                    <span>{{trainer.email}}</span>
+                </div>
+                <div class="info-row">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span class="partnership-type">{{trainer.location}}</span>
+                </div>
+                <div class="info-row" *ngIf="trainer.technology">
+                    <i class="fas fa-code"></i>
+                    <span class="badge-tech">{{trainer.technology}}</span>
+                </div>
+                <div class="card-actions">
+                    <button class="action-btn view"
+                        (click)="selectTrainer(trainer); $event.stopPropagation()">👁️</button>
+                    <button *ngIf="trainer.isBlankCv" class="action-btn accept" disabled
+                        style="width: auto; padding: 0 0.8rem; border-radius: 12px; background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; font-size: 0.8rem; font-weight: 700;">
+                        CV field is blank
+                    </button>
+                    <button *ngIf="!trainer.isBlankCv" class="action-btn accept" [disabled]="trainer.plagiarismFlag"
+                        (click)="!trainer.plagiarismFlag && approveTrainer(trainer.id!); $event.stopPropagation()"
+                        [title]="trainer.plagiarismFlag ? 'Plagiarism Detected - Cannot Accept' : 'Accept'">
+                        {{ trainer.plagiarismFlag ? '⚠️' : '✅' }}
+                    </button>
+                    <button class="action-btn reject" (click)="rejectTrainer(trainer.id!); $event.stopPropagation()"
+                        title="Reject">❌</button>
+                    <button class="action-btn delete" (click)="deleteTrainer(trainer.id!); $event.stopPropagation()"
+                        title="Delete">🗑️</button>
+                </div>
+            </div>
+            <!-- Status Badge -->
+            <div class="status-badge" [ngClass]="getStatusClass(trainer.status)">
+                {{trainer.status || 'PENDING'}}
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="trainers.length === 0">
+            <i class="fas fa-folder-open"></i>
+            <p>No trainer applications found.</p>
+        </div>
+    </div>
+
+    <!-- Detailed Modal -->
+    <div class="modal-overlay" *ngIf="selectedTrainer" (click)="closeDetails()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <div class="header-main">
+                    <div class="modal-org-icon logo-img">
+                        <img [src]="getPictureUrl(selectedTrainer)" [alt]="selectedTrainer.forename"
+                            onerror="this.src='images/avatar.jpg'">
+                    </div>
+                    <div>
+                        <h2>{{selectedTrainer.forename}} {{selectedTrainer.name}}</h2>
+                        <span class="modal-legal-form">{{selectedTrainer.partnerName || 'No partner'}}</span>
+                    </div>
+                </div>
+                <button class="close-modal" (click)="closeDetails()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="detail-section">
+                    <h3><i class="fas fa-info-circle"></i> General Information</h3>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Status</label>
+                            <span class="status-badge modal-status" [ngClass]="getStatusClass(selectedTrainer.status)">
+                                {{selectedTrainer.status || 'PENDING'}}
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Partner Organization</label>
+                            <span class="val">{{selectedTrainer.partnerName || 'N/A'}}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Submitted On</label>
+                            <span class="val">{{selectedTrainer.createdAt | date:'medium'}}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Location</label>
+                            <span class="val">{{selectedTrainer.location}}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Experience</label>
+                            <span class="val">{{selectedTrainer.yearsOfExperience}} Years</span>
+                        </div>
+                        <div class="detail-item" *ngIf="selectedTrainer.technology">
+                            <label>Technology</label>
+                            <span class="val badge-tech">{{selectedTrainer.technology}}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3><i class="fas fa-address-card"></i> Contact Details</h3>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Full Name</label>
+                            <span class="val">{{selectedTrainer.forename}} {{selectedTrainer.name}}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Email Address</label>
+                            <span class="val">{{selectedTrainer.email}}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Phone Number</label>
+                            <span class="val">{{selectedTrainer.phone}}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>CV / Resume</label>
+                            <a (click)="viewCV(selectedTrainer.id!)" class="val-link doc-link">
+                                <i class="fas fa-file-pdf"></i> View CV
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section" *ngIf="selectedTrainer.motivationLetter">
+                    <h3><i class="fas fa-pen-fancy"></i> Motivation Letter</h3>
+                    <div class="motivation-letter-content" [innerHTML]="selectedTrainer.motivationLetter"></div>
+                </div>
+
+                <!-- Intelligent Insight Dashboard -->
+                <div class="detail-section ai-insight-section" *ngIf="selectedTrainer.skillSyncScore !== undefined">
+                    <div class="ai-header">
+                        <h3><i class="fas fa-brain"></i> Intelligent Insight</h3>
+                        <span class="ai-badge">SMART VERIFIED</span>
+                    </div>
+
+                    <div class="ai-metrics-grid">
+                        <!-- Skill Sync Card -->
+                        <div class="ai-metric-card">
+                            <div class="metric-top">
+                                <label>Skill Sync Score</label>
+                                <span class="val">{{selectedTrainer.skillSyncScore}}%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-fill" [style.width.%]="selectedTrainer.skillSyncScore"></div>
+                            </div>
+                        </div>
+
+                        <!-- Tone Clarity Card -->
+                        <div class="ai-metric-card">
+                            <div class="metric-top">
+                                <label>Tone Professionalism</label>
+                                <span class="val">{{selectedTrainer.toneClarityScore}}%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-fill tone" [style.width.%]="selectedTrainer.toneClarityScore">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Acceptance Probability Card -->
+                        <div class="ai-metric-card highlight">
+                            <div class="metric-top">
+                                <label>Hiring Success Probability</label>
+                                <span class="val">{{selectedTrainer.acceptanceProbability}}%</span>
+                            </div>
+                            <div class="probability-meter">
+                                <div class="meter-point" [style.left.%]="selectedTrainer.acceptanceProbability"></div>
+                            </div>
+                        </div>
+
+                        <!-- Plagiarism Card -->
+                        <div class="ai-metric-card warning" [class.danger]="selectedTrainer.plagiarismFlag">
+                            <div class="metric-top">
+                                <label>Red-Flag: Integrity Check</label>
+                                <span class="val">{{selectedTrainer.plagiarismFlag ? 'Linguistic Overlap' :
+                                    'CLEAR'}}</span>
+                            </div>
+                            <div class="alert-status">
+                                <i class="fas"
+                                    [ngClass]="selectedTrainer.plagiarismFlag ? 'fa-exclamation-circle' : 'fa-check-circle'"></i>
+                                <span>{{selectedTrainer.plagiarismFlag ? 'High similarity with other records' :
+                                    'Original
+                                    Content'}}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Intelligent Context Summary -->
+                    <div class="ai-context-summary" *ngIf="selectedTrainer.intelligentAnalysisContext">
+                        <i class="fas"
+                            [ngClass]="selectedTrainer.isBlankCv ? 'fa-exclamation-triangle' : 'fa-quote-left'"></i>
+                        <p [style.color]="selectedTrainer.isBlankCv ? '#ef4444' : 'inherit'">
+                            <strong>{{selectedTrainer.isBlankCv ? 'CRITICAL ALERT: ' : ''}}</strong>
+                            {{selectedTrainer.intelligentAnalysisContext}}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="modal-btn delete-btn" (click)="deleteTrainer(selectedTrainer.id!); closeDetails()">
+                    🗑️ Delete
+                </button>
+                <div class="modal-actions-right">
+                    <button class="modal-btn reject-btn" (click)="rejectTrainer(selectedTrainer.id!)">
+                        ❌ Reject
+                    </button>
+                    <button class="modal-btn accept-btn"
+                        [disabled]="selectedTrainer.plagiarismFlag || selectedTrainer.isBlankCv"
+                        (click)="!selectedTrainer.plagiarismFlag && !selectedTrainer.isBlankCv && approveTrainer(selectedTrainer.id!)"
+                        [title]="selectedTrainer.plagiarismFlag ? 'Plagiarism Detected - Cannot Accept' : (selectedTrainer.isBlankCv ? 'Blank CV Document - Cannot Accept' : 'Accept')">
+                        {{ selectedTrainer.plagiarismFlag ? '⚠️ Plagiarism detected : Cannot Accept' :
+                        (selectedTrainer.isBlankCv ? '⚠️ Blank CV : Cannot Accept' : '✅ Accept') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

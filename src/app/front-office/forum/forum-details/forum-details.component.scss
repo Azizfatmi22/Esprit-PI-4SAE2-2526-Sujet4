@@ -1,0 +1,516 @@
+/* Variables */
+:host {
+    --cyan-main: #00acc1;
+    --cyan-dark: #00838f;
+    --cyan-light: #4dd0e1;
+    --cyan-bg: rgba(0, 172, 193, 0.08);
+    --shadow-heavy: 0 10px 30px rgba(0, 172, 193, 0.15);
+    --shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.05);
+    --white: #ffffff;
+    --gray-bg: #ffffff;
+    --gray-border: #e2e8f0;
+    --gray-text: #64748b;
+    --gray-dark: #334155;
+    --radius: 8px;
+    font-family: "Inter", sans-serif;
+}
+
+/* Container */
+.forum-details-container {
+    min-height: 100vh;
+    background: var(--gray-bg);
+    padding: 40px 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Waves Background Container */
+.waves-bg-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+/* Ensure app-waves fills the container */
+app-waves {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.forum-details-container>*:not(.waves-bg-container) {
+    position: relative;
+    z-index: 1;
+}
+
+/* Loading State */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    color: var(--gray-text);
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid var(--gray-border);
+    border-top-color: var(--cyan-main);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Not Found State */
+.not-found {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--gray-text);
+}
+
+.not-found svg {
+    margin-bottom: 24px;
+    opacity: 0.4;
+}
+
+.not-found h3 {
+    margin: 0 0 12px 0;
+    font-size: 24px;
+    color: var(--gray-dark);
+    font-weight: 700;
+}
+
+.not-found p {
+    margin: 0 0 24px 0;
+    font-size: 16px;
+}
+
+.btn-back-simple {
+    background: var(--cyan-main);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: var(--radius);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-back-simple:hover {
+    background: var(--cyan-dark);
+    transform: translateY(-2px);
+}
+
+/* Forum Content */
+.forum-content {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Header Section */
+.header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.btn-back {
+    background: none;
+    border: none;
+    color: var(--gray-text);
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    transition: all 0.2s;
+    font-size: 15px;
+}
+
+.btn-back:hover {
+    background: rgba(0, 0, 0, 0.03);
+    color: var(--cyan-main);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-edit,
+.btn-delete {
+    border: none;
+    padding: 10px 20px;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-edit {
+    background: var(--cyan-main);
+    color: white;
+    box-shadow: var(--shadow-heavy);
+}
+
+.btn-edit:hover {
+    background: var(--cyan-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(139, 92, 246, 0.25);
+}
+
+.btn-delete {
+    background: white;
+    color: #ef4444;
+    border: 2px solid #ef4444;
+}
+
+.btn-delete:hover {
+    background: #ef4444;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Forum Card */
+.forum-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 40px;
+    box-shadow: var(--shadow-soft);
+    border-top: 4px solid var(--cyan-main);
+}
+
+/* Title Section */
+.title-section {
+    margin-bottom: 30px;
+    padding-bottom: 24px;
+    border-bottom: 2px solid var(--gray-border);
+}
+
+.title-section h1 {
+    margin: 0 0 16px 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--gray-dark);
+    line-height: 1.3;
+}
+
+.description {
+    margin: 0;
+    font-size: 18px;
+    color: var(--gray-text);
+    line-height: 1.6;
+    font-style: italic;
+}
+
+/* Meta Information */
+.meta-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: var(--cyan-bg);
+    border-radius: var(--radius);
+    border-left: 4px solid var(--cyan-main);
+    align-items: center;
+}
+
+.author-avatar-small {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Interactive Reaction Buttons */
+.reactions-interactive {
+    margin-left: auto;
+    display: flex;
+    gap: 12px;
+}
+
+.reaction-btn-details {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1px solid var(--gray-border);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-text);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.reaction-btn-details:hover {
+    background: var(--gray-bg);
+    border-color: var(--cyan-main);
+    color: var(--cyan-main);
+}
+
+.reaction-btn-details svg {
+    transition: transform 0.2s;
+}
+
+.reaction-btn-details.active-like {
+    color: var(--cyan-main);
+    border-color: var(--cyan-main);
+    background: var(--cyan-bg);
+}
+
+.reaction-btn-details.active-dislike {
+    color: #ef4444;
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.reaction-btn-details.is-reacting svg {
+    animation: react-pop 0.5s ease;
+}
+
+@keyframes react-pop {
+    0% {
+        transform: scale(1);
+    }
+
+    25% {
+        transform: scale(1.3);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Content Section */
+.content-section {
+    margin-bottom: 40px;
+}
+
+.content-section h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gray-dark);
+    margin-bottom: 16px;
+}
+
+.content-text {
+    font-size: 16px;
+    color: var(--gray-dark);
+    line-height: 1.8;
+    white-space: pre-wrap;
+}
+
+/* Comments Section */
+.comments-section {
+    padding-top: 40px;
+    border-top: 2px solid var(--gray-border);
+}
+
+.comments-section h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gray-dark);
+    margin-bottom: 24px;
+}
+
+/* Comment Form */
+.comment-form {
+    margin-bottom: 40px;
+}
+
+.comment-form textarea {
+    width: 100%;
+    padding: 16px;
+    border: 2px solid var(--gray-border);
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--gray-dark);
+    margin-bottom: 12px;
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+
+.comment-form textarea:focus {
+    outline: none;
+    border-color: var(--cyan-main);
+}
+
+.btn-add-comment {
+    background: var(--cyan-main);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: var(--radius);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-add-comment:hover:not(:disabled) {
+    background: var(--cyan-dark);
+    transform: translateY(-1px);
+}
+
+.btn-add-comment:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Comments List */
+.comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.comment-item {
+    display: flex;
+    gap: 16px;
+    padding: 20px;
+    background: var(--gray-bg);
+    border-radius: var(--radius);
+    border: 1px solid var(--gray-border);
+    transition: transform 0.2s;
+}
+
+.comment-item:hover {
+    transform: translateX(4px);
+    border-color: var(--cyan-main);
+}
+
+.comment-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.comment-content {
+    flex: 1;
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.comment-author {
+    font-weight: 700;
+    color: var(--gray-dark);
+    font-size: 15px;
+}
+
+.comment-date {
+    font-size: 13px;
+    color: var(--gray-500);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-badge.pending {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+
+.status-badge.rejected {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.comment-text {
+    margin: 0;
+    font-size: 15px;
+    color: var(--gray-dark);
+    line-height: 1.6;
+}
+
+.no-comments {
+    text-align: center;
+    padding: 40px;
+    color: var(--gray-text);
+    font-style: italic;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: var(--radius);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .forum-card {
+        padding: 24px;
+    }
+
+    .title-section h1 {
+        font-size: 24px;
+    }
+
+    .meta-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .reactions-interactive {
+        margin-left: 0;
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .header-section {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    .action-buttons {
+        width: 100%;
+    }
+
+    .btn-edit,
+    .btn-delete {
+        flex: 1;
+        justify-content: center;
+    }
+}

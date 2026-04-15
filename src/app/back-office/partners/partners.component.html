@@ -1,0 +1,166 @@
+<div class="partners-management-container">
+    <!-- Background Design Elements -->
+    <div class="triangle-bg triangle-1"></div>
+    <div class="triangle-bg triangle-2"></div>
+    <div class="triangle-bg triangle-3"></div>
+
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">Partner Applications</h1>
+            <p class="page-subtitle">Manage and review incoming partnership requests</p>
+        </div>
+        <div class="stats-badge">
+            <span class="count">{{partners.length}}</span>
+            <span class="label">Total Requests</span>
+        </div>
+    </div>
+
+    <div class="loading-state" *ngIf="isLoading">
+        <div class="loader"></div>
+        <p>Loading applications...</p>
+    </div>
+
+    <div class="error-state" *ngIf="errorMessage">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>{{errorMessage}}</p>
+        <button (click)="loadPartners()" class="btn-retry">Retry</button>
+    </div>
+
+    <div class="partners-grid" *ngIf="!isLoading && !errorMessage">
+        <div class="partner-card" *ngFor="let partner of partners" (click)="selectPartner(partner)">
+            <!-- Triangle Decor in Card -->
+            <div class="card-triangle"></div>
+
+            <div class="card-header">
+                <div class="org-icon logo-img">
+                    <img [src]="getLogoUrl(partner)" [alt]="partner.organizationName"
+                        onerror="this.src='images/avatar.jpg'">
+                </div>
+                <div class="org-info">
+                    <h3>{{partner.organizationName}}</h3>
+                    <span class="legal-form">{{partner.legalForm}}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="info-row">
+                    <i class="fas fa-envelope"></i>
+                    <span>{{partner.email}}</span>
+                </div>
+                <div class="info-row">
+                    <i class="fas fa-handshake"></i>
+                    <span class="partnership-type">{{partner.partnershipType}}</span>
+                </div>
+                <div class="card-actions">
+                    <button class="action-btn view" (click)="selectPartner(partner)">👁️</button>
+                    <button class="action-btn accept" (click)="approvePartner(partner.id!)" title="Accept">✅</button>
+                    <button class="action-btn reject" (click)="rejectPartner(partner.id!)" title="Reject">❌</button>
+                    <button class="action-btn delete" (click)="deletePartner(partner.id!)" title="Delete">🗑️</button>
+                </div>
+            </div>
+            <!-- Status Badge -->
+            <div class="status-badge" [ngClass]="getStatusClass(partner.status)">
+                {{partner.status || 'PENDING'}}
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="partners.length === 0">
+            <i class="fas fa-folder-open"></i>
+            <p>No partner applications found.</p>
+        </div>
+    </div>
+
+    <!-- Detailed Modal -->
+    <div class="modal-overlay" *ngIf="selectedPartner" (click)="closeDetails()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <div class="header-main">
+                    <div class="modal-org-icon logo-img">
+                        <img [src]="getLogoUrl(selectedPartner)" [alt]="selectedPartner.organizationName"
+                            onerror="this.src='images/avatar.jpg'">
+                    </div>
+                    <div>
+                        <h2>{{selectedPartner.organizationName}}</h2>
+                        <span class="modal-legal-form">{{selectedPartner.legalForm}}</span>
+                    </div>
+                </div>
+                <button class="close-modal" (click)="closeDetails()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="detail-section">
+                    <h3><i class="fas fa-info-circle"></i> General Information</h3>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Status</label>
+                            <span class="status-badge" [ngClass]="getStatusClass(selectedPartner.status)">
+                                {{selectedPartner.status || 'PENDING'}}
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Partnership Type</label>
+                            <span class="val">{{selectedPartner.partnershipType}}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Submitted On</label>
+                            <span class="val">{{selectedPartner.createdAt | date:'medium'}}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3><i class="fas fa-address-card"></i> Contact Details</h3>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Email Address</label>
+                            <span class="val">{{selectedPartner.email}}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Phone Number</label>
+                            <span class="val">{{selectedPartner.phone}}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Website</label>
+                            <a [href]="selectedPartner.website" target="_blank"
+                                class="val-link">{{selectedPartner.website}} <i
+                                    class="fas fa-external-link-alt"></i></a>
+                        </div>
+                        <div class="detail-item full-width">
+                            <label>Location</label>
+                            <span class="val">{{selectedPartner.address}}, {{selectedPartner.city}}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Business Registration</label>
+                            <a (click)="viewDocument(selectedPartner.id!, 'BUSINESS_REGISTRATION')"
+                                class="val-link doc-link">
+                                <i class="fas fa-file-pdf"></i> View PDF
+                            </a>
+                        </div>
+                        <div class="detail-item">
+                            <label>Company Profile</label>
+                            <a (click)="viewDocument(selectedPartner.id!, 'COMPANY_PROFILE')" class="val-link doc-link">
+                                <i class="fas fa-file-pdf"></i> View PDF
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="modal-btn delete-btn" (click)="deletePartner(selectedPartner.id!); closeDetails()">
+                    🗑️ Delete
+                </button>
+                <div class="modal-actions-right">
+                    <button class="modal-btn reject-btn" (click)="rejectPartner(selectedPartner.id!)">
+                        ❌ Reject
+                    </button>
+                    <button class="modal-btn accept-btn" (click)="approvePartner(selectedPartner.id!)">
+                        ✅ Accept
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

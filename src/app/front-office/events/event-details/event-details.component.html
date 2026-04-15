@@ -1,0 +1,186 @@
+<div class="event-details-container" *ngIf="!loading && event">
+    <!-- Header Section -->
+    <div class="header-section">
+        <button class="btn-back" (click)="goBack()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            Back to Events
+        </button>
+        <div class="header-actions">
+            <button class="btn-edit" (click)="editEvent()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke-width="2" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-width="2" />
+                </svg>
+                Edit
+            </button>
+            <button class="btn-delete" (click)="deleteEvent()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                        stroke-width="2" />
+                </svg>
+                Delete
+            </button>
+        </div>
+    </div>
+
+    <!-- Event Image -->
+    <div class="event-image-hero" *ngIf="event.imageUrl">
+        <img [src]="event.imageUrl" [alt]="event.name" />
+        <div class="image-overlay">
+            <div class="event-category-badge">{{ event.category }}</div>
+            <div class="event-status-badge" *ngIf="event.status" [ngClass]="event.status.toLowerCase()">{{ event.status
+                }}</div>
+        </div>
+    </div>
+
+    <!-- Event Content -->
+    <div class="event-content">
+        <!-- Main Info Section -->
+        <div class="main-info">
+            <h1 class="event-title">{{ event.name }}</h1>
+            <div class="countdown" *ngIf="countdownText">{{ countdownText }}</div>
+
+            <div class="event-stats-row">
+                <div class="stat-pill">
+                    <span class="stat-icon">👥</span>
+                    <span class="stat-text">{{ event.currentParticipants || 0 }} / {{ event.maxParticipants || '∞'
+                        }}</span>
+                </div>
+                <div class="stat-pill">
+                    <span class="stat-icon">📅</span>
+                    <span class="stat-text">{{ event.date | date:'medium' }}</span>
+                </div>
+                <!-- Always-visible status badge -->
+                <div class="stat-pill status-pill" *ngIf="event.status"
+                    [ngClass]="'status-' + event.status.toLowerCase()">
+                    <span class="stat-icon">{{ getStatusIcon() }}</span>
+                    <span class="stat-text">{{ event.status }}</span>
+                </div>
+            </div>
+
+            <p class="event-description">{{ event.description }}</p>
+
+            <!-- Participate CTA -->
+            <div class="participation-cta">
+                <button class="btn-primary" (click)="toggleParticipation()" [disabled]="isParticipationDisabled()"
+                    [class.btn-full]="isParticipationDisabled()">
+                    {{ showParticipation ? 'Close Participation' : getParticipateLabel() }}
+                </button>
+                <p class="spots-left" *ngIf="!isParticipationDisabled() && event.maxParticipants">
+                    {{ event.maxParticipants! - (event.currentParticipants || 0) }} spot(s) remaining
+                </p>
+            </div>
+
+            <!-- Participation Modal Overlay -->
+            <div class="modal-overlay" *ngIf="showParticipation" (click)="toggleParticipation()"></div>
+            <div class="modal" *ngIf="showParticipation">
+                <div class="modal-header">
+                    <h3>Participate in {{ event.name }}</h3>
+                    <button class="modal-close" (click)="toggleParticipation()" aria-label="Close">×</button>
+                </div>
+                <div class="modal-body">
+                    <form [formGroup]="participationForm" (ngSubmit)="submitParticipation()">
+                        <div class="form-group">
+                            <label for="name">Name</label>
+                            <input id="name" type="text" formControlName="name" placeholder="Your name" />
+                            <div class="error"
+                                *ngIf="participationForm.get('name')?.touched && participationForm.get('name')?.invalid">
+                                Name is required (min 2 characters).
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input id="email" type="email" formControlName="email" placeholder="you@example.com" />
+                            <div class="error"
+                                *ngIf="participationForm.get('email')?.touched && participationForm.get('email')?.invalid">
+                                A valid email is required.
+                            </div>
+                        </div>
+                        <button class="btn-primary modal-submit" type="submit"
+                            [disabled]="submitting">Participate</button>
+                    </form>
+                    <p class="success" *ngIf="apiMessage">{{ apiMessage }}</p>
+                    <p class="error" *ngIf="apiError">{{ apiError }}</p>
+                    <button class="btn-primary" type="button" *ngIf="apiMessage && lastParticipation"
+                        (click)="downloadParticipationPdf()">
+                        Download confirmation PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Event Meta Info -->
+            <div class="meta-info-grid">
+                <div class="meta-card">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-width="2" />
+                        <path d="M16 2v4M8 2v4M3 10h18" stroke-width="2" />
+                    </svg>
+                    <div class="meta-content">
+                        <span class="meta-label">Date & Time</span>
+                        <span class="meta-label">{{ formatDate(event.date) }}</span>
+                    </div>
+                </div>
+
+                <div class="meta-card">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke-width="2" />
+                        <circle cx="12" cy="10" r="3" stroke-width="2" />
+                    </svg>
+                    <div class="meta-content">
+                        <span class="meta-label">Location</span>
+                        <span class="meta-value">{{ event.location }}</span>
+                    </div>
+                </div>
+
+                <div class="meta-card">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-width="2" />
+                        <circle cx="9" cy="7" r="4" stroke-width="2" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-width="2" />
+                    </svg>
+                    <div class="meta-content">
+                        <span class="meta-label">Attendees</span>
+                        <span class="meta-value">{{ event.attendees }} people</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Details -->
+            <div class="details-section">
+                <h2>About This Event</h2>
+                <p class="details-text">{{ event.details }}</p>
+            </div>
+
+            <!-- Forum Discussion Link -->
+            <div class="forum-link-section" *ngIf="event.forumTopicId">
+                <a [routerLink]="['/forum', event.forumTopicId]" class="btn-forum-link">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-width="2" />
+                    </svg>
+                    Discuss Event
+                </a>
+            </div>
+        </div>
+
+        <!-- Map Section -->
+        <div class="map-section">
+            <h2>Event Location</h2>
+            <div id="map" class="map-container"></div>
+            <p class="map-address">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke-width="2" />
+                    <circle cx="12" cy="10" r="3" stroke-width="2" />
+                </svg>
+                {{ event.location }}
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Loading State -->
+<div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading event details...</p>
+</div>

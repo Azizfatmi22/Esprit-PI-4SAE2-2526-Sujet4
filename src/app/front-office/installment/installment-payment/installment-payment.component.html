@@ -1,0 +1,249 @@
+<div class="installment-container">
+  <div class="header">
+    <button (click)="goBack()" class="btn-back">← Retour</button>
+    <h1>Paiement en plusieurs fois</h1>
+  </div>
+
+  <!-- Sélection du plan -->
+  <div class="plan-selector">
+    
+    <!-- Plan 3x -->
+    <div class="plan-card" 
+         [class.selected]="selectedPlan === 3"
+         (click)="selectPlan(3)">
+      <div class="plan-badge free">SANS FRAIS</div>
+      <h2>3x</h2>
+      <p class="plan-amount">{{ planPreview?.perInstallment | currency:'TND':'symbol':'1.2-2' }} / mois</p>
+      <p class="plan-detail">0% de frais</p>
+      <ul class="plan-features">
+        <li>Paiement immédiat de la 1ère échéance</li>
+        <li>2 paiements mensuels suivants</li>
+        <li>Aucun frais supplémentaire</li>
+      </ul>
+    </div>
+
+    <!-- Plan 6x -->
+    <div class="plan-card" 
+         [class.selected]="selectedPlan === 6"
+         (click)="selectPlan(6)">
+      <div class="plan-badge fees">+5% FRAIS</div>
+      <h2>6x</h2>
+      <p class="plan-amount">{{ planPreview?.perInstallment | currency:'TND':'symbol':'1.2-2' }} / mois</p>
+      <p class="plan-detail">5% de frais inclus</p>
+      <ul class="plan-features">
+        <li>Paiement immédiat de la 1ère échéance</li>
+        <li>5 paiements mensuels suivants</li>
+        <li>Frais de {{ planPreview?.feeAmount | currency:'TND':'symbol':'1.2-2' }}</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Récapitulatif -->
+  <div class="summary-box" *ngIf="planPreview">
+    <h3>Récapitulatif</h3>
+    <div class="summary-row">
+      <span>Montant total des cours</span>
+      <span>{{ planPreview.totalAmount | currency:'TND':'symbol':'1.2-2' }}</span>
+    </div>
+    <div class="summary-row" *ngIf="planPreview.feePercentage > 0">
+      <span>Frais ({{ planPreview.feePercentage }}%)</span>
+      <span class="fee-amount">+ {{ planPreview.feeAmount | currency:'TND':'symbol':'1.2-2' }}</span>
+    </div>
+    <div class="summary-row total">
+      <span><strong>Total à payer</strong></span>
+      <span><strong>{{ planPreview.totalWithFee | currency:'TND':'symbol':'1.2-2' }}</strong></span>
+    </div>
+
+    <!-- ✅ FIX : utiliser installmentRange au lieu de [].constructor() -->
+    <div class="installment-schedule">
+      <h4>Calendrier des paiements</h4>
+      <div class="schedule-item" *ngFor="let idx of installmentRange">
+        <span class="schedule-num">Échéance {{ idx + 1 }}</span>
+        <span class="schedule-date">
+          {{ idx === 0 ? "Aujourd'hui" : "Dans " + (idx * 30) + " jours" }}
+        </span>
+        <span class="schedule-amount">
+          {{ planPreview.perInstallment | currency:'TND':'symbol':'1.2-2' }}
+        </span>
+        <span class="schedule-badge" [class.paid]="idx === 0">
+          {{ idx === 0 ? 'Maintenant' : 'A venir' }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Méthode de paiement -->
+  <div class="payment-method-section">
+    <h3>Méthode de paiement</h3>
+    <div class="method-options">
+      <button [class.active]="selectedMethod === 'FLOUCI'" 
+              (click)="selectedMethod = 'FLOUCI'">Flouci</button>
+      <button [class.active]="selectedMethod === 'WAFA_CASH'" 
+              (click)="selectedMethod = 'WAFA_CASH'">Wafa Cash</button>
+      <button [class.active]="selectedMethod === 'BAKCHICH'" 
+              (click)="selectedMethod = 'BAKCHICH'">Bakchich</button>
+    </div>
+    <input 
+      type="tel" 
+      [(ngModel)]="phoneNumber" 
+      placeholder="Numéro de téléphone"
+      class="phone-input"
+    >
+  </div>
+
+  <!-- Avertissement accès -->
+  <div class="warning-box">
+    <strong>Important :</strong> En cas d'échéance manquée, votre accès aux cours sera 
+    automatiquement suspendu jusqu'au règlement.
+  </div>
+
+  <!-- Bouton de confirmation -->
+  <button 
+    class="btn-confirm" 
+    (click)="confirmInstallmentPayment()"
+    [disabled]="processing">
+    <span *ngIf="!processing">Confirmer le paiement {{ selectedPlan }}x</span>
+    <span *ngIf="processing">Traitement en cours...</span>
+  </button>
+
+</div>
+<!-- Ajouter après le formulaire principal -->
+
+<!-- ===== OVERLAY OTP FLOUCI ===== -->
+<div class="otp-overlay" *ngIf="showOtpScreen">
+  <div class="otp-card">
+    <div class="otp-header">
+      <span class="otp-logo">💜</span>
+      <h2>Vérification Flouci</h2>
+      <p>Code envoyé au <strong>{{ phoneNumber }}</strong></p>
+      <p class="otp-plan-info">
+        Plan {{ selectedPlan }}x — 
+        {{ planPreview?.perInstallment | currency:'TND':'symbol':'1.2-2' }} / mois
+      </p>
+    </div>
+    <div class="otp-input-wrapper">
+      <input
+        type="text"
+        [(ngModel)]="otpCode"
+        maxlength="6"
+        placeholder="_ _ _ _ _ _"
+        class="otp-input"
+        (keyup.enter)="confirmOtp()">
+    </div>
+    <div class="otp-timer" [class.expired]="canResend">
+      <span *ngIf="!canResend">⏱ Code valable {{ timerDisplay }}</span>
+      <span *ngIf="canResend">⚠️ Code expiré</span>
+    </div>
+    <button class="btn-confirm-otp" (click)="confirmOtp()" [disabled]="processing">
+      <span *ngIf="!processing">✅ Confirmer le plan</span>
+      <span *ngIf="processing">Vérification...</span>
+    </button>
+    <button class="btn-resend" (click)="resendOtp()" [disabled]="!canResend">
+      🔄 Renvoyer le code
+    </button>
+    <button class="btn-cancel-otp" (click)="showOtpScreen = false">
+      Annuler
+    </button>
+  </div>
+</div>
+<!-- ===== OVERLAY WAFA CASH ===== -->
+<div class="wafa-overlay" *ngIf="showWafaConfirmScreen">
+  <div class="wafa-card">
+    <div class="wafa-header">
+      <span class="wafa-logo">💚</span>
+      <h2>Confirmation Wafa Cash</h2>
+      <p>Paiement depuis le compte <strong>{{ phoneNumber }}</strong></p>
+    </div>
+
+    <div class="wafa-balance-display">
+      <div class="balance-row">
+        <span>💰 Solde disponible</span>
+        <strong class="balance-ok">
+          {{ wafaBalance | currency:'TND':'symbol':'1.2-2' }}
+        </strong>
+      </div>
+      <div class="balance-row highlight">
+        <span>📅 1ère mensualité (maintenant)</span>
+        <strong>
+          {{ planPreview?.perInstallment | currency:'TND':'symbol':'1.2-2' }}
+        </strong>
+      </div>
+      <div class="balance-row">
+        <span>📋 Plan choisi</span>
+        <strong>{{ selectedPlan }}x mensualités</strong>
+      </div>
+      <div class="balance-row total-row">
+        <span>💳 Total avec frais</span>
+        <strong>
+          {{ planPreview?.totalWithFee | currency:'TND':'symbol':'1.2-2' }}
+        </strong>
+      </div>
+    </div>
+
+    <div class="wafa-info-box">
+      ℹ️ Seule la <strong>1ère mensualité</strong> sera débitée maintenant.
+      Les suivantes seront prélevées automatiquement chaque mois.
+    </div>
+
+    <button class="btn-confirm-wafa" 
+            (click)="confirmWafaInstallment()" 
+            [disabled]="processing">
+      <span *ngIf="!processing">
+        ✅ Confirmer — débiter 
+        {{ planPreview?.perInstallment | currency:'TND':'symbol':'1.2-2' }}
+      </span>
+      <span *ngIf="processing">Traitement en cours...</span>
+    </button>
+
+    <button class="btn-cancel-wafa" 
+            (click)="showWafaConfirmScreen = false"
+            [disabled]="processing">
+      Annuler
+    </button>
+  </div>
+</div>
+
+<!-- ===== OVERLAY BAKCHICH ===== -->
+<div class="bakchich-overlay" *ngIf="showBakchichScreen">
+  <div class="bakchich-card">
+    <div class="bakchich-header">
+      <span class="bakchich-logo">💙</span>
+      <h2>Code de paiement Bakchich</h2>
+      <p>Présentez ce code en agence Bakchich</p>
+    </div>
+    <div class="bakchich-code-box">
+      <p class="code-label">Votre code</p>
+      <p class="code-value">{{ bakchichCode }}</p>
+    </div>
+    <div class="qr-code-box">
+      <qrcode
+        [qrdata]="bakchichQrData"
+        [width]="200"
+        [errorCorrectionLevel]="'M'">
+      </qrcode>
+      <p class="qr-hint">📱 Scannez en agence Bakchich</p>
+    </div>
+    <div class="bakchich-details">
+      <div class="detail-row">
+        <span>💰 Montant total</span>
+        <strong>{{ bakchichAmount | currency:'TND':'symbol':'1.2-2' }}</strong>
+      </div>
+      <div class="detail-row">
+        <span>📅 Plan</span>
+        <strong>{{ selectedPlan }} mensualités</strong>
+      </div>
+      <div class="detail-row">
+        <span>⏰ Valable jusqu'à</span>
+        <strong>{{ bakchichExpiresAt | date:'dd/MM/yyyy HH:mm' }}</strong>
+      </div>
+    </div>
+    <div class="bakchich-warning">
+      ⚠️ Ce code est valable <strong>24 heures</strong> seulement.
+      Votre plan sera activé après confirmation en agence.
+    </div>
+    <button class="btn-bakchich-close"
+            (click)="showBakchichScreen = false; router.navigate(['/cart'])">
+      ✅ J'ai noté mon code
+    </button>
+  </div>
+</div>

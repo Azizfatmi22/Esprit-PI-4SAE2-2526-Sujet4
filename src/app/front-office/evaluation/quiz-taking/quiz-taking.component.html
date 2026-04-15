@@ -1,0 +1,124 @@
+<div class="loading-state" *ngIf="isLoading">
+  <div class="loader"></div>
+  <p>Préparation de votre session...</p>
+</div>
+
+<div class="status-overlay" *ngIf="!isLoading && accessStatus === 'WAITING'">
+  <div class="status-card">
+    <div class="status-icon waiting">⏳</div>
+    <h2>L'examen n'est pas encore ouvert</h2>
+    <p>Ce quiz sera disponible dans :</p>
+    <div class="countdown-display">{{ formatTime(timeUntilStart) }}</div>
+    <div class="time-info">
+      Début prévu : <strong>{{ startTime | date: "HH:mm" }}</strong>
+    </div>
+    <button class="btn-secondary" routerLink="/dashboard">
+      Retour au Dashboard
+    </button>
+  </div>
+</div>
+
+<div class="status-overlay" *ngIf="!isLoading && accessStatus === 'EXPIRED'">
+  <div class="status-card">
+    <div class="status-icon expired">🚫</div>
+    <h2>Session Expirée</h2>
+    <p>Le temps imparti pour accéder à cet examen est terminé.</p>
+    <button class="btn-primary" routerLink="/dashboard">Quitter</button>
+  </div>
+</div>
+
+<div
+  class="quiz-taking-container"
+  *ngIf="!isLoading && accessStatus === 'AUTHORIZED' && quiz"
+>
+  <header class="quiz-header">
+    <h1 class="quiz-title">{{ quiz.title }}</h1>
+    <div class="timer-container" [class]="getTimerColor()">
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+      >
+        <circle cx="12" cy="12" r="10" stroke-width="2" />
+        <polyline points="12 6 12 12 16 14" stroke-width="2" />
+      </svg>
+      <span class="timer-value">{{ formatTime(remainingTime) }}</span>
+      <div class="timer-progress">
+        <div class="progress-bar" [style.width.%]="timePercentage"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="quiz-layout">
+    <aside class="question-sidebar">
+      <div class="sidebar-header">
+        <h3>Questions</h3>
+        <span class="answered-count"
+          >{{ getAnsweredCount() }}/{{ quiz.questions.length }}</span
+        >
+      </div>
+      <div class="questions-nav">
+        <div
+          *ngFor="let question of quiz.questions; let i = index"
+          class="question-dot"
+          [class.active]="i === currentIndex"
+          [class.answered]="isQuestionAnswered(question.id)"
+          (click)="goToQuestion(i)"
+        >
+          <span class="dot-number">{{ i + 1 }}</span>
+        </div>
+      </div>
+      <button class="btn-submit-sidebar" (click)="confirmSubmit()">
+        Terminer l'examen
+      </button>
+    </aside>
+
+    <main class="question-area">
+      <div class="question-header">
+        <span class="question-number"
+          >Question {{ currentIndex + 1 }} / {{ quiz.questions.length }}</span
+        >
+        <span class="question-points"
+          >{{ quiz.questions[currentIndex].points }} points</span
+        >
+      </div>
+
+      <div class="question-text">
+        <h2>{{ quiz.questions[currentIndex].question }}</h2>
+      </div>
+
+      <div class="answers-area">
+        <label>Choisissez votre réponse :</label>
+        <div class="answers-grid">
+          <div
+            *ngFor="
+              let answer of quiz.questions[currentIndex].answers;
+              let i = index
+            "
+            class="answer-option"
+            [class.selected]="getCurrentAnswer() === answer.id"
+            (click)="selectAnswer(answer.id)"
+          >
+            <div class="answer-letter">{{ getAnswerLetter(i) }}</div>
+            <div class="answer-text">{{ answer.text }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="navigation-bar">
+        <button
+          class="btn-nav prev"
+          [disabled]="currentIndex === 0"
+          (click)="previousQuestion()"
+        >
+          Précédent
+        </button>
+        <button class="btn-nav next" (click)="nextQuestion()">
+          {{ isLastQuestion() ? "Soumettre" : "Suivant" }}
+        </button>
+      </div>
+    </main>
+  </div>
+</div>

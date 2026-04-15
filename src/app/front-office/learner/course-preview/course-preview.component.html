@@ -1,0 +1,242 @@
+<div class="course-preview-page">
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading course...</p>
+  </div>
+
+  <div *ngIf="!loading && errorMessage" class="error-container">
+    <div class="error-icon">⚠️</div>
+    <h3>{{ errorMessage }}</h3>
+    <button class="btn-back" (click)="goBack()">Back to Catalog</button>
+  </div>
+
+  <div *ngIf="!loading && course as currentCourse" class="course-content">
+    <section class="course-header">
+      <div class="header-overlay"></div>
+      <div class="header-content">
+        <button class="btn-back-header" (click)="goBack()">
+          <span class="back-arrow">←</span> Back to Catalog
+        </button>
+
+        <div class="header-main">
+          <div class="header-left">
+            <div class="course-meta-badges">
+              <span class="level-badge" [ngClass]="getLevelBadgeClass(currentCourse.level)">
+                {{ getLevelLabel(currentCourse.level) }}
+              </span>
+            </div>
+
+            <h1 class="course-title">{{ currentCourse.title }}</h1>
+            <p class="course-description">{{ currentCourse.description }}</p>
+
+            <div class="course-stats">
+              <div class="stat-item">
+                <span class="stat-icon">⭐</span>
+                <span class="stat-value">{{ currentCourse.rating || 'N/A' }}</span>
+                <span class="stat-label">Rating</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-icon">👥</span>
+                <span class="stat-value">{{ currentCourse.enrolledStudents || 0 }}</span>
+                <span class="stat-label">Students</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-icon">📑</span>
+                <span class="stat-value">{{ currentCourse.chapters?.length || 0 }}</span>
+                <span class="stat-label">Chapters</span>
+              </div>
+              <div class="stat-item" *ngIf="currentCourse.durationMinutes">
+                <span class="stat-icon">⏱️</span>
+                <span class="stat-value">{{ formatDuration(currentCourse.durationMinutes) }}</span>
+                <span class="stat-label">Duration</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="header-right">
+            <div class="enrollment-card">
+              <div class="price-section">
+                <span class="price-label">Course Price</span>
+                <span class="price-value">{{ currentCourse.price === 0 ? 'Free' : currentCourse.price + ' dt' }}</span>
+              </div>
+
+          <button class="btn-enroll-large" (click)="enrollInCourse()">
+                  Enroll Now
+                </button>
+              <button class="btn-launch-player" (click)="startEnrolledStudentCourse()">
+                Start Learning (Learner: {{ getCurrentLearnerId() }} | Course: {{ currentCourse.id }})
+              </button>
+
+              <div class="enrollment-info">
+                <div class="info-item">
+                  <span class="info-icon">✓</span>
+                  <span>Full lifetime access</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-icon">✓</span>
+                  <span>Certificate of completion</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-icon">✓</span>
+                  <span>30-day money-back guarantee</span>
+                </div>
+              </div>
+
+              <div class="trust-row">
+                <span>Secure checkout</span>
+                <span>Instant access</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="main-content">
+      <div class="content-container">
+        <aside class="curriculum-sidebar">
+          <div class="sidebar-header">
+            <h3>Course Curriculum</h3>
+            <span class="chapter-count">{{ currentCourse.chapters?.length || 0 }} Chapters</span>
+          </div>
+
+          <div class="curriculum-progress">
+            <div class="progress-label-row">
+              <span>Free preview progress</span>
+              <span>{{ getCurriculumProgress() }}</span>
+            </div>
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill" [style.width.%]="getCurriculumProgressWidth()"></div>
+            </div>
+          </div>
+
+          <div class="chapters-list">
+            <div
+              *ngFor="let chapter of currentCourse.chapters; let i = index"
+              class="chapter-item"
+              [class.expanded]="isChapterExpanded(chapter.id!)"
+              [class.selected]="selectedChapter?.id === chapter.id"
+            >
+              <div class="chapter-header" (click)="selectChapter(chapter)">
+                <div class="chapter-info">
+                  <span class="chapter-number">{{ i + 1 }}</span>
+                  <div class="chapter-details">
+                    <h4 class="chapter-title">{{ chapter.title }}</h4>
+                    <p class="chapter-description" *ngIf="chapter.description">{{ chapter.description }}</p>
+                    <span class="content-count">{{ chapter.contentBlocks?.length || 0 }} lessons</span>
+                  </div>
+                </div>
+                <span class="expand-icon">{{ isChapterExpanded(chapter.id!) ? '▼' : '▶' }}</span>
+              </div>
+
+              <div class="content-blocks-list" *ngIf="isChapterExpanded(chapter.id!)">
+                <div
+                  *ngFor="let block of chapter.contentBlocks; let j = index"
+                  class="content-block-item"
+                  [class.selected]="selectedContentBlock?.id === block.id"
+                  [class.locked]="isContentLocked(i, j)"
+                  (click)="selectContentBlock(block, i, j)"
+                >
+                  <span class="block-icon">{{ getContentTypeIcon(block.type) }}</span>
+                  <div class="block-info">
+                    <span class="block-title">{{ block.title || 'Lesson ' + (j + 1) }}</span>
+                    <span class="block-type">{{ block.type }}</span>
+                  </div>
+                  <span class="lock-icon" *ngIf="isContentLocked(i, j)">🔒</span>
+                  <span class="free-badge" *ngIf="!isContentLocked(i, j)">FREE</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sidebar-resources">
+            <div class="resources-header">
+              <h4>📦 Course Resources</h4>
+              <span class="resources-count">{{ currentCourse.attachments?.length || 0 }} files</span>
+            </div>
+
+            <div class="resources-list" *ngIf="currentCourse.attachments?.length; else noResources">
+              <div class="resource-item" *ngFor="let attachment of currentCourse.attachments">
+                <span class="resource-lock">🔒</span>
+                <span class="resource-name">{{ attachment.fileName }}</span>
+              </div>
+            </div>
+
+            <ng-template #noResources>
+              <div class="resources-locked-message">
+                <div class="lock-icon-small">🔒</div>
+                <p>Downloadable resources available after enrollment</p>
+              </div>
+            </ng-template>
+          </div>
+        </aside>
+
+        <main class="content-display">
+          <div *ngIf="!selectedContentBlock" class="no-content-selected">
+            <div class="placeholder-icon">📚</div>
+            <h3>Select a lesson to start learning</h3>
+            <p>Choose a chapter from the curriculum on the left to begin</p>
+          </div>
+
+          <div *ngIf="selectedContentBlock as currentBlock" class="content-viewer">
+            <div class="content-header">
+              <div class="content-title-section">
+                <span class="content-type-badge">{{ getContentTypeIcon(currentBlock.type) }} {{ currentBlock.type }}</span>
+                <h2 class="content-title">{{ currentBlock.title || 'Lesson Content' }}</h2>
+                <p class="lesson-counter">{{ getLessonCounter() }}</p>
+              </div>
+
+              <div class="lesson-nav">
+                <button class="btn-lesson-nav" (click)="goToPreviousLesson()" [disabled]="!hasPreviousLesson()">
+                  ← Previous
+                </button>
+                <button class="btn-lesson-nav btn-lesson-nav-primary" (click)="goToNextLesson()" [disabled]="!hasNextLesson()">
+                  Next →
+                </button>
+              </div>
+            </div>
+
+            <div class="content-body">
+              <div *ngIf="currentBlock.type === ContentType.TEXT" class="text-content">
+                <div class="text-container" [innerHTML]="currentBlock.data"></div>
+              </div>
+
+              <div *ngIf="currentBlock.type === ContentType.IMAGE" class="image-content">
+                <img
+                  [src]="getContentUrl(currentBlock)"
+                  [alt]="currentBlock.title || 'Image'"
+                  class="content-image"
+                  (error)="onImageError($event)"
+                />
+              </div>
+
+              <div *ngIf="currentBlock.type === ContentType.VIDEO" class="video-content">
+                <video [src]="getContentUrl(currentBlock)" controls class="content-video">
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+
+              <div *ngIf="currentBlock.type === ContentType.PDF" class="pdf-content">
+                <div class="pdf-viewer-placeholder">
+                  <div class="pdf-icon">📄</div>
+                  <h3>PDF Document</h3>
+                  <p>{{ currentBlock.title || 'Document' }}</p>
+                  <a [href]="getContentUrl(currentBlock)" target="_blank" class="btn-view-pdf">Open PDF in New Tab</a>
+                </div>
+              </div>
+
+              <div *ngIf="currentBlock.type === ContentType.FILE" class="file-content">
+                <div class="file-download-card">
+                  <div class="file-icon">📁</div>
+                  <h3>Downloadable File</h3>
+                  <p>{{ currentBlock.title || 'File' }}</p>
+                  <a [href]="getContentUrl(currentBlock)" download class="btn-download-file">Download File</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </section>
+  </div>
+</div>

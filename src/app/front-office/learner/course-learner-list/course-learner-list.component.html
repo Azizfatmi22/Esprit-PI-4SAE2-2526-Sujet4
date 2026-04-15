@@ -1,0 +1,166 @@
+<div class="course-catalog-page">
+  <!-- Hero Section -->
+  <section class="catalog-hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <h1 class="hero-title">Discover Your Next <span class="gradient-text">Learning Journey</span></h1>
+      <p class="hero-description">Explore our comprehensive catalog of courses designed to help you master new skills and advance your career</p>
+      
+      <!-- Search Bar -->
+      <div class="search-container">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input 
+            type="text" 
+            [(ngModel)]="searchTerm" 
+            (input)="onSearchChange()"
+            placeholder="Search courses by title or description..."
+            class="search-input"
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Filters Section -->
+  <section class="filters-section">
+    <div class="filters-container">
+      <!-- Level Filter -->
+      <div class="filter-group">
+        <label class="filter-label">Level:</label>
+        <div class="filter-buttons">
+          <button 
+            class="filter-btn" 
+            [class.active]="selectedLevel === 'ALL'"
+            (click)="onLevelChange('ALL')"
+          >
+            All Levels
+          </button>
+          <button 
+            class="filter-btn" 
+            [class.active]="selectedLevel === Level.BEGINNER"
+            (click)="onLevelChange(Level.BEGINNER)"
+          >
+            Beginner
+          </button>
+          <button 
+            class="filter-btn" 
+            [class.active]="selectedLevel === Level.INTERMEDIATE"
+            (click)="onLevelChange(Level.INTERMEDIATE)"
+          >
+            Intermediate
+          </button>
+          <button 
+            class="filter-btn" 
+            [class.active]="selectedLevel === Level.ADVANCED"
+            (click)="onLevelChange(Level.ADVANCED)"
+          >
+            Advanced
+          </button>
+        </div>
+      </div>
+
+      <!-- Sort Filter -->
+     
+
+      <!-- Results Count -->
+      <div class="results-count">
+        <span>{{ filteredCourses.length }} course{{ filteredCourses.length !== 1 ? 's' : '' }} found</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Courses Grid -->
+  <section class="courses-section">
+    <div class="courses-container">
+      <!-- Loading State -->
+      <div *ngIf="loading" class="loading-container">
+        <div class="spinner"></div>
+        <p>Loading courses...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!loading && filteredCourses.length === 0" class="empty-state">
+        <div class="empty-icon">📚</div>
+        <h3>No courses found</h3>
+        <p>Try adjusting your filters or search term</p>
+      </div>
+
+      <!-- Courses Grid -->
+      <div *ngIf="!loading && filteredCourses.length > 0" class="courses-grid">
+        <div *ngFor="let course of filteredCourses" class="course-card">
+          <!-- Course Thumbnail -->
+          <div class="course-thumbnail">
+            <img 
+              [src]="getThumbnailUrl(course.thumbnailUrl, course.id)" 
+              [alt]="course.title"
+              class="thumbnail-image"
+              (error)="onImageError($event)"
+            />
+            <div class="thumbnail-placeholder">
+              <span class="placeholder-icon">📖</span>
+            </div>
+            <div class="thumbnail-overlay">
+              <button class="btn-view-details" (click)="viewCourseDetails(course.id)">
+                View Details
+              </button>
+            </div>
+          </div>
+
+          <!-- Course Content -->
+          <div class="course-content">
+            <!-- Header -->
+            <div class="course-header">
+              <span class="level-badge" [ngClass]="getLevelBadgeClass(course.level)">
+                {{ getLevelLabel(course.level) }}
+              </span>
+              <div class="course-rating" *ngIf="course.rating">
+                <span class="star-icon">⭐</span>
+                <span class="rating-value">{{ course.rating.toFixed(1) }}</span>
+              </div>
+            </div>
+
+            <!-- Title -->
+            <h3 class="course-title">{{ course.title }}</h3>
+
+            <!-- Description -->
+            <p class="course-description">{{ course.description }}</p>
+
+            <!-- Meta Info -->
+            <div class="course-meta">
+              <div class="meta-item">
+                <span class="meta-icon">👥</span>
+                <span class="meta-text">{{ getPaidStudentsCount(course.title) }}  students</span>
+              </div>
+              <div class="meta-item" *ngIf="course.totalChapters">
+                <span class="meta-icon">📑</span>
+                <span class="meta-text">{{ course.totalChapters }} chapters</span>
+              </div>
+              <div class="meta-item" *ngIf="course.totalDurationMinutes">
+                <span class="meta-icon">⏱️</span>
+                <span class="meta-text">{{ formatDuration(course.totalDurationMinutes) }}</span>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="course-footer">
+              <div class="course-price">
+                <span class="price-label">Price:</span>
+                <span class="price-value">{{ course.price === 0 ? 'Free' : course.price + ' dt' }}</span>
+              </div>
+              <div class="footer-buttons">
+                
+                <button class="btn-preview" (click)="viewCourseDetails(course.id)">
+                  <span class="btn-icon">👁️</span> Preview
+                </button>
+                <button class="btn-enroll" (click)="enrollInCourse(course.id)">
+                  Enroll Now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

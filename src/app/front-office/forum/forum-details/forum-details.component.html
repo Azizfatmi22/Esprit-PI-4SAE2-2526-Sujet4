@@ -1,0 +1,163 @@
+<div class="forum-details-container">
+    <!-- Interactive Waves Background -->
+    <div class="waves-bg-container">
+        <app-ribbons [colors]="['#FC8EAC']" [baseSpring]="0.03" [baseFriction]="0.9" [baseThickness]="30"
+            [offsetFactor]="0.05" [maxAge]="500" [pointCount]="50" [speedMultiplier]="0.6" [enableFade]="false"
+            [enableShaderEffect]="false" [effectAmplitude]="2">
+        </app-ribbons>
+    </div>
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="loading">
+        <div class="spinner"></div>
+        <p>Loading forum...</p>
+    </div>
+
+    <!-- Forum Not Found -->
+    <div class="not-found" *ngIf="!loading && !forum">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF">
+            <circle cx="12" cy="12" r="10" stroke-width="2" />
+            <path d="M12 8v4M12 16h.01" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <h3>Forum Not Found</h3>
+        <p>The forum you're looking for doesn't exist.</p>
+        <button class="btn-back-simple" (click)="goBack()">Back to Forums</button>
+    </div>
+
+    <!-- Forum Details -->
+    <div class="forum-content" *ngIf="!loading && forum">
+        <!-- Header Section -->
+        <div class="header-section">
+            <button class="btn-back" (click)="goBack()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                Back to Forums
+            </button>
+
+            <div class="action-buttons">
+                <button class="btn-edit" (click)="editForum()" *ngIf="isTrainer">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke-width="2"
+                            stroke-linecap="round" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-width="2" />
+                    </svg>
+                    Update
+                </button>
+                <button class="btn-delete" (click)="deleteForum()" *ngIf="isTrainer">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                            stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                    Delete
+                </button>
+            </div>
+        </div>
+
+        <!-- Forum Card -->
+        <div class="forum-card">
+            <!-- Title Section -->
+            <div class="title-section">
+                <h1>{{ forum.title }}</h1>
+            </div>
+
+            <!-- Image Section -->
+            <div class="forum-image-section" *ngIf="forum.imageUrl">
+                <img [src]="forum.imageUrl" [alt]="forum.title" class="forum-detail-image" />
+            </div>
+
+            <!-- Meta Information -->
+            <div class="meta-info">
+                <div class="meta-item">
+                    <img [src]="getAuthorInfo(forum.userId).avatar" alt="Author" class="author-avatar-small" />
+                    <span><strong>Author:</strong> {{ getAuthorInfo(forum.userId).name }} · {{ getUserLevel(forum.userId) }}</span>
+                </div>
+                <div class="meta-item">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10" stroke-width="2" />
+                        <path d="M12 6v6l4 2" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                    <span><strong>Created:</strong> {{ formatDate(forum.createdAt) }}</span>
+                </div>
+                <!-- Interactive Reaction Buttons -->
+                <div class="meta-item reactions-interactive">
+                    <button class="reaction-btn-details like" (click)="onReact(ReactionType.LIKE)"
+                        [class.is-reacting]="isReacting && currentReactionType === ReactionType.LIKE"
+                        [class.active-like]="reactionCounts.likeCount > 0">
+                        <svg width="20" height="20" viewBox="0 0 24 24"
+                            [attr.fill]="reactionCounts.likeCount ? 'currentColor' : 'none'" stroke="currentColor">
+                            <path
+                                d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"
+                                stroke-width="2" />
+                        </svg>
+                        <span>{{ reactionCounts.likeCount }} Likes</span>
+                    </button>
+                    <button class="reaction-btn-details dislike" (click)="onReact(ReactionType.DISLIKE)"
+                        [class.is-reacting]="isReacting && currentReactionType === ReactionType.DISLIKE"
+                        [class.active-dislike]="reactionCounts.dislikeCount > 0">
+                        <svg width="20" height="20" viewBox="0 0 24 24"
+                            [attr.fill]="reactionCounts.dislikeCount ? 'currentColor' : 'none'" stroke="currentColor"
+                            style="transform: rotate(180deg);">
+                            <path
+                                d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"
+                                stroke-width="2" />
+                        </svg>
+                        <span>{{ reactionCounts.dislikeCount }} Dislikes</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Section -->
+            <div class="content-section">
+                <h2>Content</h2>
+                <div class="content-text">
+                    {{ forum.content }}
+                </div>
+            </div>
+
+            <!-- Comments Section -->
+            <div class="comments-section">
+                <h2>Comments ({{ comments.length }})</h2>
+
+                <!-- Comment Form -->
+                <div class="comment-form">
+                    <textarea [(ngModel)]="newComment" placeholder="Add a comment..." rows="3"
+                        [disabled]="submittingComment"></textarea>
+                    <button class="btn-add-comment" (click)="addComment()"
+                        [disabled]="submittingComment || !newComment.trim()">
+                        {{ submittingComment ? 'Posting...' : 'Post Comment' }}
+                    </button>
+                </div>
+
+                <!-- Comments List -->
+                <div class="comments-list">
+                    <div class="comment-item" *ngFor="let comment of comments">
+                        <div class="comment-content">
+                            <div class="comment-header">
+                                <img [src]="getAuthorInfo(comment.userId).avatar" alt="Author" class="author-avatar-small" />
+                                <div class="comment-info">
+                                    <span class="comment-author">{{ getAuthorInfo(comment.userId).name }}</span>
+                                    <span class="comment-date">{{ getUserLevel(comment.userId) }}</span>
+                                    <span class="comment-date" *ngIf="comment.isBestAnswer">Best Answer</span>
+                                    <span class="comment-date">
+                                        {{ formatDate(comment.createdAt) }}
+                                        <span class="status-badge pending" *ngIf="comment.status === 'PENDING'">Under Review</span>
+                                        <span class="status-badge rejected" *ngIf="comment.status === 'REJECTED'">Rejected</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <p class="comment-text">{{ comment.content }}</p>
+                            <button class="btn-add-comment" *ngIf="canMarkBestAnswer(comment)"
+                                (click)="markAsBestAnswer(comment.id)">
+                                Mark as Best Answer
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="no-comments" *ngIf="comments.length === 0">
+                        <p>No comments yet. Be the first to share your thoughts!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

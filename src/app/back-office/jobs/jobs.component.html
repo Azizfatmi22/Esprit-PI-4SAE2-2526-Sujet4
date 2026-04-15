@@ -1,0 +1,178 @@
+<div class="admin-container">
+    <!-- Background Decor -->
+    <div class="triangle-bg triangle-1"></div>
+    <div class="triangle-bg triangle-2"></div>
+
+    <div class="header">
+        <div class="header-text">
+            <h1>Job Postings Management</h1>
+            <p>Monitor and manage active job opportunities</p>
+        </div>
+        <button class="btn-create" (click)="toggleCreateForm()">
+            <i class="fas" [class.fa-plus]="!showCreateForm" [class.fa-times]="showCreateForm"></i>
+            {{ showCreateForm ? 'Cancel' : 'Post New Job' }}
+        </button>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div *ngIf="successMessage" class="alert alert-success">
+        <i class="fas fa-check-circle"></i> {{ successMessage }}
+    </div>
+    <div *ngIf="errorMessage" class="alert alert-danger">
+        <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
+    </div>
+
+    <!-- Create Form Section -->
+    <div *ngIf="showCreateForm" class="create-form-section animated-fade-in">
+        <div class="glass-card form-card">
+            <h2 class="form-title">Define New Position</h2>
+            <form [formGroup]="jobForm" (ngSubmit)="onJobSubmit()">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label>Target Partner</label>
+                        <select formControlName="partnerId">
+                            <option value="" disabled>Select Partner Organization</option>
+                            <option *ngFor="let partner of acceptedPartners" [value]="partner.id">
+                                {{ partner.organizationName }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Job Title</label>
+                        <input type="text" formControlName="title" placeholder="e.g. Senior Java Architect">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Expertise Area (Technology)</label>
+                        <select formControlName="technology">
+                            <option value="" disabled>Select Technology</option>
+                            <option *ngFor="let tech of technologies" [value]="tech">{{ tech }}</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Work Location</label>
+                        <select formControlName="location">
+                            <option value="" disabled>Select City</option>
+                            <option *ngFor="let city of cities" [value]="city">{{ city }}</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Experience Required (Years)</label>
+                        <input type="number" formControlName="minExperience">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Job Description & Responsibilities</label>
+                        <textarea formControlName="description" rows="4"
+                            placeholder="Detailed requirements..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit masterpiece" [disabled]="jobForm.invalid || isSubmitting">
+                        <span *ngIf="!isSubmitting">Publish Posting <i class="fas fa-paper-plane"></i></span>
+                        <span *ngIf="isSubmitting"><i class="fas fa-spinner fa-spin"></i> Publishing...</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div *ngIf="isLoading" class="loader-container">
+        <div class="loader"></div>
+        <p>Synchronizing job catalog...</p>
+    </div>
+
+    <div *ngIf="!isLoading" class="content">
+        <div class="jobs-grid" *ngIf="jobs.length > 0">
+            <div *ngFor="let job of jobs" class="job-card glass-card animated-slide-up" (click)="selectJob(job)">
+                <div class="job-card-decor"></div>
+                <div class="job-badge">{{ job.technology }}</div>
+                <div class="job-main">
+                    <h3>{{ job.title }}</h3>
+                    <div class="meta-info">
+                        <span><i class="fas fa-building"></i> {{ job.partnerName }}</span>
+                        <span><i class="fas fa-map-marker-alt"></i> {{ job.location }}</span>
+                    </div>
+                    <p class="description">{{ job.description | slice:0:120 }}...</p>
+                </div>
+
+                <div class="job-footer">
+                    <div class="stats">
+                        <span class="stat-tag"><i class="fas fa-user-graduate"></i> {{ job.minExperience }}+ yrs</span>
+                        <span class="stat-tag primary"><i class="fas fa-wallet"></i> {{ job.salaryRange || 'Competitive'
+                            }}</span>
+                    </div>
+                    <div class="actions">
+                        <button class="btn-action-icon view" (click)="selectJob(job); $event.stopPropagation()"
+                            title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div *ngIf="jobs.length === 0" class="empty-state">
+            <div class="empty-icon"><i class="fas fa-folder-open"></i></div>
+            <h3>No Active Postings</h3>
+            <p>Ready to start hiring? Use the button above to post your first job requirement.</p>
+        </div>
+    </div>
+
+    <!-- Job Details Modal -->
+    <div class="modal-overlay" *ngIf="selectedJob" (click)="closeDetails()">
+        <div class="modal-card glass-card animated-zoom-in" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-icon"><i class="fas fa-briefcase"></i></div>
+                    <div>
+                        <h2>{{ selectedJob.title }}</h2>
+                        <span class="modal-subtitle">{{ selectedJob.partnerName }}</span>
+                    </div>
+                </div>
+                <button class="btn-close" (click)="closeDetails()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Technology</label>
+                        <span class="value tech-badge">{{ selectedJob.technology }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Location</label>
+                        <span class="value-row"><i class="fas fa-map-marker-alt"></i> {{ selectedJob.location }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Exp. Required</label>
+                        <span class="value-row"><i class="fas fa-user-graduate"></i> {{ selectedJob.minExperience }}+
+                            Years</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Financial Level</label>
+                        <span class="value-row"><i class="fas fa-wallet"></i> {{ selectedJob.salaryRange ||
+                            'Competitive' }}</span>
+                    </div>
+                </div>
+
+                <div class="description-section">
+                    <h3>Position Responsibility</h3>
+                    <div class="description-content">
+                        {{ selectedJob.description }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-modal-delete" (click)="deleteJob(selectedJob.id!)">
+                    <i class="fas fa-trash-alt"></i> Delete Posting
+                </button>
+                <button class="btn-modal-close" (click)="closeDetails()">Close View</button>
+            </div>
+        </div>
+    </div>
+</div>
