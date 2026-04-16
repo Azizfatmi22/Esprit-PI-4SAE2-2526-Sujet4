@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Independent Contractor Agreement</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+
+            @bottom-center {
+                content: "Page " counter(page) " of " counter(pages);
+                font-family: serif;
+                font-size: 9pt;
+                color: #555555;
+            }
+        }
+
+        body {
+            font-family: "Times New Roman", Times, serif;
+            color: #1a1a1a;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+        }
+
+        .container {
+            border: 2px solid #e0e0e0;
+            padding: 40px;
+            margin: 10px;
+            background: #fff;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 24pt;
+            color: #2c3e50;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .header p {
+            font-style: italic;
+            color: #7f8c8d;
+            margin: 5px 0 0 0;
+        }
+
+        .content {
+            font-size: 11pt;
+            text-align: justify;
+        }
+
+        .section-title {
+            font-size: 14pt;
+            color: #34495e;
+            border-bottom: 1px solid #ebedef;
+            padding-bottom: 5px;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .highlight {
+            font-weight: bold;
+            display: inline;
+        }
+
+        .signature-block {
+            margin-top: 50px;
+            width: 100%;
+        }
+
+        .signature-box {
+            display: inline-block;
+            width: 45%;
+            margin-top: 10px;
+        }
+
+        .signature-line {
+            width: 90%;
+            border-bottom: 1px solid #000;
+            margin-bottom: 5px;
+            height: 40px;
+        }
+
+        .legal-footer {
+            margin-top: 40px;
+            font-size: 8pt;
+            color: #95a5a6;
+            text-align: justify;
+            border-top: 1px solid #ecf0f1;
+            padding-top: 10px;
+        }
+
+        .watermark {
+            position: absolute;
+            top: 30%;
+            left: 15%;
+            font-size: 80pt;
+            color: rgba(236, 240, 241, 0.4);
+            transform: rotate(-45deg);
+            z-index: -1;
+            font-weight: bold;
+            letter-spacing: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="watermark">OFFICIAL</div>
+
+        <div class="header">
+            <h1>Independent Contractor Agreement</h1>
+            <p>Executed on <span th:text="${issueDate}"></span></p>
+        </div>
+
+        <div class="content">
+            <p>
+                This Independent Contractor Agreement (the "Agreement") is entered into as of the date written above,
+                by and between <span class="highlight" th:text="${partnerName}">[Partner Name]</span> (the "Client"),
+                and <span class="highlight" th:text="${trainerName}">[Trainer Name]</span> (the "Contractor").
+            </p>
+
+            <div class="section-title">1. Services Provided</div>
+            <p>
+                The Contractor agrees to provide training and educational services specializing in
+                <span class="highlight" th:text="${technology}">[Technology]</span>. The Contractor shall perform the
+                Services in a professional and workmanlike manner, in accordance with the specifications requested by
+                the Client
+                on the Learning Partnership Platform.
+            </p>
+
+            <div class="section-title">2. Term and Termination</div>
+            <p>
+                This Agreement shall commence on the date of final electronic approval (Status: ACCEPTED) on the
+                Learning Gateway Portal. It remains in full force and effect until either party provides a written
+                30-day notice of termination.
+            </p>
+
+            <div class="section-title">3. Contact Record</div>
+            <p>
+                The legal point of contact for the Contractor is established as:
+                <br />
+                Email: <span th:text="${trainerEmail}"></span><br />
+                Phone: <span th:text="${trainerPhone}"></span>
+            </p>
+
+            <div class="section-title">4. Independent Contractor Status</div>
+            <p>
+                The Contractor is an independent contractor, and nothing contained in this Agreement shall be construed
+                to create a partnership, joint venture, or agency relationship between the parties.
+            </p>
+
+            <div class="signature-block">
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <div class="highlight">The Client</div>
+                    <div><span th:text="${partnerName}"></span></div>
+                    <div>Date: <span th:text="${issueDate}"></span></div>
+                </div>
+
+                <div class="signature-box" style="float: right;">
+                    <div class="signature-line"></div>
+                    <div class="highlight">The Contractor</div>
+                    <div><span th:text="${trainerName}"></span></div>
+                    <div>Date: <span th:text="${issueDate}"></span></div>
+                </div>
+                <div style="clear:both;"></div>
+            </div>
+
+            <div class="legal-footer">
+                This document is electronically generated by the Platform API. By changing the system status to
+                ACCEPTED,
+                both parties inherently agreed to the Terms of Service hosted at the Platform's legal index.
+                Document Version 1.2 | Verification Code: A9B8-C7D6-E5F4
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

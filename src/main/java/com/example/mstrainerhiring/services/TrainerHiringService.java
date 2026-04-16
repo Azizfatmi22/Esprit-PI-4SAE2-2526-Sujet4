@@ -21,6 +21,8 @@ public interface TrainerHiringService {
 
     TrainerHiringDTO getTrainerById(UUID id);
 
+    com.example.mstrainerhiring.entities.TrainerHiring getTrainerEntityById(UUID id);
+
     TrainerHiringDTO updateStatus(UUID id, TrainerStatus status);
 
     TrainerHiringDTO checkApplicationExists(String email, UUID jobId);

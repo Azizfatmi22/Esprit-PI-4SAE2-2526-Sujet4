@@ -1,13 +1,12 @@
 package com.example.mstrainerhiring.services.impl;
 
-import com.example.mstrainerhiring.entities.Job;
+import com.example.mstrainerhiring.dto.JobDTO;
 import com.example.mstrainerhiring.entities.TrainerHiring;
 import com.example.mstrainerhiring.enums.TrainerStatus;
 import com.example.mstrainerhiring.repositories.TrainerHiringRepository;
 import com.example.mstrainerhiring.services.IntelligenceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.stereotype.Service;
@@ -27,7 +26,7 @@ public class IntelligenceServiceImpl implements IntelligenceService {
 
     @Override
     public String extractTextFromPdf(String filePath) {
-        try (PDDocument document = Loader.loadPDF(new File(filePath))) {
+        try (PDDocument document = PDDocument.load(new File(filePath))) {
             PDFTextStripper stripper = new PDFTextStripper();
             return stripper.getText(document);
         } catch (IOException e) {
@@ -37,7 +36,7 @@ public class IntelligenceServiceImpl implements IntelligenceService {
     }
 
     @Override
-    public TrainerHiring analyzeApplication(TrainerHiring application, String cvText) {
+    public TrainerHiring analyzeApplication(TrainerHiring application, String cvText, JobDTO jobDTO) {
         log.info("Starting intelligence analysis for application: {}", application.getId());
 
         // 0. Blank CV check
@@ -45,7 +44,7 @@ public class IntelligenceServiceImpl implements IntelligenceService {
         application.setIsBlankCv(isBlank);
 
         // 1. Skill Sync Score
-        double skillSync = isBlank ? 0.0 : calculateSkillSync(application, cvText);
+        double skillSync = isBlank ? 0.0 : calculateSkillSync(application, cvText, jobDTO);
         application.setSkillSyncScore(skillSync);
 
         // 2. Red-Flag Plagiarism detection
@@ -99,8 +98,7 @@ public class IntelligenceServiceImpl implements IntelligenceService {
         return sb.toString();
     }
 
-    private double calculateSkillSync(TrainerHiring application, String cvText) {
-        Job job = application.getJob();
+    private double calculateSkillSync(TrainerHiring application, String cvText, JobDTO job) {
         if (job == null)
             return 0.0;
 

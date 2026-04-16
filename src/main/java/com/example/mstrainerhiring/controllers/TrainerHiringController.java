@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -30,11 +31,13 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/trainers")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Trainer Hiring", description = "Trainer Hiring Management API")
 public class TrainerHiringController {
 
         private final TrainerHiringService trainerService;
         private final ObjectMapper objectMapper;
+        private final com.example.mstrainerhiring.services.RecommendationService recommendationService;
 
         @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         @Operation(summary = "Create a new trainer", description = "Creates a new trainer application with CV")
@@ -113,6 +116,41 @@ public class TrainerHiringController {
                 // Return 204 No Content instead of 404 to avoid browser console errors for
                 // normal checks
                 return ResponseEntity.noContent().build();
+        }
+
+        private final com.example.mstrainerhiring.services.ContractGenerationService contractGenerationService;
+
+        @GetMapping("/{id}/contract/download")
+        @Operation(summary = "Download Trainer Contract", description = "Generates and returns an elegant PDF contract for an accepted trainer")
+        public ResponseEntity<byte[]> downloadContract(@PathVariable(name = "id") UUID id) {
+                try {
+                        com.example.mstrainerhiring.entities.TrainerHiring trainer = trainerService
+                                        .getTrainerEntityById(id);
+                        if (trainer.getStatus() != TrainerStatus.ACCEPTED) {
+                                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+                        }
+
+                        byte[] pdfContent = contractGenerationService.generateContractPdf(trainer);
+
+                        return ResponseEntity.ok()
+                                        .contentType(MediaType.APPLICATION_PDF)
+                                        .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                                                        "attachment; filename=\"Contract_" + trainer.getName()
+                                                                        + ".pdf\"")
+                                        .body(pdfContent);
+                } catch (Exception e) {
+                        log.error("Failed to generate/download contract for trainer {}: {}", id, e.getMessage(), e);
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                }
+        }
+
+        @GetMapping("/jobs/{jobId}/top-candidate")
+        @Operation(summary = "Get best matched candidate", description = "Analyzes all pending applications to find the top match")
+        public ResponseEntity<com.example.mstrainerhiring.dto.TopCandidateDTO> getTopCandidate(
+                        @PathVariable(name = "jobId") UUID jobId) {
+                com.example.mstrainerhiring.dto.TopCandidateDTO topCandidate = recommendationService
+                                .getTopCandidateForJob(jobId);
+                return ResponseEntity.ok(topCandidate);
         }
 
         @DeleteMapping("/{id}")

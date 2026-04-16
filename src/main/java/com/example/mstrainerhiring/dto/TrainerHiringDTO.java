@@ -35,7 +35,7 @@ public class TrainerHiringDTO {
     private String email;
 
     @NotBlank(message = "Phone is required")
-    @Pattern(regexp = "^[2579][0-9]{7}$", message = "Phone must be a valid Tunisian number")
+    @Pattern(regexp = "^[0-9+ \\-()]{7,20}$", message = "Phone must be a valid contact number")
     private String phone;
 
     @NotBlank(message = "Motivation letter is required")

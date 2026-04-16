@@ -48,7 +48,7 @@ public class TrainerHiring {
     private String email;
 
     @NotBlank(message = "Phone is required")
-    @Pattern(regexp = "^[2579][0-9]{7}$", message = "Phone must be a valid Tunisian number")
+    @Pattern(regexp = "^[0-9+ \\-()]{7,20}$", message = "Phone must be a valid contact number")
     @Column(name = "phone", nullable = false)
     private String phone;
 
@@ -83,9 +83,8 @@ public class TrainerHiring {
     @Builder.Default
     private List<TrainerDocument> documents = new ArrayList<>();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "job_id")
-    private Job job;
+    @Column(name = "job_id")
+    private UUID jobId;
 
     // Intelligence Scores
     @Column(name = "skill_sync_score")

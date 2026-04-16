@@ -1,8 +1,8 @@
 package com.example.mstrainerhiring.services.impl;
 
+import com.example.mstrainerhiring.client.PartnerClient;
+import com.example.mstrainerhiring.dto.JobDTO;
 import com.example.mstrainerhiring.dto.TrainerHiringDTO;
-
-import com.example.mstrainerhiring.entities.Job;
 import com.example.mstrainerhiring.entities.TrainerDocument;
 import com.example.mstrainerhiring.entities.TrainerHiring;
 import com.example.mstrainerhiring.enums.DocumentType;
@@ -12,8 +12,6 @@ import com.example.mstrainerhiring.exception.InvalidFileException;
 import com.example.mstrainerhiring.exception.MissingRequiredDocumentException;
 import com.example.mstrainerhiring.exception.ResourceNotFoundException;
 import com.example.mstrainerhiring.mapper.TrainerHiringMapper;
-import com.example.mstrainerhiring.repositories.JobRepository;
-import com.example.mstrainerhiring.repositories.PartnerHiringRepository;
 import com.example.mstrainerhiring.repositories.TrainerDocumentRepository;
 import com.example.mstrainerhiring.repositories.TrainerHiringRepository;
 import com.example.mstrainerhiring.services.IntelligenceService;
@@ -48,8 +46,7 @@ public class TrainerHiringServiceImpl implements TrainerHiringService {
 
     private final TrainerHiringRepository trainerRepository;
     private final TrainerDocumentRepository documentRepository;
-    private final PartnerHiringRepository partnerRepository;
-    private final JobRepository jobRepository;
+    private final PartnerClient partnerClient;
     private final IntelligenceService intelligenceService;
     private final SmsService smsService;
     private final TrainerHiringMapper trainerMapper;
@@ -77,8 +74,8 @@ public class TrainerHiringServiceImpl implements TrainerHiringService {
             validateImageFile(pictureFile, "Profile Picture");
         }
 
-        // Verify partner exists
-        if (!partnerRepository.existsById(trainerDTO.getPartnerId())) {
+        // Verify partner exists via Client
+        if (!partnerClient.existsById(trainerDTO.getPartnerId())) {
             throw new ResourceNotFoundException("Partner", "id", trainerDTO.getPartnerId());
         }
 
@@ -88,15 +85,22 @@ public class TrainerHiringServiceImpl implements TrainerHiringService {
             throw new InvalidFileException("You have already submitted an application for this specific job position.");
         }
 
-        TrainerHiring trainer = trainerMapper.toEntity(trainerDTO);
-
-        // Link to Job if provided
+        // Fetch Job details for analysis
+        JobDTO jobDTO = null;
         if (trainerDTO.getJobId() != null) {
-            Job job = jobRepository.findById(trainerDTO.getJobId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Job", "id", trainerDTO.getJobId()));
-            trainer.setJob(job);
+            if (!partnerClient.jobExistsById(trainerDTO.getJobId())) {
+                throw new ResourceNotFoundException("Job", "id", trainerDTO.getJobId());
+            }
+            // Fetch job DTO for technical alignment analysis
+            // We might need a separate method in PartnerClient for getJobById
+            // I'll add it or assume it's part of getPartnerById if jobs are included?
+            // Better add a dedicated one.
+            // I'll assume jobDTO is fetched for analysis.
+            jobDTO = partnerClient.getJobById(trainerDTO.getJobId());
         }
 
+        TrainerHiring trainer = trainerMapper.toEntity(trainerDTO);
+        trainer.setJobId(trainerDTO.getJobId());
         trainer.setStatus(TrainerStatus.PENDING);
 
         TrainerHiring savedTrainer = trainerRepository.save(trainer);
@@ -114,7 +118,7 @@ public class TrainerHiringServiceImpl implements TrainerHiringService {
         try {
             log.info("Starting intelligent verification for CV: {}", cvPath);
             String cvText = intelligenceService.extractTextFromPdf(cvPath);
-            savedTrainer = intelligenceService.analyzeApplication(savedTrainer, cvText);
+            savedTrainer = intelligenceService.analyzeApplication(savedTrainer, cvText, jobDTO);
 
             // Auto-reject logic based on intelligence
             if (Boolean.TRUE.equals(savedTrainer.getIsBlankCv())
@@ -181,6 +185,13 @@ public class TrainerHiringServiceImpl implements TrainerHiringService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public TrainerHiring getTrainerEntityById(UUID id) {
+        return trainerRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Trainer", "id", id));
+    }
+
+    @Override
     public TrainerHiringDTO updateStatus(UUID id, TrainerStatus status) {
         TrainerHiring trainer = trainerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Trainer", "id", id));
@@ -225,18 +236,7 @@ public class TrainerHiringServiceImpl implements TrainerHiringService {
 
         // Cleanup files
         try {
-            // We use a different folder structure? Or just same uploadDir/trainers/{id}?
-            // Implementation plan said uploadDir which is 'uploads/partners' currently.
-            // We should probably separate them or reuse.
-            // Let's use uploadDir/trainers/{id} to keep it clean, but 'uploadDir' property
-            // is fixed.
-            // I'll assume we append a prefix or use a separate subfolder.
-            // For now, I'll use the same logic as PartnerServiceImpl but adding "trainers"
-            // to path if possible.
-            // However, `uploadDir` var is injected.
-            // I will modify the storage logic to use `uploads/trainers/{id}`.
-
-            Path trainerDir = Paths.get("uploads/trainers", id.toString());
+            Path trainerDir = Paths.get(uploadDir, id.toString());
             if (Files.exists(trainerDir)) {
                 Files.walk(trainerDir)
                         .sorted(java.util.Comparator.reverseOrder())
@@ -260,8 +260,18 @@ public class TrainerHiringServiceImpl implements TrainerHiringService {
     private TrainerHiringDTO mapToDTOWithPartnerName(TrainerHiring trainer) {
         TrainerHiringDTO dto = trainerMapper.toDTO(trainer);
         if (trainer.getPartnerId() != null) {
-            partnerRepository.findById(trainer.getPartnerId())
-                    .ifPresent(partner -> dto.setPartnerName(partner.getOrganizationName()));
+            com.example.mstrainerhiring.dto.PartnerHiringDTO partner = partnerClient
+                    .getPartnerById(trainer.getPartnerId());
+            if (partner != null) {
+                dto.setPartnerName(partner.getOrganizationName());
+            }
+        }
+
+        if (trainer.getJobId() != null) {
+            com.example.mstrainerhiring.dto.JobDTO job = partnerClient.getJobById(trainer.getJobId());
+            if (job != null) {
+                dto.setJobTitle(job.getTitle());
+            }
         }
 
         // Calculate candidate score
@@ -298,7 +308,7 @@ public class TrainerHiringServiceImpl implements TrainerHiringService {
     private String storeDocument(TrainerHiring trainer, MultipartFile file, DocumentType documentType) {
         try {
             // Directory: uploads/trainers/{trainerId}/
-            Path trainerDir = Paths.get("uploads/trainers", trainer.getId().toString());
+            Path trainerDir = Paths.get(uploadDir, trainer.getId().toString());
             Files.createDirectories(trainerDir);
 
             String originalFilename = file.getOriginalFilename();

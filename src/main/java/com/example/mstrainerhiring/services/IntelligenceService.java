@@ -13,7 +13,8 @@ public interface IntelligenceService {
     /**
      * Performs a complete intelligence analysis on a trainer application.
      */
-    TrainerHiring analyzeApplication(TrainerHiring application, String cvText);
+    TrainerHiring analyzeApplication(TrainerHiring application, String cvText,
+            com.example.mstrainerhiring.dto.JobDTO jobDTO);
 
     /**
      * Calculates similarity between two strings using Levenshtein distance.

@@ -11,10 +11,8 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface TrainerHiringMapper {
 
-    @Mapping(target = "partnerId", source = "partnerId")
-    @Mapping(target = "jobId", source = "job.id")
-    @Mapping(target = "jobTitle", source = "job.title")
     @Mapping(target = "partnerName", ignore = true)
+    @Mapping(target = "jobTitle", ignore = true)
     @Mapping(target = "score", ignore = true)
     TrainerHiringDTO toDTO(TrainerHiring trainerHiring);
 
@@ -23,7 +21,6 @@ public interface TrainerHiringMapper {
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "job", ignore = true)
     TrainerHiring toEntity(TrainerHiringDTO trainerHiringDTO);
 
     @Mapping(target = "id", ignore = true)
@@ -31,7 +28,6 @@ public interface TrainerHiringMapper {
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "job", ignore = true)
     void updateEntityFromDTO(TrainerHiringDTO dto, @MappingTarget TrainerHiring entity);
 
     @Mapping(source = "trainer.id", target = "trainerId")

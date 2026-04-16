@@ -26,6 +26,8 @@ public interface TrainerHiringRepository
 
         List<TrainerHiring> findByJobId(UUID jobId);
 
+        List<TrainerHiring> findByJobIdAndStatus(UUID jobId, TrainerStatus status);
+
         java.util.Optional<com.example.mstrainerhiring.entities.TrainerHiring> findByEmailAndJobId(String email,
                         UUID jobId);
 }
