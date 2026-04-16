@@ -85,8 +85,13 @@ public class GatewayConfig {
 
                 // MS-TrainerHiring Routes
                 .route("trainer-hiring-service", r -> r
-                        .path("/api/partners/**", "/api/trainers/**", "/api/jobs/**")
+                        .path("/api/trainers/**")
                         .uri("lb://MS-TRAINERHIRING"))
+
+                // MS-PartnerHiring Routes
+                .route("partner-hiring-service", r -> r
+                        .path("/api/partners/**", "/api/jobs/**", "/api/coupons/**")
+                        .uri("lb://MS-PARTNERHIRING"))
 
                 .route("recommendation-service", r -> r
                         .path("/api/recommend/**")
