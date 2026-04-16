@@ -1,0 +1,197 @@
+.admin-container {
+  padding: 2rem;
+  background: #ffffff; // Fond blanc pur
+  min-height: 100vh;
+  font-family: "Inter", sans-serif;
+  color: #1e293b; // Texte principal sombre (presque noir)
+
+  .main-header {
+    margin-bottom: 2rem;
+    h1 {
+      color: #0f172a; // Titre noir profond
+      font-size: 1.8rem;
+      .badge {
+        background: #3b82f6; // Bleu pour le petit badge
+        color: white;
+        font-size: 0.7rem;
+        padding: 4px 8px;
+        border-radius: 4px;
+        vertical-align: middle;
+      }
+    }
+    p {
+      color: #64748b; // Sous-titre gris
+    }
+  }
+
+  .glass-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0; // Bordure grise légère
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); // Ombre légère pour le relief
+  }
+
+  .grid-layout {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    label {
+      font-size: 0.85rem;
+      color: #475569; // Label gris foncé
+      font-weight: 600;
+    }
+    input,
+    select,
+    textarea {
+      background: #f8fafc; // Fond des inputs très clair
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0.75rem;
+      color: #1e293b; // Texte input noir
+      transition: 0.3s;
+      &::placeholder {
+        color: #94a3b8;
+      }
+      &:focus {
+        border-color: #3b82f6;
+        outline: none;
+        background: #ffffff;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+      }
+    }
+  }
+
+  .upload-zone {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    .file-label {
+      background: #e2e8f0;
+      color: #475569;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 500;
+      &:hover {
+        background: #cbd5e1;
+      }
+    }
+    .mini-preview img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid #3b82f6;
+    }
+  }
+
+  .form-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    .btn-submit {
+      background: linear-gradient(
+        to right,
+        #3b82f6,
+        #8b5cf6
+      ); // Dégradé bleu-violet
+      border: none;
+      padding: 0.8rem 2rem;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+      &:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+      }
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid #e2e8f0;
+      color: #64748b;
+      padding: 0.8rem 2rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      &:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+      }
+    }
+  }
+
+  .table-container {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      th {
+        background: #f8fafc; // Entête de table gris très clair
+        padding: 1rem;
+        text-align: left;
+        font-size: 0.8rem;
+        color: #64748b;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+      }
+      td {
+        padding: 1rem;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 0.9rem;
+        color: #334155; // Texte des lignes en noir/gris sombre
+      }
+      .table-img {
+        width: 35px;
+        height: 35px;
+        border-radius: 6px;
+        object-fit: cover;
+      }
+      .tag {
+        background: rgba(59, 130, 246, 0.1); // Badge bleu clair transparent
+        color: #3b82f6;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .btn-group {
+    button {
+      border: none;
+      background: none;
+      cursor: pointer;
+      margin-right: 10px;
+      font-weight: 600;
+      transition: 0.2s;
+    }
+    .edit {
+      color: #3b82f6; // Bleu pour l'édition
+      &:hover {
+        color: #2563eb;
+      }
+    }
+    .delete {
+      color: #ef4444; // Rouge pour la suppression
+      &:hover {
+        color: #dc2626;
+      }
+    }
+  }
+}

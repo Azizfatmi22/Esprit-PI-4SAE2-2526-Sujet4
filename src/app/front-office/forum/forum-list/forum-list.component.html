@@ -1,0 +1,277 @@
+<div class="linkedin-container">
+
+  <!-- Left Sidebar - Profile -->
+  <aside class="left-sidebar">
+    <!-- Profile Card -->
+    <div class="profile-card">
+      <div class="profile-cover"></div>
+      <div class="profile-content">
+        <img [src]="'https://ui-avatars.com/api/?name=' + currentUserFullName + '&background=FC8EAC&color=fff&size=128'" alt="Profile" class="profile-avatar" />
+        <h3 class="profile-name">{{ currentUserFullName }}</h3>
+        <p class="profile-role">{{ isTrainer ? 'Trainer' : 'Student' }}</p>
+      </div>
+      <div class="profile-stats">
+        <div class="stat-item">
+          <span class="stat-label">Posts</span>
+          <span class="stat-value">{{ userPostsCount }}</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-label">Points</span>
+          <span class="stat-value">{{ currentUserReputation?.points || 0 }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="quick-links-card" *ngIf="currentUserReputation">
+      <h4>Reputation</h4>
+      <a href="javascript:void(0)" class="quick-link">
+        <span>Points</span>
+        <strong>{{ currentUserReputation.points }}</strong>
+      </a>
+      <a href="javascript:void(0)" class="quick-link">
+        <span>Level</span>
+        <strong>{{ formatLevel(currentUserReputation.level) }}</strong>
+      </a>
+      <a href="javascript:void(0)" class="quick-link">
+        <span>Rank</span>
+        <strong>#{{ currentUserReputation.rank }}</strong>
+      </a>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="quick-links-card" *ngIf="isTrainer">
+      <h4>Post Filter</h4>
+      <a href="javascript:void(0)" class="quick-link" [class.active]="!showMyPosts" (click)="setPostFilter(false)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M4 6h16M4 12h16M4 18h16" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        All Posts
+      </a>
+      <a href="javascript:void(0)" class="quick-link" [class.active]="showMyPosts" (click)="setPostFilter(true)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke-width="2" />
+          <circle cx="12" cy="7" r="4" stroke-width="2" />
+        </svg>
+        My Posts
+      </a>
+    </div>
+
+    <!-- Category Filter -->
+    <div class="quick-links-card">
+      <h4>Categories</h4>
+      <a href="javascript:void(0)" class="quick-link" [class.active]="selectedCategory === 'ALL'"
+        (click)="onCategoryChange('ALL')">
+        All Categories
+      </a>
+      <a href="javascript:void(0)" class="quick-link" *ngFor="let cat of categories"
+        [class.active]="selectedCategory === cat" (click)="onCategoryChange(cat)">
+        {{ cat }}
+      </a>
+    </div>
+  </aside>
+
+  <!-- Center Feed -->
+  <main class="center-feed">
+    <!-- Post Creation Box -->
+    <div class="create-post-card" *ngIf="isTrainer">
+      <img [src]="'https://ui-avatars.com/api/?name=' + currentUserFullName + '&background=FC8EAC&color=fff&size=128'" alt="Profile" class="create-avatar" />
+      <button class="create-post-button" (click)="createForum()">
+        Start a post...
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="loading">
+      <div class="spinner"></div>
+      <p>Loading posts...</p>
+    </div>
+
+    <!-- Forum Posts Feed -->
+    <div class="posts-feed" *ngIf="!loading && displayedForums.length > 0">
+      <article class="post-card" *ngFor="let forum of displayedForums" (click)="viewForum(forum.id)">
+        <!-- Post Header -->
+        <div class="post-header">
+          <img [src]="forum.avatarUrl" alt="Author" class="post-avatar" />
+          <div class="post-author-info">
+            <h3 class="post-author-name">{{ forum.authorName }}</h3>
+            <p class="post-meta">
+              {{ forum.createdAt ? formatDate(forum.createdAt) : 'Just now' }}
+              <span class="category-badge">{{ forum.category }}</span>
+              <span class="status-badge pending" *ngIf="forum.status === 'PENDING'">Under Review</span>
+              <span class="status-badge rejected" *ngIf="forum.status === 'REJECTED'">Rejected</span>
+            </p>
+          </div>
+          <button class="post-menu-btn" (click)="deleteForum($event, forum.id)" *ngIf="isTrainer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="5" r="2" />
+              <circle cx="12" cy="12" r="2" />
+              <circle cx="12" cy="19" r="2" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Post Content -->
+        <div class="post-content">
+          <h2 class="post-title">{{ forum.title }}</h2>
+          <p class="post-text">{{ forum.content }}</p>
+        </div>
+
+        <!-- Post Image -->
+        <div class="post-image" *ngIf="forum.imageUrl || forum.staticImage">
+          <img [src]="forum.imageUrl || forum.staticImage" [alt]="forum.title" />
+        </div>
+
+        <!-- Post Actions -->
+        <div class="post-actions">
+          <button class="action-btn like-btn" (click)="onReact($event, forum.id!, ReactionType.LIKE)"
+            [class.is-reacting]="forum.isReacting && forum.reactionType === ReactionType.LIKE"
+            [class.active-like]="forum.likeCount && forum.likeCount > 0">
+            <svg width="20" height="20" viewBox="0 0 24 24" [attr.fill]="forum.likeCount ? 'currentColor' : 'none'"
+              stroke="currentColor">
+              <path
+                d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"
+                stroke-width="2" />
+            </svg>
+            <span>Like ({{ forum.likeCount || 0 }})</span>
+          </button>
+          <button class="action-btn dislike-btn" (click)="onReact($event, forum.id!, ReactionType.DISLIKE)"
+            [class.is-reacting]="forum.isReacting && forum.reactionType === ReactionType.DISLIKE"
+            [class.active-dislike]="forum.dislikeCount && forum.dislikeCount > 0">
+            <svg width="20" height="20" viewBox="0 0 24 24" [attr.fill]="forum.dislikeCount ? 'currentColor' : 'none'"
+              stroke="currentColor" style="transform: rotate(180deg);">
+              <path
+                d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"
+                stroke-width="2" />
+            </svg>
+            <span>Dislike ({{ forum.dislikeCount || 0 }})</span>
+          </button>
+          <button class="action-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-width="2" />
+            </svg>
+            Comment
+          </button>
+        </div>
+      </article>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!loading && forums.length === 0">
+      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-width="2" />
+      </svg>
+      <h3>No Posts Yet</h3>
+      <p>Be the first to share something!</p>
+      <button class="btn-create-empty" (click)="createForum()">
+        Create Your First Post
+      </button>
+    </div>
+  </main>
+
+  <!-- Right Sidebar - Events -->
+  <aside class="right-sidebar">
+    <div class="events-card" *ngIf="leaderboard.length">
+      <h4 class="events-header">Top Contributors</h4>
+      <div class="events-list">
+        <div class="event-item" *ngFor="let user of leaderboard">
+          <div class="event-info">
+            <h5 class="event-title">#{{ user.rank }} - {{ user.fullName || user.userId }}</h5>
+            <p class="event-location">{{ user.points }} pts · {{ formatLevel(user.level) }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Events Card -->
+    <div class="events-card">
+      <h4 class="events-header">Top Events</h4>
+      <div class="events-list" *ngIf="!loadingEvents && !eventsError && events.length">
+        <div class="event-item" *ngFor="let event of events" [routerLink]="['/events', event.id]"
+          style="cursor: pointer;">
+          <div class="event-date-badge">
+            <span class="event-month">{{ formatEventDate(event.date).month }}</span>
+            <span class="event-day">{{ formatEventDate(event.date).day }}</span>
+          </div>
+          <div class="event-info">
+            <h5 class="event-title">{{ event.name }}</h5>
+            <p class="event-location">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke-width="2" />
+                <circle cx="12" cy="10" r="3" stroke-width="2" />
+              </svg>
+              {{ event.location }}
+            </p>
+            <p class="event-attendees">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-width="2" />
+                <circle cx="9" cy="7" r="4" stroke-width="2" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-width="2" />
+              </svg>
+              {{ event.attendees }} attending
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="events-list" *ngIf="loadingEvents">
+        <div class="event-item">
+          <div class="event-info">
+            <p class="event-location">Loading events...</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="events-list" *ngIf="eventsError && !loadingEvents">
+        <div class="event-item">
+          <div class="event-info">
+            <p class="event-location">{{ eventsError }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="events-list" *ngIf="!loadingEvents && !eventsError && !events.length">
+        <div class="event-item">
+          <div class="event-info">
+            <p class="event-location">No events available.</p>
+          </div>
+        </div>
+      </div>
+
+      <a [routerLink]="['/events']" class="see-all-link">See all events →</a>
+    </div>
+
+    <!-- Tunisia Holidays Card -->
+    <div class="events-card">
+      <h4 class="events-header">🇹🇳 Tunisia Holidays</h4>
+      <div class="events-list" *ngIf="!loadingHolidays && holidays.length">
+        <div class="event-item" *ngFor="let holiday of holidays">
+          <div class="event-date-badge holiday-badge">
+            <span class="event-month">{{ formatHolidayDate(holiday.date).split(' ')[0] }}</span>
+            <span class="event-day">{{ formatHolidayDate(holiday.date).split(' ')[1] }}</span>
+          </div>
+          <div class="event-info">
+            <h5 class="event-title">{{ holiday.localName }}</h5>
+            <p class="event-location">{{ holiday.name }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="events-list" *ngIf="loadingHolidays">
+        <div class="event-item">
+          <div class="event-info">
+            <p class="event-location">Loading holidays...</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="events-list" *ngIf="!loadingHolidays && !holidays.length">
+        <div class="event-item">
+          <div class="event-info">
+            <p class="event-location">No upcoming holidays.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>

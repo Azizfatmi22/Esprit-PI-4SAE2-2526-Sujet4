@@ -1,0 +1,107 @@
+<div class="result-container" *ngIf="result">
+  <div
+    class="result-banner"
+    [class.isPassed]="result.isPassed"
+    [class.failed]="!result.isPassed"
+  >
+    <div class="status-icon">
+      <span *ngIf="result.isPassed">🏆</span>
+      <span *ngIf="!result.isPassed">📚</span>
+    </div>
+    <h1>
+      {{ result.isPassed ? "Félicitations !" : "Continuez vos efforts !" }}
+    </h1>
+    <p class="learner-name">
+      {{ result.learnerName }}, vous avez terminé votre
+      {{ result.type === "QUIZ" ? "Quiz" : "Examen" }}
+    </p>
+  </div>
+
+  <div class="result-content">
+    <div
+      class="score-highlight"
+      [class.isPassed]="result.isPassed"
+      [class.failed]="!result.isPassed"
+    >
+      <div class="score-display">
+        <div
+          class="score-number"
+          [class.passed]="result.isPassed"
+          [class.failed]="!result.isPassed"
+        >
+          {{ result.percentage }}<small>%</small>
+        </div>
+        <div class="score-meta">
+          <p><strong>Évaluation :</strong> {{ result.evaluationTitle }}</p>
+          <p>
+            <strong>Points :</strong> {{ result.scoreObtained }} /
+            {{ result.totalPossiblePoints }} pts
+          </p>
+        </div>
+      </div>
+
+      <div class="score-threshold">
+        <span class="threshold-label">Seuil requis</span>
+        <span
+          class="threshold-value"
+          [class.isPassed]="result.isPassed"
+          [class.failed]="!result.isPassed"
+        >
+          {{ result.minSuccessScore }}%
+        </span>
+      </div>
+    </div>
+
+    <div class="stats-modern-grid">
+      <div class="stat-modern-card total">
+        <span class="stat-icon">📊</span>
+        <span class="stat-modern-label">Questions</span>
+        <span class="stat-modern-value">{{ result.totalQuestions }}</span>
+      </div>
+
+      <div class="stat-modern-card success">
+        <span class="stat-icon">✅</span>
+        <span class="stat-modern-label">Réussies</span>
+        <span class="stat-modern-value">{{ result.correctAnswersCount }}</span>
+      </div>
+
+      <div class="stat-modern-card error">
+        <span class="stat-icon">❌</span>
+        <span class="stat-modern-label">Échouées</span>
+        <span class="stat-modern-value">{{ result.wrongAnswersCount }}</span>
+      </div>
+
+      <div class="stat-modern-card info">
+        <span class="stat-icon">🎯</span>
+        <span class="stat-modern-label">Objectif</span>
+        <span class="stat-modern-value">{{ result.minSuccessScore }}%</span>
+      </div>
+    </div>
+
+    <div class="result-actions-modern">
+      <button class="btn-dashboard" routerLink="/dashboard">
+        Retour au Dashboard
+      </button>
+
+      <button
+        *ngIf="result.isPassed"
+        class="btn-certif"
+        (click)="generateCertificate()"
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <path
+            d="M12 15l-3-3m0 0l3-3m-3 3h8M2 12a10 10 0 1 1 20 0 10 10 0 0 1-20 0z"
+            stroke-width="2"
+          />
+        </svg>
+        Générer ma Certification
+      </button>
+    </div>
+  </div>
+</div>

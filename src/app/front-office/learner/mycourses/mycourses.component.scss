@@ -1,0 +1,10 @@
+@import '../course-learner-list/course-learner-list.component.scss';
+
+.btn-enroll.btn-finished {
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+  cursor: default;
+}
+
+.btn-enroll:disabled {
+  opacity: 0.95;
+}

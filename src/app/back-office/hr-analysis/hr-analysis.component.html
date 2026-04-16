@@ -1,0 +1,122 @@
+<div class="stats-container">
+    <!-- Header -->
+    <div class="stats-header">
+        <div class="header-left">
+            <h1 class="page-title">
+                <span class="gradient-text">Hiring Intelligence</span>
+            </h1>
+            <p class="page-subtitle">
+                HR Analysis & Predictive Recruitment Metrics
+            </p>
+        </div>
+        <div class="header-right">
+            <div class="date-badge">
+                <span class="date-icon">📅</span>
+                <span class="date-text">{{ today | date:'EEEE, MMMM d, yyyy' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Intelligence Row -->
+    <div class="dashboard-row">
+        <!-- Hiring Performance (Donut-style) -->
+        <div class="chart-card donut-card">
+            <div class="card-header">
+                <h2>Hiring Performance</h2>
+                <span class="header-badge">Pipeline Status</span>
+            </div>
+            <div class="donut-container">
+                <div class="donut-visual">
+                    <svg viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="40" class="donut-bg"></circle>
+                        <circle *ngFor="let slice of candidateDistribution; let i = index" cx="50" cy="50" r="40"
+                            class="donut-segment" [style.stroke]="slice.color"
+                            [style.stroke-dasharray]="(slice.value / (totalHiringTrainers || 1) * 251) + ' 251'"
+                            [style.stroke-dashoffset]="getDonutOffset(i)">
+                        </circle>
+                    </svg>
+                    <div class="donut-center">
+                        <span class="total-number">{{ totalHiringTrainers }}</span>
+                        <span class="total-label">Profiles</span>
+                    </div>
+                </div>
+                <div class="donut-legend">
+                    <div class="legend-item" *ngFor="let item of candidateDistribution">
+                        <span class="dot" [style.background]="item.color"></span>
+                        <span class="label">{{ item.label }}</span>
+                        <span class="value">{{ item.value }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expertise Alignment (Radar-style) -->
+        <div class="chart-card radar-card">
+            <div class="card-header">
+                <h2>Expertise Alignment</h2>
+                <span class="header-badge">Intelligent Sync</span>
+            </div>
+            <div class="radar-container">
+                <div class="radar-row" *ngFor="let metric of expertiseRadar">
+                    <div class="metric-label">
+                        <span>{{ metric.label }}</span>
+                        <span>{{ metric.value }}%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" [style.width.%]="metric.value"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trends Row -->
+    <div class="dashboard-row">
+        <!-- Evolution Chart -->
+        <div class="chart-card full-width">
+            <div class="card-header">
+                <h2>Application Volume Trend</h2>
+                <div class="chart-legend">
+                    <span class="legend-dot" style="background: #6366f1;"></span>
+                    <span>Verified Candidates</span>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-bars">
+                    <div class="chart-bar-item" *ngFor="let data of chartData">
+                        <div class="bar-wrapper">
+                            <div class="bar" [style.height.px]="(data.value / maxChartValue) * 200"
+                                [style.background]="'linear-gradient(180deg, #6366f1 0%, #a855f7 100%)'">
+                                <span class="bar-value">{{ data.value }}</span>
+                            </div>
+                        </div>
+                        <span class="bar-label">{{ data.label }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tech Insights Row -->
+    <div class="dashboard-row">
+        <div class="top-certifications-card full-width">
+            <div class="card-header">
+                <h2>Top Expertise Segments</h2>
+            </div>
+            <div class="certifications-list tech-insights-grid">
+                <div class="certification-item" *ngFor="let insight of topTechInsights">
+                    <div class="cert-info">
+                        <div class="cert-icon" style="background: rgba(99, 102, 241, 0.1)">
+                            <span>💻</span>
+                        </div>
+                        <div class="cert-details">
+                            <h4>{{ insight.tech }}</h4>
+                            <span class="cert-enrollments">{{ insight.count }} Candidates</span>
+                        </div>
+                    </div>
+                    <span class="cert-growth" style="color: #10b981">{{ insight.trend }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

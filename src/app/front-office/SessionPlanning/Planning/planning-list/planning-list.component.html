@@ -1,0 +1,577 @@
+<div class="planning-manager">
+  <!-- En-tête -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">
+        <span class="title-icon">
+          <svg
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="2" />
+            <path d="M8 2v4M16 2v4M3 10h18" stroke-width="2" />
+            <line x1="8" y1="14" x2="16" y2="14" stroke-width="2" />
+            <line x1="8" y1="18" x2="12" y2="18" stroke-width="2" />
+          </svg>
+        </span>
+        <span class="title-text">Plannings des sessions</span>
+      </h1>
+      <p class="page-subtitle">
+        Gérez les plannings de toutes les sessions de formation
+      </p>
+    </div>
+
+    <!-- Filtres rapides -->
+    <div class="header-right">
+      <div class="filter-tabs">
+        <button
+          class="filter-tab"
+          [class.active]="selectedFilter === 'all'"
+          (click)="selectedFilter = 'all'; applyFilters()"
+        >
+          Tous
+          <span class="tab-badge">{{ plannings.length }}</span>
+        </button>
+        <button
+          class="filter-tab"
+          [class.active]="selectedFilter === 'presential'"
+          (click)="selectedFilter = 'presential'; applyFilters()"
+        >
+          Présentiel
+          <span class="tab-badge">{{ getCountByMode("PRESENTIAL") }}</span>
+        </button>
+        <button
+          class="filter-tab"
+          [class.active]="selectedFilter === 'remote'"
+          (click)="selectedFilter = 'remote'; applyFilters()"
+        >
+          Distanciel
+          <span class="tab-badge">{{ getCountByMode("REMOTE") }}</span>
+        </button>
+        <button
+          class="filter-tab"
+          [class.active]="selectedFilter === 'hybrid'"
+          (click)="selectedFilter = 'hybrid'; applyFilters()"
+        >
+          Hybride
+          <span class="tab-badge">{{ getCountByMode("HYBRID") }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barre de recherche -->
+  <div class="search-section">
+    <div class="search-box">
+      <svg
+        class="search-icon"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+      >
+        <circle cx="11" cy="11" r="8" stroke-width="2" />
+        <path d="M21 21l-4.35-4.35" stroke-width="2" />
+      </svg>
+      <input
+        type="text"
+        placeholder="Rechercher par session, lieu, mode..."
+        [(ngModel)]="searchText"
+        (input)="applyFilters()"
+        class="search-input"
+      />
+      <button *ngIf="searchText" class="clear-search" (click)="clearSearch()">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <path d="M18 6L6 18M6 6l12 12" stroke-width="2" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="view-options">
+      <button
+        class="view-btn"
+        [class.active]="viewMode === 'grid'"
+        (click)="viewMode = 'grid'"
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2" />
+          <rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2" />
+          <rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2" />
+          <rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2" />
+        </svg>
+        Grille
+      </button>
+      <button
+        class="view-btn"
+        [class.active]="viewMode === 'list'"
+        (click)="viewMode = 'list'"
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <line x1="8" y1="6" x2="21" y2="6" stroke-width="2" />
+          <line x1="8" y1="12" x2="21" y2="12" stroke-width="2" />
+          <line x1="8" y1="18" x2="21" y2="18" stroke-width="2" />
+          <line x1="3" y1="6" x2="3.01" y2="6" stroke-width="2" />
+          <line x1="3" y1="12" x2="3.01" y2="12" stroke-width="2" />
+          <line x1="3" y1="18" x2="3.01" y2="18" stroke-width="2" />
+        </svg>
+        Liste
+      </button>
+    </div>
+  </div>
+
+  <!-- Statistiques -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon total">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <rect x="2" y="2" width="20" height="20" rx="2" stroke-width="2" />
+          <line x1="8" y1="2" x2="8" y2="22" stroke-width="2" />
+          <line x1="16" y1="2" x2="16" y2="22" stroke-width="2" />
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ totalSessions }}</span>
+        <span class="stat-label">Sessions totales</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon with-planning">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="2" />
+          <path d="M8 2v4M16 2v4M3 10h18" stroke-width="2" />
+          <circle cx="12" cy="16" r="2" fill="currentColor" />
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ plannings.length }}</span>
+        <span class="stat-label">Avec planning</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon without-planning">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="2" />
+          <path d="M8 2v4M16 2v4M3 10h18" stroke-width="2" />
+          <line x1="18" y1="18" x2="6" y2="6" stroke-width="2" />
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ sessionsWithoutPlanning }}</span>
+        <span class="stat-label">Sans planning</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon total-hours">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <circle cx="12" cy="12" r="10" stroke-width="2" />
+          <polyline points="12 6 12 12 16 14" stroke-width="2" />
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ totalHours }}h</span>
+        <span class="stat-label">Heures totales</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Résultats de recherche -->
+  <div class="results-header" *ngIf="searchText || selectedFilter !== 'all'">
+    <div class="results-info">
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+      >
+        <circle cx="11" cy="11" r="8" stroke-width="2" />
+        <path d="M21 21l-4.35-4.35" stroke-width="2" />
+      </svg>
+      <span>
+        <strong>{{ filteredPlannings.length }}</strong> planning(s) trouvé(s)
+        <span *ngIf="searchText">pour "{{ searchText }}"</span>
+      </span>
+    </div>
+    <button class="clear-filters" (click)="resetFilters()">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+      >
+        <path d="M18 6L6 18M6 6l12 12" stroke-width="2" />
+      </svg>
+      Effacer les filtres
+    </button>
+  </div>
+
+  <!-- Liste des plannings -->
+  <div class="plannings-list">
+    <!-- État vide -->
+    <div class="empty-state" *ngIf="filteredPlannings.length === 0">
+      <svg
+        width="80"
+        height="80"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+      >
+        <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="1.5" />
+        <path d="M8 2v4M16 2v4M3 10h18" stroke-width="1.5" />
+      </svg>
+      <h3>Aucun planning trouvé</h3>
+      <p *ngIf="searchText || selectedFilter !== 'all'">
+        Aucun planning ne correspond à vos critères de recherche.
+      </p>
+      <p *ngIf="!searchText && selectedFilter === 'all'">
+        Commencez par créer un planning pour une session.
+      </p>
+      <button
+        class="btn-create"
+        routerLink="/sessions"
+        *ngIf="!searchText && selectedFilter === 'all'"
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <path d="M12 5v14M5 12h14" stroke-width="2" />
+        </svg>
+        Voir les sessions
+      </button>
+    </div>
+
+    <!-- Vue Grille -->
+    <div
+      class="grid-view"
+      *ngIf="viewMode === 'grid' && filteredPlannings.length > 0"
+    >
+      <div class="planning-card" *ngFor="let planning of filteredPlannings">
+        <!-- En-tête avec mode -->
+        <div class="card-header" [class]="planning.mode.toLowerCase()">
+          <div class="mode-badge">
+            <span class="mode-icon">{{ getModeIcon(planning.mode) }}</span>
+            <span class="mode-name">{{ getModeLabel(planning.mode) }}</span>
+          </div>
+          <div class="card-actions">
+            <button
+              class="action-btn edit"
+              (click)="editPlanning(planning.id!, planning.sessionId!)"
+              title="Modifier"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <path
+                  d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
+                  stroke-width="2"
+                />
+              </svg>
+            </button>
+            <button
+              class="action-btn delete"
+              (click)="deletePlanning(planning.id!)"
+              title="Supprimer"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <path
+                  d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"
+                  stroke-width="2"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Corps de la carte -->
+        <div class="card-body">
+          <div class="session-info">
+            <span class="session-label">Session #{{ planning.sessionId }}</span>
+            <span class="session-dates">
+              {{ planning.startDate | date: "dd MMM" }} -
+              {{ planning.endDate | date: "dd MMM yyyy" }}
+            </span>
+          </div>
+
+          <div class="hours-info">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <circle cx="12" cy="12" r="10" stroke-width="2" />
+              <polyline points="12 6 12 12 16 14" stroke-width="2" />
+            </svg>
+            <span>{{ planning.totalHours }} heures</span>
+          </div>
+
+          <div class="sessions-count">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <rect
+                x="3"
+                y="4"
+                width="18"
+                height="18"
+                rx="2"
+                stroke-width="2"
+              />
+              <line x1="16" y1="2" x2="16" y2="6" stroke-width="2" />
+              <line x1="8" y1="2" x2="8" y2="6" stroke-width="2" />
+            </svg>
+            <span>{{ planning.schedules.length || 0 }} séances</span>
+          </div>
+
+          <!-- Lieu si présentiel ou hybride -->
+          <div
+            class="location-info"
+            *ngIf="planning.mode !== 'ONLINE' && planning.location"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <path
+                d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
+                stroke-width="2"
+              />
+              <circle cx="12" cy="10" r="3" stroke-width="2" />
+            </svg>
+            <span></span>
+          </div>
+        </div>
+
+        <!-- Pied de carte -->
+        <div class="card-footer">
+          <button class="btn-view" [routerLink]="['/plannings', planning.id]">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <circle cx="12" cy="12" r="3" stroke-width="2" />
+              <path
+                d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7z"
+                stroke-width="2"
+              />
+            </svg>
+            Voir détails
+          </button>
+          <button
+            class="btn-session"
+            [routerLink]="['/sessions', planning.sessionId]"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <rect
+                x="2"
+                y="2"
+                width="20"
+                height="20"
+                rx="2.18"
+                stroke-width="2"
+              />
+            </svg>
+            Voir session
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vue Liste -->
+    <div
+      class="list-view"
+      *ngIf="viewMode === 'list' && filteredPlannings.length > 0"
+    >
+      <table class="plannings-table">
+        <thead>
+          <tr>
+            <th>Session</th>
+            <th>Mode</th>
+            <th>Période</th>
+            <th>Durée</th>
+            <th>Séances</th>
+            <th>Lieu</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let planning of filteredPlannings">
+            <td class="session-cell">#{{ planning.sessionId }}</td>
+            <td>
+              <span class="mode-tag" [class]="planning.mode.toLowerCase()">
+                <span class="mode-icon">{{ getModeIcon(planning.mode) }}</span>
+                {{ getModeLabel(planning.mode) }}
+              </span>
+            </td>
+            <td>
+              {{ planning.startDate | date: "dd/MM/yy" }} -
+              {{ planning.endDate | date: "dd/MM/yy" }}
+            </td>
+            <td class="hours-cell">{{ planning.totalHours }}h</td>
+            <td class="sessions-cell">{{ planning.schedules.length || 0 }}</td>
+            <td class="location-cell"></td>
+            <td class="actions-cell">
+              <button
+                class="table-action view"
+                [routerLink]="['/plannings', planning.id]"
+                title="Voir"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <circle cx="12" cy="12" r="3" stroke-width="2" />
+                  <path
+                    d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7z"
+                    stroke-width="2"
+                  />
+                </svg>
+              </button>
+              <button
+                class="table-action edit"
+                [routerLink]="['/plannings/edit', planning.id]"
+                title="Modifier"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <path
+                    d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"
+                    stroke-width="2"
+                  />
+                </svg>
+              </button>
+              <button
+                class="table-action delete"
+                (click)="deletePlanning(planning.id!)"
+                title="Supprimer"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <path
+                    d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"
+                    stroke-width="2"
+                  />
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Message de confirmation -->
+  <div class="message-container" *ngIf="message.show">
+    <div
+      class="message"
+      [class.success]="message.type === 'success'"
+      [class.error]="message.type === 'error'"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path
+          *ngIf="message.type === 'success'"
+          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+        <path
+          *ngIf="message.type === 'error'"
+          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      {{ message.text }}
+    </div>
+  </div>
+</div>

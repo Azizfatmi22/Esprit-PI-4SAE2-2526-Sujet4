@@ -1,0 +1,117 @@
+<div class="course-catalog-page">
+  <section class="catalog-hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <h1 class="hero-title">My <span class="gradient-text">Paid Courses</span></h1>
+      <p class="hero-description">Access your purchased content and continue your learning journey</p>
+
+      <div class="search-container">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            (input)="onSearchChange()"
+            placeholder="Search in your paid courses..."
+            class="search-input"
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="filters-section">
+    <div class="filters-container">
+      <div class="results-count">
+        <span>{{ filteredCourses.length }} course{{ filteredCourses.length !== 1 ? 's' : '' }} found</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="courses-section">
+    <div class="courses-container">
+      <div *ngIf="loading" class="loading-container">
+        <div class="spinner"></div>
+        <p>Loading your paid courses...</p>
+      </div>
+
+      <div *ngIf="!loading && errorMessage" class="empty-state">
+        <div class="empty-icon">⚠️</div>
+        <h3>{{ errorMessage }}</h3>
+      </div>
+
+      <div *ngIf="!loading && !errorMessage && filteredCourses.length === 0" class="empty-state">
+        <div class="empty-icon">📚</div>
+        <h3>No paid courses found</h3>
+        <p>Try adjusting your search term</p>
+      </div>
+
+      <div *ngIf="!loading && !errorMessage && filteredCourses.length > 0" class="courses-grid">
+        <div *ngFor="let course of filteredCourses" class="course-card">
+          <div class="course-thumbnail">
+            <img
+              [src]="getThumbnailUrl(course.thumbnailUrl, course.courseId)"
+              [alt]="course.title"
+              class="thumbnail-image"
+              (error)="onImageError($event)"
+            />
+            <div class="thumbnail-placeholder">
+              <span class="placeholder-icon">📖</span>
+            </div>
+          </div>
+
+          <div class="course-content">
+            <div class="course-header">
+              <span class="level-badge" [ngClass]="getLevelBadgeClass(course.level)">
+                {{ getLevelLabel(course.level) }}
+              </span>
+              <div class="course-rating" *ngIf="course.rating">
+                <span class="star-icon">⭐</span>
+                <span class="rating-value">{{ course.rating.toFixed(1) }}</span>
+              </div>
+            </div>
+
+            <h3 class="course-title">{{ course.title }}</h3>
+            <p class="course-description">{{ course.description }}</p>
+
+            <div class="course-meta">
+              <div class="meta-item">
+                <span class="meta-icon">✅</span>
+                <span class="meta-text">Paid: {{ formatDate(course.lastPaidDate) }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-icon">🔁</span>
+                <span class="meta-text">{{ course.purchaseCount }} payment(s)</span>
+              </div>
+              <div class="meta-item" *ngIf="course.totalChapters">
+                <span class="meta-icon">📑</span>
+                <span class="meta-text">{{ course.totalChapters }} chapters</span>
+              </div>
+              <div class="meta-item" *ngIf="course.totalDurationMinutes">
+                <span class="meta-icon">⏱️</span>
+                <span class="meta-text">{{ formatDuration(course.totalDurationMinutes) }}</span>
+              </div>
+            </div>
+
+            <div class="course-footer">
+              <div class="course-price">
+                <span class="price-label">Status:</span>
+                <span class="price-value">{{ course.isFinished ? 'Finished' : 'In Progress' }}</span>
+              </div>
+
+              <div class="footer-buttons">
+                <button
+                  class="btn-enroll"
+                  [class.btn-finished]="course.isFinished"
+                  [disabled]="course.isFinished || !course.courseId"
+                  (click)="openCourseContent(course)">
+                  {{ course.isFinished ? 'Already Finished' : 'Contenu Course' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

@@ -1,0 +1,240 @@
+<div class="refund-container">
+
+  <!-- ===== HEADER ===== -->
+  <div class="refund-header">
+    <button class="btn-back" (click)="goBack()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Retour
+    </button>
+    <div class="header-title">
+      <h1>💸 Mes Remboursements</h1>
+      <p>Gérez vos demandes de remboursement</p>
+    </div>
+  </div>
+
+  <!-- ===== TABS ===== -->
+  <div class="tabs">
+    <button class="tab" [class.active]="activeTab === 'invoices'" (click)="activeTab = 'invoices'">
+      🧾 Mes Factures
+    </button>
+    <button class="tab" [class.active]="activeTab === 'refunds'" (click)="activeTab = 'refunds'; loadMyRefunds()">
+      📋 Mes Demandes
+      <span class="badge" *ngIf="pendingCount > 0">{{ pendingCount }}</span>
+    </button>
+  </div>
+
+  <!-- ===== TAB: FACTURES ===== -->
+  <div *ngIf="activeTab === 'invoices'">
+
+    <div class="section-info">
+      <div class="info-icon">ℹ️</div>
+      <p>Vous pouvez demander un remboursement dans les <strong>14 jours</strong> suivant votre achat.</p>
+    </div>
+
+    <div class="error-state" *ngIf="!loadingInvoices && invoicesLoadError">
+      ❌ {{ invoicesLoadError }}
+    </div>
+
+    <div class="loading-state" *ngIf="loadingInvoices">
+      <div class="spinner"></div>
+      <span>Chargement des factures...</span>
+    </div>
+
+    <div class="empty-state" *ngIf="!loadingInvoices && invoices.length === 0">
+      <div class="empty-icon">📭</div>
+      <h3>Aucune facture trouvée</h3>
+      <p>Vous n'avez pas encore effectué d'achat.</p>
+    </div>
+
+    <div class="invoices-grid" *ngIf="!loadingInvoices && invoices.length > 0">
+      <div class="invoice-card" *ngFor="let invoice of invoices">
+
+        <div class="invoice-card-header">
+          <div class="invoice-number">{{ invoice.invoiceNumber }}</div>
+          <span class="invoice-status" [class]="'status-' + invoice.status.toLowerCase()">
+            {{ invoice.status }}
+          </span>
+        </div>
+
+        <div class="invoice-card-body">
+          <div class="invoice-meta">
+            <div class="meta-row">
+              <span class="meta-label">📅 Date</span>
+              <span class="meta-value">{{ invoice.issueDate | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">💰 Montant</span>
+              <span class="meta-value amount">{{ invoice.totalAmount | number:'1.2-2' }} TND</span>
+            </div>
+            <div class="meta-row" *ngIf="invoice.couponCode">
+              <span class="meta-label">🎟️ Coupon</span>
+              <span class="meta-value coupon">{{ invoice.couponCode }} (-{{ invoice.discountAmount | number:'1.2-2' }} TND)</span>
+            </div>
+          </div>
+
+          <div class="courses-list">
+            <div class="course-chip" *ngFor="let course of invoice.purchasedCourses">
+              📚 {{ course }}
+            </div>
+          </div>
+        </div>
+
+        <div class="invoice-card-footer">
+
+          <!-- Délai dépassé -->
+          <div class="deadline-expired" *ngIf="isDeadlineExpired(invoice.issueDate)">
+            ⏰ Délai de remboursement dépassé
+          </div>
+
+          <!-- Déjà remboursé -->
+          <div class="already-refunded" *ngIf="invoice.status === 'REFUNDED'">
+            ✅ Remboursé
+          </div>
+
+          <!-- Demande existante -->
+          <div class="refund-pending-badge" *ngIf="hasExistingRefund(invoice.id)">
+            ⏳ Demande en cours
+          </div>
+
+          <!-- Bouton demande -->
+          <button
+            class="btn-request-refund"
+            *ngIf="!isDeadlineExpired(invoice.issueDate) && invoice.status === 'PAID' && !hasExistingRefund(invoice.id)"
+            (click)="openRefundModal(invoice)">
+            💸 Demander un remboursement
+          </button>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: MES DEMANDES ===== -->
+  <div *ngIf="activeTab === 'refunds'">
+
+    <div class="loading-state" *ngIf="loadingRefunds">
+      <div class="spinner"></div>
+      <span>Chargement...</span>
+    </div>
+
+    <div class="empty-state" *ngIf="!loadingRefunds && myRefunds.length === 0">
+      <div class="empty-icon">📋</div>
+      <h3>Aucune demande</h3>
+      <p>Vous n'avez pas encore fait de demande de remboursement.</p>
+    </div>
+
+    <div class="refunds-list" *ngIf="!loadingRefunds && myRefunds.length > 0">
+      <div class="refund-item" *ngFor="let refund of myRefunds" [class]="'refund-' + refund.status.toLowerCase()">
+
+        <div class="refund-item-header">
+          <div class="refund-info">
+            <div class="refund-invoice">Facture #{{ refund.invoiceId }}</div>
+            <div class="refund-date">Demandé le {{ refund.requestDate | date:'dd/MM/yyyy à HH:mm' }}</div>
+          </div>
+          <div class="refund-status-badge" [class]="'badge-' + refund.status.toLowerCase()">
+            <span *ngIf="refund.status === 'PENDING'">⏳ En attente</span>
+            <span *ngIf="refund.status === 'PROCESSED'">✅ Approuvé</span>
+            <span *ngIf="refund.status === 'REJECTED'">❌ Rejeté</span>
+          </div>
+        </div>
+
+        <div class="refund-item-body">
+          <div class="refund-amount">
+            <span class="amount-label">Montant remboursé</span>
+            <span class="amount-value">{{ refund.refundAmount | number:'1.2-2' }} TND</span>
+          </div>
+          <div class="refund-reason">
+            <span class="reason-label">Raison :</span>
+            <span class="reason-text">{{ refund.reason }}</span>
+          </div>
+        </div>
+
+        <!-- PROCESSED -->
+        <div class="refund-item-footer PROCESSED" *ngIf="refund.status === 'PROCESSED'">
+          <div class="credit-note">
+            📄 Avoir N° <strong>{{ refund.creditNoteNumber }}</strong>
+          </div>
+          <div class="processed-info">
+            Approuvé le {{ refund.processedDate | date:'dd/MM/yyyy' }} par {{ refund.processedBy }}
+          </div>
+        </div>
+
+        <!-- Rejected -->
+        <div class="refund-item-footer rejected" *ngIf="refund.status === 'REJECTED'">
+          <div class="rejection-reason">
+            ❌ Motif : {{ refund.rejectionReason }}
+          </div>
+          <div class="processed-info">
+            Rejeté le {{ refund.processedDate | date:'dd/MM/yyyy' }} par {{ refund.processedBy }}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== MODAL DEMANDE DE REMBOURSEMENT ===== -->
+<div class="modal-overlay" *ngIf="showRefundModal" (click)="closeModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <h2>💸 Demande de remboursement</h2>
+      <button class="modal-close" (click)="closeModal()">✕</button>
+    </div>
+
+    <div class="modal-body" *ngIf="selectedInvoice">
+
+      <div class="invoice-summary">
+        <div class="summary-row">
+          <span>Facture</span>
+          <strong>{{ selectedInvoice.invoiceNumber }}</strong>
+        </div>
+        <div class="summary-row">
+          <span>Montant</span>
+          <strong class="amount">{{ selectedInvoice.totalAmount | number:'1.2-2' }} TND</strong>
+        </div>
+        <div class="summary-row">
+          <span>Date d'achat</span>
+          <strong>{{ selectedInvoice.issueDate | date:'dd/MM/yyyy' }}</strong>
+        </div>
+        <div class="summary-row deadline">
+          <span>⚠️ Délai limite</span>
+          <strong>{{ getDeadline(selectedInvoice.issueDate) | date:'dd/MM/yyyy' }}</strong>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Raison du remboursement <span class="required">*</span></label>
+        <textarea
+          [(ngModel)]="refundReason"
+          placeholder="Expliquez pourquoi vous souhaitez être remboursé..."
+          rows="4"
+          maxlength="500"
+          class="reason-input">
+        </textarea>
+        <div class="char-count">{{ refundReason.length }}/500</div>
+      </div>
+
+      <div class="refund-warning">
+        ⚠️ En cas d'approbation, vos accès aux cours achetés seront révoqués.
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="closeModal()">Annuler</button>
+      <button
+        class="btn-submit-refund"
+        (click)="submitRefundRequest()"
+        [disabled]="!refundReason.trim() || submitting">
+        <span *ngIf="submitting">⏳ Envoi...</span>
+        <span *ngIf="!submitting">💸 Envoyer la demande</span>
+      </button>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,925 @@
+<div class="schedule-wrapper">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <button class="btn-back" (click)="goBack()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Retour
+      </button>
+      <div class="header-info">
+        <h1>📅 Gestion des séances</h1>
+        <p *ngIf="planningStartDate && planningEndDate">
+          {{ planningStartDate | date:'dd MMMM yyyy' }} - {{ planningEndDate | date:'dd MMMM yyyy' }}
+          <span class="duration-badge">{{ getTotalDays() }} jours</span>
+        </p>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="stat-badge">
+        <span class="stat-value">{{ schedules.length }}</span>
+        <span class="stat-label">Séances</span>
+      </div>
+      <div class="stat-badge">
+        <span class="stat-value">{{ getTotalHours() }}h</span>
+        <span class="stat-label">Heures</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert Messages -->
+  <div class="alert-message success" *ngIf="successMessage" (click)="clearMessages()">
+    <span class="alert-icon">✅</span>
+    <span class="alert-text">{{ successMessage }}</span>
+    <button class="alert-close">✕</button>
+  </div>
+  <div class="alert-message error" *ngIf="errorMessage" (click)="clearMessages()">
+    <span class="alert-icon">❌</span>
+    <span class="alert-text">{{ errorMessage }}</span>
+    <button class="alert-close">✕</button>
+  </div>
+  <div class="alert-message warning" *ngIf="warningMessage" (click)="clearMessages()">
+    <span class="alert-icon">⚠️</span>
+    <span class="alert-text">{{ warningMessage }}</span>
+    <button class="alert-close">✕</button>
+  </div>
+
+  <!-- Main two-column layout -->
+  <div class="two-columns">
+
+    <!-- Left column: Calendar -->
+    <div class="calendar-column">
+      <div class="calendar-container">
+        <div class="calendar-header">
+          <button class="month-nav" (click)="previousMonth()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <h2>{{ getMonthName() }}</h2>
+          <button class="month-nav" (click)="nextMonth()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Calendar Legend -->
+        <div class="calendar-legend">
+          <div class="legend-item">
+            <span class="legend-dot confirmed"></span>
+            <span>Confirmé</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot pending"></span>
+            <span>En attente</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot active"></span>
+            <span>Actif</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot cancelled"></span>
+            <span>Annulé</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot multiple"></span>
+            <span>Multiple</span>
+          </div>
+        </div>
+        
+        <div class="calendar-grid">
+          <div class="weekday" *ngFor="let day of weekDays">{{ day }}</div>
+          <ng-container *ngFor="let week of weeks">
+            <div *ngFor="let day of week"
+                 class="calendar-day"
+                 [class.other-month]="!isCurrentMonth(day)"
+                 [class.out-of-range]="!isDateInPlanningRange(day)"
+                 [class.past]="!isDateSelectable(day)"
+                 [class.today]="isToday(day)"
+                 [class.selected]="selectedDate?.toDateString() === day.toDateString()"
+                 [class.has-schedules]="getSchedulesForDate(day).length > 0"
+                 (click)="selectDate(day)">
+              
+              <!-- Day header with number and count -->
+              <div class="day-header">
+                <span class="day-number">{{ day.getDate() }}</span>
+                <span class="schedule-count" *ngIf="getSchedulesForDate(day).length > 0">
+                  {{ getSchedulesForDate(day).length }}
+                </span>
+              </div>
+              
+              <!-- Schedule preview cards -->
+              <div class="day-schedules-preview">
+                <div *ngFor="let schedule of getSchedulesForDate(day).slice(0, 2)" 
+                     class="schedule-preview"
+                     [class]="schedule.status | lowercase"
+                     (click)="selectSchedule(schedule, $event)">
+                  <span class="schedule-time">{{ formatTime(schedule.startTime) }}</span>
+                  <span class="schedule-title">{{ schedule.title | slice:0:20 }}{{ schedule.title.length > 20 ? '...' : '' }}</span>
+                </div>
+                
+                <!-- More indicator -->
+                <div *ngIf="getSchedulesForDate(day).length > 2" 
+                     class="more-schedules"
+                     (click)="selectDate(day)">
+                  +{{ getSchedulesForDate(day).length - 2 }} autre{{ getSchedulesForDate(day).length - 2 > 1 ? 's' : '' }}
+                </div>
+              </div>
+              
+              <!-- Add button -->
+              <button class="add-schedule-btn" *ngIf="isDateSelectable(day)" (click)="selectDate(day); $event.stopPropagation()">
+                +
+              </button>
+            </div>
+          </ng-container>
+        </div>
+        
+        <!-- Mini stats footer -->
+        <div class="calendar-footer" *ngIf="schedules.length > 0">
+          <div class="mini-stats">
+            <div class="mini-stat">
+              <span class="mini-stat-value">{{ getSessionsThisMonth() }}</span>
+              <span class="mini-stat-label">ce mois</span>
+            </div>
+            <div class="mini-stat">
+              <span class="mini-stat-value">{{ getSessionsNextMonth() }}</span>
+              <span class="mini-stat-label">mois prochain</span>
+            </div>
+            <div class="mini-stat">
+              <span class="mini-stat-value">{{ getHoursThisMonth() }}h</span>
+              <span class="mini-stat-label">heures</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column: Actions & Form -->
+    <div class="form-column">
+
+      <!-- Action Buttons -->
+      <div class="actions-section">
+        <div class="action-buttons">
+          <button class="action-btn primary" (click)="openAction('auto')">
+            ⚡ Auto-planifier
+          </button>
+          <button class="action-btn primary" (click)="openAction('weekly')">
+            📅 Générer semaine
+          </button>
+          <button class="action-btn secondary" (click)="openAction('analytics')">
+            📊 Analytics
+          </button>
+          <button class="action-btn secondary" (click)="openAction('export')">
+            📁 Export
+          </button>
+        </div>
+
+        <div class="action-buttons">
+          <button class="action-btn outline" (click)="openAction('shift')">
+            ⏰ Décaler sessions
+          </button>
+          <button class="action-btn outline" (click)="openAction('suggest')">
+            🎯 Suggestions
+          </button>
+          <button class="action-btn outline" (click)="openAction('available')">
+            🔍 Créneaux dispo
+          </button>
+        </div>
+
+        <!-- Per-schedule actions -->
+        <div class="advanced-actions" *ngIf="selectedSchedule">
+          <div class="advanced-header">
+            <div class="advanced-title">
+              <span class="action-icon">🔧</span>
+              <div class="title-info">
+                <span class="main-title">Actions sur la séance</span>
+                <span class="schedule-name">{{ selectedSchedule.title }}</span>
+              </div>
+            </div>
+            <button class="minimize-btn" (click)="toggleAdvancedActions()" [class.minimized]="advancedActionsMinimized">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path *ngIf="!advancedActionsMinimized" d="M18 15l-6-6-6 6" stroke-width="2" stroke-linecap="round"/>
+                <path *ngIf="advancedActionsMinimized" d="M6 9l6 6 6-6" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="advanced-buttons" [class.minimized]="advancedActionsMinimized">
+            <div class="action-card">
+              <button class="action-card-btn split" (click)="openSplitModal()" [disabled]="!canSplitSession()">
+                <span class="btn-icon">✂️</span>
+                <div class="btn-content">
+                  <span class="btn-title">Diviser</span>
+                  <span class="btn-desc">Partager en deux sessions</span>
+                </div>
+              </button>
+            </div>
+
+            <div class="action-card">
+              <button class="action-card-btn duplicate" (click)="openDuplicateModal()">
+                <span class="btn-icon">📋</span>
+                <div class="btn-content">
+                  <span class="btn-title">Dupliquer</span>
+                  <span class="btn-desc">Créer une copie</span>
+                </div>
+              </button>
+            </div>
+
+            <div class="action-card">
+              <button class="action-card-btn recurring" (click)="openRecurringModal()">
+                <span class="btn-icon">🔄</span>
+                <div class="btn-content">
+                  <span class="btn-title">Récurrent</span>
+                  <span class="btn-desc">Créer plusieurs sessions</span>
+                </div>
+              </button>
+            </div>
+
+            <div class="action-card">
+              <button class="action-card-btn optimize" (click)="openOptimizeModal()">
+                <span class="btn-icon">⚡</span>
+                <div class="btn-content">
+                  <span class="btn-title">Optimiser</span>
+                  <span class="btn-desc">Meilleur créneau</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick info badges -->
+          <div class="advanced-footer" *ngIf="!advancedActionsMinimized">
+            <div class="info-badge">
+              <span class="badge-icon">⏱️</span>
+              <span>Durée: {{ getScheduleDuration() }}</span>
+            </div>
+            <div class="info-badge">
+              <span class="badge-icon">📅</span>
+              <span>{{ selectedSchedule.startTime | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="info-badge" [class.warning]="isScheduleToday()">
+              <span class="badge-icon">{{ isScheduleToday() ? '⚠️' : '✅' }}</span>
+              <span>{{ isScheduleToday() ? 'Aujourd\'hui' : 'À venir' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== DRAWERS ==================== -->
+
+      <!-- Drawer: Auto Schedule -->
+      <div class="action-drawer" *ngIf="activeAction === 'auto'">
+        <div class="drawer-header">
+          <h4>⚡ Auto-planifier</h4>
+          <button class="drawer-close" (click)="closeAction()">✕</button>
+        </div>
+        <p class="drawer-hint">Génère des séances réparties sur les prochains jours ouvrables.</p>
+
+        <div class="drawer-row">
+          <div class="drawer-field">
+            <label>Jours à planifier</label>
+            <input type="number" [(ngModel)]="autoConfig.days" min="1" max="90">
+          </div>
+          <div class="drawer-field">
+            <label>Durée / séance (h)</label>
+            <input type="number" [(ngModel)]="autoConfig.durationH" min="1" max="8">
+          </div>
+        </div>
+        <div class="drawer-row">
+          <div class="drawer-field">
+            <label>Heure début</label>
+            <input type="time" [(ngModel)]="autoConfig.startHour">
+          </div>
+          <div class="drawer-field">
+            <label>Heure fin max</label>
+            <input type="time" [(ngModel)]="autoConfig.endHour">
+          </div>
+        </div>
+
+        <div class="day-toggle-row">
+          <button *ngFor="let d of ['LUN','MAR','MER','JEU','VEN','SAM','DIM']"
+                  [class.on]="autoConfig.activeDays.includes(d)"
+                  (click)="toggleAutoDay(d)">{{ d }}</button>
+        </div>
+
+        <div class="drawer-footer">
+          <button class="btn-secondary" (click)="closeAction()">Annuler</button>
+          <button class="btn-primary" (click)="runAutoSchedule()" [disabled]="isAutoScheduling">
+            {{ isAutoScheduling ? 'Planification…' : 'Planifier' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Drawer: Weekly Generation -->
+      <div class="action-drawer" *ngIf="activeAction === 'weekly'">
+        <div class="drawer-header">
+          <h4>📅 Génération hebdomadaire</h4>
+          <button class="drawer-close" (click)="closeAction()">✕</button>
+        </div>
+        <p class="drawer-hint">
+          Génère des séances uniquement sur les jours sans séance existante.
+          <br>
+          <strong>Planning:</strong> {{ planningStartDate | date:'dd/MM/yyyy' }} - {{ planningEndDate | date:'dd/MM/yyyy' }}
+        </p>
+
+        <div class="drawer-row">
+          <div class="drawer-field">
+            <label>Date de début</label>
+            <input type="date" [(ngModel)]="weeklyConfig.fromDate" 
+                   [min]="formatDateForInput(planningStartDate!)" 
+                   [max]="formatDateForInput(planningEndDate!)">
+          </div>
+          <div class="drawer-field">
+            <label>Date de fin</label>
+            <input type="date" [(ngModel)]="weeklyConfig.toDate" 
+                   [min]="formatDateForInput(planningStartDate!)" 
+                   [max]="formatDateForInput(planningEndDate!)">
+          </div>
+        </div>
+        
+        <div class="drawer-row">
+          <div class="drawer-field">
+            <label>Heure début</label>
+            <input type="time" [(ngModel)]="weeklyConfig.startTime">
+          </div>
+          <div class="drawer-field">
+            <label>Heure fin</label>
+            <input type="time" [(ngModel)]="weeklyConfig.endTime">
+          </div>
+        </div>
+
+        <div class="day-toggle-row">
+          <button *ngFor="let d of ['LUN','MAR','MER','JEU','VEN','SAM','DIM']"
+                  [class.on]="weeklyConfig.activeDays.includes(d)"
+                  (click)="toggleWeeklyDay(d)">{{ d }}</button>
+        </div>
+
+        <div class="drawer-footer">
+          <button class="btn-secondary" (click)="closeAction()">Annuler</button>
+          <button class="btn-primary" *ngIf="!weeklyPreview" (click)="previewWeekly()">Aperçu</button>
+          <button class="btn-primary" *ngIf="weeklyPreview" (click)="confirmWeekly()" [disabled]="isGeneratingWeekly">
+            {{ isGeneratingWeekly ? 'Génération…' : 'Confirmer' }}
+          </button>
+        </div>
+        <div class="preview-box info" *ngIf="weeklyPreview">{{ weeklyPreview.message }}</div>
+      </div>
+
+      <!-- Drawer: Shift Sessions -->
+      <div class="action-drawer" *ngIf="activeAction === 'shift'">
+        <div class="drawer-header">
+          <h4>⏰ Décaler les sessions</h4>
+          <button class="drawer-close" (click)="closeAction()">✕</button>
+        </div>
+
+        <div class="drawer-row">
+          <div class="drawer-field">
+            <label>À partir du</label>
+            <input type="datetime-local" [(ngModel)]="shiftConfig.fromDate" (change)="buildShiftPreview()">
+          </div>
+          <div class="drawer-field">
+            <label>Direction</label>
+            <select [(ngModel)]="shiftConfig.direction" (change)="buildShiftPreview()">
+              <option [value]="1">Avancer (+ heures)</option>
+              <option [value]="-1">Reculer (- heures)</option>
+            </select>
+          </div>
+          <div class="drawer-field">
+            <label>Heures</label>
+            <input type="number" [(ngModel)]="shiftConfig.offsetHours" (change)="buildShiftPreview()" min="1" max="48">
+          </div>
+        </div>
+
+        <div class="preview-box warning" *ngIf="shiftPreview">{{ shiftPreview }}</div>
+
+        <div class="drawer-footer">
+          <button class="btn-secondary" (click)="closeAction()">Annuler</button>
+          <button class="btn-primary" (click)="confirmShift()" [disabled]="isShiftingSessions">
+            {{ isShiftingSessions ? 'Décalage…' : 'Décaler' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Drawer: Suggest Slots -->
+      <div class="action-drawer" *ngIf="activeAction === 'suggest'">
+        <div class="drawer-header">
+          <h4>🎯 Suggestions de créneaux</h4>
+          <button class="drawer-close" (click)="closeAction()">✕</button>
+        </div>
+
+        <div class="drawer-row">
+          <div class="drawer-field">
+            <label>Durée (h)</label>
+            <input type="number" [(ngModel)]="suggestConfig.durationH" min="1" max="8">
+          </div>
+          <div class="drawer-field">
+            <label>Nb suggestions</label>
+            <input type="number" [(ngModel)]="suggestConfig.maxCount" min="1" max="10">
+          </div>
+        </div>
+
+        <div class="drawer-footer">
+          <button class="btn-secondary" (click)="closeAction()">Annuler</button>
+          <button class="btn-primary" (click)="runSuggest()" [disabled]="isLoadingAlternatives">
+            {{ isLoadingAlternatives ? 'Recherche…' : 'Chercher' }}
+          </button>
+        </div>
+
+        <div class="slot-chip-grid" *ngIf="suggestedSlots.length > 0">
+          <button *ngFor="let slot of suggestedSlots"
+                  class="slot-chip"
+                  [class.selected]="selectedSuggestedSlot?.getTime() === slot.getTime()"
+                  (click)="applySuggestedSlot(slot)">
+            {{ slot | date:'EEE d MMM · HH:mm' }}
+          </button>
+        </div>
+        <p class="no-slots" *ngIf="suggestedSlots.length === 0 && !isLoadingAlternatives && activeAction === 'suggest'">
+          Aucun créneau disponible sur cet horizon.
+        </p>
+      </div>
+
+      <!-- Drawer: Available Slots -->
+      <div class="action-drawer" *ngIf="activeAction === 'available'">
+        <div class="drawer-header">
+          <h4>🔍 Créneaux disponibles</h4>
+          <button class="drawer-close" (click)="closeAction()">✕</button>
+        </div>
+
+        <div class="drawer-row">
+          <div class="drawer-field">
+            <label>Durée (h)</label>
+            <input type="number" [(ngModel)]="availableSlotsConfig.durationH" min="1" max="8">
+          </div>
+          <div class="drawer-field">
+            <label>Jours à vérifier</label>
+            <input type="number" [(ngModel)]="availableSlotsConfig.daysAhead" min="1" max="30">
+          </div>
+        </div>
+
+        <div class="drawer-footer">
+          <button class="btn-secondary" (click)="closeAction()">Annuler</button>
+          <button class="btn-primary" (click)="runAvailableSlots()">
+            Chercher
+          </button>
+        </div>
+
+        <div class="slot-chip-grid" *ngIf="availableSlots.length > 0">
+          <button *ngFor="let slot of availableSlots.slice(0, 10)"
+                  class="slot-chip"
+                  (click)="applyAvailableSlot(slot)">
+            {{ slot | date:'EEE d MMM · HH:mm' }}
+          </button>
+        </div>
+        <p class="no-slots" *ngIf="availableSlots.length === 0 && !loading">
+          Aucun créneau disponible.
+        </p>
+      </div>
+
+      <!-- Drawer: Export -->
+      <div class="action-drawer" *ngIf="activeAction === 'export'">
+        <div class="drawer-header">
+          <h4>📁 Exporter le planning</h4>
+          <button class="drawer-close" (click)="closeAction()">✕</button>
+        </div>
+
+        <div class="export-format-picker">
+          <button [class.sel]="exportConfig.format === 'ical'" (click)="exportConfig.format = 'ical'">
+            📆 iCal (.ics)<small>Google Cal, Outlook, Apple</small>
+          </button>
+          <button [class.sel]="exportConfig.format === 'csv'" (click)="exportConfig.format = 'csv'">
+            📋 CSV<small>Excel, Sheets, analyse</small>
+          </button>
+        </div>
+
+        <div class="drawer-row">
+          <div class="drawer-field"><label>Du</label><input type="date" [(ngModel)]="exportConfig.from"></div>
+          <div class="drawer-field"><label>Au</label><input type="date" [(ngModel)]="exportConfig.to"></div>
+        </div>
+
+        <div class="drawer-footer">
+          <button class="btn-secondary" (click)="closeAction()">Annuler</button>
+          <button class="btn-primary" (click)="runExport()">Télécharger</button>
+        </div>
+      </div>
+
+      <!-- Drawer: Analytics -->
+      <div class="action-drawer analytics-drawer" *ngIf="activeAction === 'analytics'">
+        <div class="drawer-header">
+          <h4>📊 Analyse du planning</h4>
+          <button class="drawer-close" (click)="closeAction()">✕</button>
+        </div>
+        <div class="analytics-content" *ngIf="analyticsData">
+          <div class="stat-row">
+            <span class="stat-label">Total séances :</span>
+            <span class="stat-value">{{ analyticsData.totalSchedules }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Heures totales :</span>
+            <span class="stat-value">{{ analyticsData.totalHours }}h</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Durée moyenne :</span>
+            <span class="stat-value">{{ analyticsData.averageDurationHours }}h</span>
+          </div>
+        </div>
+        <div class="analytics-content" *ngIf="statisticsData">
+          <div class="stat-row">
+            <span class="stat-label">Confirmées :</span>
+            <span class="stat-value">{{ statisticsData.confirmed }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">En attente :</span>
+            <span class="stat-value">{{ statisticsData.pending }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Taux complétion :</span>
+            <span class="stat-value">{{ statisticsData.completionRate }}%</span>
+          </div>
+        </div>
+        <div class="analytics-content" *ngIf="efficiencyData">
+          <div class="stat-row">
+            <span class="stat-label">Efficacité :</span>
+            <span class="stat-value">{{ efficiencyData.efficiencyScore || efficiencyData.score }}%</span>
+          </div>
+        </div>
+        <div class="drawer-footer">
+          <button class="btn-secondary" (click)="closeAction()">Fermer</button>
+        </div>
+      </div>
+
+      <!-- Schedule Form -->
+      <div class="schedule-form-container" *ngIf="showForm && selectedDate; else noSelection">
+
+        <div class="form-header">
+          <div class="form-title">
+            <span class="form-icon">{{ isEditing ? '✏️' : '➕' }}</span>
+            <h3>{{ isEditing ? 'Modifier la séance' : 'Ajouter une séance' }}</h3>
+          </div>
+          <button class="close-form" (click)="cancelForm()">✕</button>
+        </div>
+
+        <div class="selected-date-info">
+          <span class="date-icon">📅</span>
+          <span class="date-text">{{ selectedDate | date:'EEEE d MMMM yyyy' }}</span>
+        </div>
+
+        <form [formGroup]="scheduleForm" (ngSubmit)="onSubmit()">
+
+          <div class="form-group full-width">
+            <label>Titre <span class="required">*</span></label>
+            <input type="text" formControlName="title"
+                   placeholder="Ex: Introduction à Angular"
+                   class="form-input"/>
+            <div class="error-message" *ngIf="titleControl?.invalid && titleControl?.touched">
+              Le titre est requis (min. 3 caractères)
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Heure de début</label>
+              <select formControlName="startTime" class="form-input" (change)="onTimeChange()">
+                <option *ngFor="let slot of timeSlots" [value]="getDateTimeForSlot(selectedDate, slot)">
+                  {{ slot }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Heure de fin</label>
+              <select formControlName="endTime" class="form-input" (change)="onTimeChange()">
+                <option *ngFor="let slot of timeSlots" [value]="getDateTimeForSlot(selectedDate, slot)">
+                  {{ slot }}
+                </option>
+              </select>
+              <div class="error-message" *ngIf="endTimeControl?.errors?.['invalidRange']">
+                La fin doit être après le début
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Type</label>
+              <select formControlName="type" class="form-input">
+                <option *ngFor="let type of typeOptions" [value]="type.value">
+                  {{ type.icon }} {{ type.label }}
+                </option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Statut</label>
+              <select formControlName="status" class="form-input">
+                <option *ngFor="let status of statusOptions" [value]="status.value">
+                  {{ status.icon }} {{ status.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea formControlName="notes" rows="2"
+                      placeholder="Informations supplémentaires..."
+                      class="form-input"></textarea>
+            <div class="char-counter">{{ notesControl?.value?.length || 0 }}/500</div>
+          </div>
+
+          <!-- Conflict zone -->
+          <div class="conflict-zone">
+            <div class="conflict-buttons">
+              <button type="button" class="btn-conflict"
+                      (click)="checkConflicts()"
+                      [disabled]="isCheckingConflict">
+                🔍 Vérifier les conflits
+              </button>
+              <button type="button" class="btn-conflict secondary"
+                      (click)="checkConflictWithBuffer()"
+                      [disabled]="isCheckingConflict">
+                🛡️ Vérifier avec tampon ±30 min
+              </button>
+            </div>
+
+            <div class="conflict-checking" *ngIf="isCheckingConflict">
+              <span class="spinner-sm"></span>
+              <span>Vérification en cours…</span>
+            </div>
+
+            <div class="conflict-result" *ngIf="!isCheckingConflict && conflictCheckResult !== null">
+              <span class="conflict-badge danger" *ngIf="conflictCheckResult">
+                ⚠️ {{ conflictingSchedules.length }} conflit(s) détecté(s)
+              </span>
+              <span class="conflict-badge success" *ngIf="!conflictCheckResult">
+                ✅ Aucun conflit détecté
+              </span>
+            </div>
+
+            <ul class="conflict-list" *ngIf="conflictingSchedules.length > 0">
+              <li *ngFor="let c of conflictingSchedules" class="conflict-item">
+                <span class="conflict-item-title">{{ c.title }}</span>
+                <span class="conflict-item-time">
+                  {{ c.startTime | date:'HH:mm' }} – {{ c.endTime | date:'HH:mm' }}
+                </span>
+              </li>
+            </ul>
+
+            <div class="alternative-slots" *ngIf="conflictingSchedules.length > 0">
+              <p class="alt-label">Créneaux alternatifs disponibles :</p>
+              <div class="alt-checking" *ngIf="isLoadingAlternatives">
+                <span class="spinner-sm"></span> Recherche de créneaux…
+              </div>
+              <div class="alt-grid" *ngIf="!isLoadingAlternatives && alternativeSlots.length > 0">
+                <button type="button" class="alt-slot"
+                        *ngFor="let slot of alternativeSlots"
+                        (click)="applyAlternativeSlot(slot)">
+                  {{ slot | date:'EEE d MMM · HH:mm' }}
+                </button>
+              </div>
+              <p class="alt-empty" *ngIf="!isLoadingAlternatives && alternativeSlots.length === 0">
+                Aucun créneau libre dans les 14 prochains jours.
+              </p>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-cancel" (click)="cancelForm()">Annuler</button>
+            <button type="submit" class="btn-submit"
+                    [disabled]="isSubmitting || scheduleForm.invalid || conflictCheckResult === true">
+              {{ isSubmitting ? 'Enregistrement…' : (isEditing ? 'Mettre à jour' : 'Ajouter') }}
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+      <ng-template #noSelection>
+        <div class="empty-selection">
+          <div class="empty-icon">📅</div>
+          <h3>Aucune séance sélectionnée</h3>
+          <p>Cliquez sur un jour dans le calendrier pour ajouter ou modifier une séance.</p>
+        </div>
+      </ng-template>
+
+    </div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement…</p>
+  </div>
+
+</div>
+
+<!-- ==================== MODALS ==================== -->
+
+<!-- Split Session Modal -->
+<div class="modal-overlay" *ngIf="showSplitModal" (click)="closeSplitModal()">
+  <div class="modal-container split-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-icon">✂️</div>
+      <h3>Diviser la séance</h3>
+      <button class="modal-close" (click)="closeSplitModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="session-info">
+        <div class="info-row">
+          <span class="label">Séance:</span>
+          <span class="value">{{ selectedSchedule?.title }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Durée actuelle:</span>
+          <span class="value">{{ getScheduleDuration() }}</span>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Durée de la pause (minutes)</label>
+        <div class="input-with-unit">
+          <input type="number" [(ngModel)]="splitBreakMinutes" min="5" max="120" step="5">
+          <span class="unit">min</span>
+        </div>
+        <small class="hint">Pause entre les deux parties</small>
+      </div>
+      
+      <div class="preview-box">
+        <div class="preview-title">Aperçu</div>
+        <div class="preview-content">
+          <div class="part">
+            <span class="part-label">Partie 1:</span>
+            <span class="part-time">{{ getSplitPart1Time() }}</span>
+          </div>
+          <div class="part-break">⏸️ Pause {{ splitBreakMinutes }} min</div>
+          <div class="part">
+            <span class="part-label">Partie 2:</span>
+            <span class="part-time">{{ getSplitPart2Time() }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeSplitModal()">Annuler</button>
+      <button class="btn-primary" (click)="confirmSplit()" [disabled]="isSplittingSession">
+        {{ isSplittingSession ? 'Division...' : 'Diviser' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Duplicate Schedule Modal -->
+<div class="modal-overlay" *ngIf="showDuplicateModal" (click)="closeDuplicateModal()">
+  <div class="modal-container duplicate-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-icon">📋</div>
+      <h3>Dupliquer la séance</h3>
+      <button class="modal-close" (click)="closeDuplicateModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="session-info">
+        <div class="info-row">
+          <span class="label">Séance originale:</span>
+          <span class="value">{{ selectedSchedule?.title }}</span>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Nouveau titre (optionnel)</label>
+        <input type="text" [(ngModel)]="duplicateNewTitle" placeholder="Laissez vide pour garder le même titre">
+      </div>
+      
+      <div class="form-group">
+        <label>Nouvelle date et heure</label>
+        <input type="datetime-local" [(ngModel)]="duplicateNewDateTime" 
+               [min]="minDateTime" class="form-input">
+      </div>
+      
+      <div class="info-box" *ngIf="duplicateNewDateTime">
+        <span class="info-icon">ℹ️</span>
+        <span>La séance sera dupliquée avec les mêmes horaires et paramètres</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeDuplicateModal()">Annuler</button>
+      <button class="btn-primary" (click)="confirmDuplicate()" [disabled]="isDuplicating || !duplicateNewDateTime">
+        {{ isDuplicating ? 'Duplication...' : 'Dupliquer' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Recurring Sessions Modal -->
+<div class="modal-overlay" *ngIf="showRecurringModal" (click)="closeRecurringModal()">
+  <div class="modal-container recurring-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-icon">🔄</div>
+      <h3>Sessions récurrentes</h3>
+      <button class="modal-close" (click)="closeRecurringModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="session-info">
+        <div class="info-row">
+          <span class="label">Modèle:</span>
+          <span class="value">{{ selectedSchedule?.title }}</span>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Date de début</label>
+        <input type="date" [(ngModel)]="recurringStartDate" 
+               [min]="formatDateForInput(planningStartDate!)" 
+               [max]="formatDateForInput(planningEndDate!)"
+               class="form-input">
+      </div>
+      
+      <div class="form-group">
+        <label>Nombre de semaines</label>
+        <div class="input-with-unit">
+          <input type="number" [(ngModel)]="recurringWeeks" min="1" max="12" step="1">
+          <span class="unit">semaines</span>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Jours de la semaine</label>
+        <div class="day-selector">
+          <button *ngFor="let day of weekDaysShort" 
+                  class="day-btn"
+                  [class.selected]="isDaySelected(day.code)"
+                  (click)="toggleRecurringDay(day.code)">
+            {{ day.name }}
+          </button>
+        </div>
+      </div>
+      
+      <div class="preview-box">
+        <div class="preview-title">Aperçu des sessions</div>
+        <div class="preview-dates">
+          <div *ngFor="let date of getRecurringPreviewDates()" class="preview-date">
+            📅 {{ date | date:'EEEE d MMMM yyyy' }}
+          </div>
+          <div *ngIf="getRecurringPreviewDates().length === 0" class="no-dates">
+            Aucune date disponible dans la période du planning
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeRecurringModal()">Annuler</button>
+      <button class="btn-primary" (click)="confirmRecurring()" 
+              [disabled]="isCreatingRecurring || getRecurringPreviewDates().length === 0">
+        {{ isCreatingRecurring ? 'Création...' : 'Créer ' + getRecurringPreviewDates().length + ' sessions' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Optimize Schedule Modal -->
+<div class="modal-overlay" *ngIf="showOptimizeModal" (click)="closeOptimizeModal()">
+  <div class="modal-container optimize-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-icon">⚡</div>
+      <h3>Optimiser la séance</h3>
+      <button class="modal-close" (click)="closeOptimizeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="session-info">
+        <div class="info-row">
+          <span class="label">Séance:</span>
+          <span class="value">{{ selectedSchedule?.title }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Durée:</span>
+          <span class="value">{{ getScheduleDuration() }}</span>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>Date et heure préférée</label>
+        <input type="datetime-local" [(ngModel)]="optimizePreferredStart" 
+               [min]="minDateTime" class="form-input">
+      </div>
+      
+      <div class="info-box info">
+        <span class="info-icon">💡</span>
+        <span>L'optimisation trouvera le meilleur créneau disponible autour de cette date</span>
+      </div>
+      
+      <div class="suggested-slots" *ngIf="optimizeSuggestedSlots.length > 0">
+        <label>Créneaux suggérés:</label>
+        <div class="slot-list">
+          <button *ngFor="let slot of optimizeSuggestedSlots" 
+                  class="slot-option"
+                  (click)="selectOptimizeSlot(slot)">
+            {{ slot | date:'EEEE d MMMM - HH:mm' }}
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeOptimizeModal()">Annuler</button>
+      <button class="btn-primary" (click)="confirmOptimize()" [disabled]="!optimizePreferredStart">
+        Optimiser
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,185 @@
+<div class="session-details-container">
+  <!-- En-tête -->
+  <div class="details-header">
+    <button class="btn-back" (click)="goBack()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Retour
+    </button>
+    <h1 class="page-title">
+      <span class="title-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <rect x="2" y="4" width="20" height="16" rx="2" stroke-width="2"/>
+          <path d="M8 2v4M16 2v4M3 10h18" stroke-width="2"/>
+        </svg>
+      </span>
+      <span>Détails de la Session</span>
+    </h1>
+    <div class="header-actions">
+      <button class="btn-edit" [routerLink]="['/sessions/edit', sessionId]">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke-width="2"/>
+        </svg>
+        Modifier
+      </button>
+      <button class="btn-delete" (click)="deleteSession()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke-width="2"/>
+        </svg>
+        Supprimer
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement des détails de la session...</p>
+  </div>
+
+  <!-- Error state -->
+  <div class="error-state" *ngIf="!loading && error">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <circle cx="12" cy="12" r="10" stroke-width="2"/>
+      <line x1="12" y1="8" x2="12" y2="12" stroke-width="2"/>
+      <circle cx="12" cy="16" r="1" fill="currentColor"/>
+    </svg>
+    <h3>{{ error }}</h3>
+    <button class="btn-retry" (click)="loadSessionDetails()">Réessayer</button>
+  </div>
+
+  <!-- Session details -->
+  <div class="details-content" *ngIf="!loading && !error && session">
+    <!-- Status badge -->
+    <div class="status-section">
+      <div class="status-badge" [class]="getStatusClass(session.status)">
+        <span class="status-icon">{{ getStatusIcon(session.status) }}</span>
+        <span class="status-label">{{ getStatusLabel(session.status) }}</span>
+      </div>
+    </div>
+
+    <!-- Informations générales -->
+    <div class="info-card">
+      <h3>Informations générales</h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">ID Session</span>
+          <span class="info-value">#{{ session.id }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Date de création</span>
+          <span class="info-value">{{ session.createdAt | date:'dd MMMM yyyy' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Participants max</span>
+          <span class="info-value">{{ session.maxParticipants }} personnes</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Planning associé -->
+    <div class="info-card">
+      <div class="card-header-with-action">
+        <h3>Planning associé</h3>
+        <button *ngIf="!planning" class="btn-add-planning" (click)="createPlanning()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 5v14M5 12h14" stroke-width="2"/>
+          </svg>
+          Ajouter un planning
+        </button>
+      </div>
+
+      <div *ngIf="loadingPlanning" class="loading-mini">
+        <div class="spinner-mini"></div>
+        <span>Chargement du planning...</span>
+      </div>
+
+      <div *ngIf="!loadingPlanning && planning" class="planning-details">
+        <!-- Mode badge -->
+        <div class="planning-mode-badge" [class]="getPlanningModeClass(planning.mode)">
+          <span class="mode-icon">{{ getPlanningModeIcon(planning.mode) }}</span>
+          <span class="mode-label">{{ getPlanningModeLabel(planning.mode) }}</span>
+        </div>
+
+        <!-- Planning info grid -->
+        <div class="planning-info-grid">
+          <div class="planning-info-item">
+            <span class="info-label">Période</span>
+            <span class="info-value">{{ planning.startDate | date:'dd MMM yyyy' }} - {{ planning.endDate | date:'dd MMM yyyy' }}</span>
+          </div>
+          <div class="planning-info-item">
+            <span class="info-label">Durée totale</span>
+            <span class="info-value">{{ planning.totalHours }} heures</span>
+          </div>
+        </div>
+
+        <!-- Platform URL (pour ONLINE et HYBRID) -->
+        <div class="planning-url" *ngIf="(planning.mode === 'ONLINE' || planning.mode === 'HYBRID') && getPlatformUrl(planning)">
+          <span class="url-label">Plateforme:</span>
+          <a [href]="getPlatformUrl(planning)" target="_blank" class="url-link">
+            {{ getPlatformUrl(planning) }}
+          </a>
+        </div>
+
+        <!-- Location (pour ONSITE et HYBRID) -->
+        <div class="planning-location" *ngIf="(planning.mode === 'ONSITE' || planning.mode === 'HYBRID') && planning.location">
+          <div class="location-badge" [style.background-color]="getLocationTypeColor(planning.location.type) + '20'">
+            <span class="location-icon">{{ getLocationTypeIcon(planning.location.type) }}</span>
+            <span class="location-type">{{ getLocationTypeLabel(planning.location.type) }}</span>
+          </div>
+          <div class="location-info">
+            <p class="location-name"><strong>{{ planning.location.name }}</strong></p>
+            <p class="location-address">{{ planning.location.address }}</p>
+            <p class="location-city">{{ planning.location.city }}</p>
+            <p class="location-capacity">Capacité: {{ planning.location.capacity }} personnes</p>
+          </div>
+        </div>
+
+        <!-- Actions planning -->
+        <div class="planning-actions">
+          <button class="btn-view-planning" [routerLink]="['/plannings', planning.id]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="3" stroke-width="2"/>
+              <path d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7z" stroke-width="2"/>
+            </svg>
+            Voir détails du planning
+          </button>
+          <button class="btn-edit-planning" [routerLink]="['/plannings/edit', planning.id]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke-width="2"/>
+            </svg>
+            Modifier le planning
+          </button>
+        </div>
+      </div>
+
+      <!-- Pas de planning -->
+      <div *ngIf="!loadingPlanning && !planning" class="no-planning">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="1.5"/>
+          <path d="M8 2v4M16 2v4M3 10h18" stroke-width="1.5"/>
+        </svg>
+        <h4>Aucun planning associé</h4>
+        <p>Cette session n'a pas encore de planning.</p>
+        <button class="btn-create-planning" (click)="createPlanning()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 5v14M5 12h14" stroke-width="2"/>
+          </svg>
+          Créer un planning
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message de confirmation -->
+  <div class="message-container" *ngIf="message.show">
+    <div class="message" [class.success]="message.type === 'success'" [class.error]="message.type === 'error'">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path *ngIf="message.type === 'success'" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        <path *ngIf="message.type === 'error'" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      {{ message.text }}
+    </div>
+  </div>
+</div>

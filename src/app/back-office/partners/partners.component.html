@@ -1,0 +1,260 @@
+<div class="partners-management-container">
+    <!-- Background Design Elements -->
+    <div class="triangle-bg triangle-1"></div>
+    <div class="triangle-bg triangle-2"></div>
+    <div class="triangle-bg triangle-3"></div>
+
+    <div class="page-header">
+        <div class="header-content">
+            <h1 class="page-title">Partner Ecosystem</h1>
+            <p class="page-subtitle">Managing global certification and training alliances</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card total">
+                <div class="stat-donut-container">
+                    <svg class="stat-donut" viewBox="0 0 36 36">
+                        <path class="donut-ring" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" />
+                        <path class="donut-segment" [style.stroke-dasharray]="'100, 100'" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" />
+                        <text x="18" y="21" class="percentage">{{totalPartners}}</text>
+                    </svg>
+                </div>
+                <span class="stat-label">Total</span>
+            </div>
+
+            <div class="stat-card accepted">
+                <div class="stat-donut-container">
+                    <svg class="stat-donut" viewBox="0 0 36 36">
+                        <path class="donut-ring" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" />
+                        <path class="donut-segment" [style.stroke-dasharray]="getStatsPercentage(acceptedCount) + ', 100'" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" />
+                        <text x="18" y="21" class="percentage">{{acceptedCount}}</text>
+                    </svg>
+                </div>
+                <span class="stat-label">Accepted</span>
+            </div>
+
+            <div class="stat-card pending">
+                <div class="stat-donut-container">
+                    <svg class="stat-donut" viewBox="0 0 36 36">
+                        <path class="donut-ring" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" />
+                        <path class="donut-segment" [style.stroke-dasharray]="getStatsPercentage(pendingCount) + ', 100'" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" />
+                        <text x="18" y="21" class="percentage">{{pendingCount}}</text>
+                    </svg>
+                </div>
+                <span class="stat-label">Pending</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label>Partner Search</label>
+            <div class="input-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" [(ngModel)]="filterKeyword" (ngModelChange)="onFilterChange()" placeholder="Search by name or email...">
+            </div>
+        </div>
+        <button class="btn-clear" (click)="clearFilters()">
+            <i class="fas fa-times"></i> Clear Filters
+        </button>
+    </div>
+
+    <div class="loading-state" *ngIf="isLoading">
+        <div class="loader"></div>
+        <p>Analyzing ecosystem...</p>
+    </div>
+
+    <div class="partners-grid" *ngIf="!isLoading && !errorMessage">
+        <div class="partner-card" 
+             *ngFor="let partner of filteredPartners" 
+             (click)="selectPartner(partner)"
+             [ngClass]="partner.tier?.toLowerCase() || 'bronze'">
+            
+            <div class="card-glow"></div>
+            <div class="card-triangle"></div>
+
+            <div class="card-header">
+                <div class="org-icon logo-img">
+                    <img [src]="getLogoUrl(partner)" [alt]="partner.organizationName" onerror="this.src='images/avatar.jpg'">
+                </div>
+                <div class="org-info">
+                    <h3>{{partner.organizationName}}</h3>
+                    <div class="tier-badge">
+                        <i class="fas fa-certificate"></i>
+                        <span>{{partner.tier || 'BRONZE'}} TIER</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fraud/Trust Analysis Preview -->
+            <div class="ai-insight-preview" *ngIf="partner.trustScore !== undefined">
+                <div class="insight-meta">
+                    <div class="score-pill" [class.excellent]="partner.trustScore >= 70" [class.good]="partner.trustScore >= 40">
+                        <i class="fas fa-brain"></i> {{partner.trustScore}}% Trust
+                    </div>
+                    <span class="legal-tag">{{partner.legalForm}} — {{partner.city}}</span>
+                </div>
+                <p class="insight-text" *ngIf="partner.trustAnalysis">
+                    "{{partner.trustAnalysis | slice:0:100}}..."
+                </p>
+            </div>
+
+            <div class="card-body">
+                <div class="info-row">
+                    <i class="fas fa-envelope"></i>
+                    <span>{{partner.email}}</span>
+                </div>
+                
+                <div class="card-actions">
+                    <button class="action-btn view" (click)="selectPartner(partner); $event.stopPropagation()" title="View Insights">👁️</button>
+                    <button class="action-btn accept" (click)="approvePartner(partner.id!); $event.stopPropagation()" title="Approve">✅</button>
+                    <button class="action-btn reject" (click)="rejectPartner(partner.id!); $event.stopPropagation()" title="Reject">❌</button>
+                    <button class="action-btn delete" (click)="deletePartner(partner.id!); $event.stopPropagation()" title="Delete">🗑️</button>
+                </div>
+            </div>
+
+            <div class="status-badge" [ngClass]="getStatusClass(partner.status)">
+                {{partner.status || 'PENDING'}}
+            </div>
+        </div>
+    </div>
+
+    <!-- Redesigned Modal -->
+    <div class="modal-overlay" *ngIf="selectedPartner" (click)="closeDetails()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <div class="header-main">
+                    <div class="modal-org-icon logo-img">
+                        <img [src]="getLogoUrl(selectedPartner)" [alt]="selectedPartner.organizationName" onerror="this.src='images/avatar.jpg'">
+                    </div>
+                    <div>
+                        <h2>{{selectedPartner.organizationName}}</h2>
+                        <span class="modal-legal-form">{{selectedPartner.legalForm}} — {{selectedPartner.partnershipType}}</span>
+                    </div>
+                </div>
+                <button class="close-modal" (click)="closeDetails()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Trust Engine Insight Dashboard -->
+                <div class="detail-section ai-insight-section">
+                    <div class="ai-header">
+                        <h3><i class="fas fa-microchip"></i> Trust Engine Insight</h3>
+                        <span class="ai-badge">ENGINE VERIFIED</span>
+                    </div>
+
+                    <div class="ai-metrics-grid">
+                        <div class="ai-metric-card">
+                            <div class="metric-top">
+                                <label>Trust Integrity Score</label>
+                                <span class="val">{{selectedPartner.trustScore}}%</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-fill" [style.width.%]="selectedPartner.trustScore"></div>
+                            </div>
+                        </div>
+
+                        <div class="ai-metric-card highlight">
+                            <div class="metric-top">
+                                <label>Partnership Success Likelihood</label>
+                                <span class="val">{{selectedPartner.trustScore}}%</span>
+                            </div>
+                            <div class="probability-meter">
+                                <div class="meter-point" [style.left.%]="selectedPartner.trustScore"></div>
+                            </div>
+                        </div>
+
+                        <div class="ai-metric-card warning" [class.danger]="(selectedPartner.trustScore ?? 0) < 40">
+                            <div class="metric-top">
+                                <label>Verification Status</label>
+                                <span class="val">{{(selectedPartner.trustScore ?? 0) >= 40 ? 'VERIFIED' : 'RISK DETECTED'}}</span>
+                            </div>
+                            <div class="alert-status">
+                                <i class="fas" [ngClass]="(selectedPartner.trustScore ?? 0) >= 40 ? 'fa-check-circle' : 'fa-exclamation-circle'"></i>
+                                <span>{{selectedPartner.tier}} Certification Level</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ai-context-summary" *ngIf="selectedPartner.trustAnalysis">
+                        <i class="fas fa-quote-left"></i>
+                        <p>{{selectedPartner.trustAnalysis}}</p>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3><i class="fas fa-info-circle"></i> General Information</h3>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Status</label>
+                            <span class="status-badge modal-status" [ngClass]="getStatusClass(selectedPartner.status)">{{selectedPartner.status}}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Location</label>
+                            <span class="val">{{selectedPartner.address}}, {{selectedPartner.city}}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Email</label>
+                            <span class="val">{{selectedPartner.email}}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Website</label>
+                            <a [href]="selectedPartner.website" target="_blank" class="val-link">{{selectedPartner.website}} <i class="fas fa-external-link-alt"></i></a>
+                        </div>
+                        <div class="detail-item">
+                            <label>Documents</label>
+                            <div style="display: flex; gap: 15px;">
+                                <a (click)="viewDocument(selectedPartner.id!, 'BUSINESS_REGISTRATION')" class="val-link doc-link"><i class="fas fa-file-pdf"></i> Registration</a>
+                                <a (click)="viewDocument(selectedPartner.id!, 'COMPANY_PROFILE')" class="val-link doc-link"><i class="fas fa-file-pdf"></i> Profile</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loyalty Reward Section inside modal -->
+                <div class="coupon-form-section" *ngIf="isCouponFormVisible">
+                    <h4><i class="fas fa-ticket-alt"></i> Loyalty Reward Generation</h4>
+                    <div class="coupon-grid">
+                        <div class="form-group">
+                            <label>Coupon Code</label>
+                            <input type="text" [(ngModel)]="newCoupon.code" placeholder="PRT-..." readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Duration (Minutes)</label>
+                            <input type="number" [(ngModel)]="newCoupon.expirationMinutes" placeholder="Minutes">
+                        </div>
+                        <div class="form-group" *ngIf="availableCourses.length">
+                            <label>Target Course</label>
+                            <select [(ngModel)]="newCoupon.courseId">
+                                <option value="" disabled selected>Select a course...</option>
+                                <option *ngFor="let course of availableCourses" [value]="course.id">{{course.title}}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="coupon-actions">
+                        <button class="btn-cancel" (click)="toggleCouponForm()">Cancel</button>
+                        <button class="btn-submit" (click)="submitCouponForm()"><i class="fas fa-gift"></i> Generate Reward</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="modal-btn delete-btn" (click)="deletePartner(selectedPartner.id!); closeDetails()">
+                    <i class="fas fa-trash-alt"></i> Delete
+                </button>
+                <div class="modal-actions-right">
+                    <button class="modal-btn coupon-btn" *ngIf="isAccepted(selectedPartner)" (click)="toggleCouponForm()">
+                        <i class="fas fa-gift"></i> Loyalty Reward
+                    </button>
+                    <button class="modal-btn reject-btn" (click)="rejectPartner(selectedPartner.id!)">
+                        <i class="fas fa-times-circle"></i> Reject
+                    </button>
+                    <button class="modal-btn accept-btn" (click)="approvePartner(selectedPartner.id!)">
+                        <i class="fas fa-check-circle"></i> Approve Partner
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

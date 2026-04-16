@@ -1,0 +1,464 @@
+:host {
+  display: block;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+.evaluation-dashboard {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Header */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-title h1 {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.badge-count {
+  background: #e2e8f0;
+  color: #475569;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Boutons */
+.btn-primary {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.btn-outline {
+  background: white;
+  border: 1px solid #2563eb;
+  color: #2563eb;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-outline:hover {
+  background: #eff6ff;
+}
+
+.plus-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* Recherche */
+.search-section {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.search-wrapper {
+  flex: 1;
+  min-width: 280px;
+  display: flex;
+  align-items: center;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 0 12px;
+}
+
+.search-icon {
+  color: #64748b;
+  font-size: 16px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  outline: none;
+}
+
+/* Filtres */
+.filter-chips {
+  display: flex;
+  gap: 8px;
+}
+
+.chip {
+  padding: 8px 16px;
+  border: none;
+  background: #f1f5f9;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chip:hover {
+  background: #e2e8f0;
+}
+
+.chip.active {
+  background: #2563eb;
+  color: white;
+}
+
+.chip.quiz.active {
+  background: #8b5cf6;
+}
+
+.chip.exam.active {
+  background: #2563eb;
+}
+
+/* Grille des évaluations */
+.evaluations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+/* Carte d'évaluation */
+.evaluation-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+  cursor: pointer;
+  position: relative;
+  border: 1px solid #e2e8f0;
+}
+
+.evaluation-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  position: relative;
+}
+
+.card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.card-icon.quiz-icon {
+  background: #f3e8ff;
+}
+
+.card-icon.exam-icon {
+  background: #dbeafe;
+}
+
+.card-title {
+  flex: 1;
+}
+
+.card-title h3 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.course-name {
+  font-size: 13px;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.course-name:hover {
+  color: #6729db;
+  font-weight: bold;
+}
+
+.menu-button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.menu-button:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+/* Menu contextuel */
+.context-menu {
+  position: absolute;
+  top: 50px;
+  right: 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0;
+  z-index: 100;
+  min-width: 160px;
+}
+
+.context-menu button {
+  width: 100%;
+  text-align: left;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  color: #334155;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.context-menu button:last-child {
+  border-bottom: none;
+}
+
+.context-menu button:hover {
+  background: #f8fafc;
+}
+
+.context-menu button.delete {
+  color: #ef4444;
+}
+
+.context-menu button.delete:hover {
+  background: #fef2f2;
+}
+
+/* Corps de la carte */
+.card-body {
+  padding: 16px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-label {
+  color: #64748b;
+}
+
+.info-value {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.score-badge {
+  background: #f1f5f9;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2563eb;
+}
+
+/* Date éditable */
+.date-editable {
+  cursor: pointer;
+}
+
+.date-editable:hover .info-value {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.date-input {
+  padding: 4px 8px;
+  border: 2px solid #2563eb;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+}
+
+/* Footer de la carte */
+.card-footer {
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  border-radius: 0 0 12px 12px;
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.type-badge.quiz {
+  background: #f3e8ff;
+  color: #7c3aed;
+}
+
+.type-badge.exam {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+/* État vide */
+.empty-state {
+  background: white;
+  border-radius: 12px;
+  padding: 60px 32px;
+  text-align: center;
+  border: 2px dashed #cbd5e1;
+}
+
+.empty-illustration {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.empty-state h3 {
+  font-size: 20px;
+  color: #334155;
+  margin: 0 0 8px 0;
+}
+
+.empty-state p {
+  color: #64748b;
+  margin: 0 0 24px 0;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .evaluation-dashboard {
+    padding: 16px;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .search-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-chips {
+    justify-content: stretch;
+  }
+
+  .chip {
+    flex: 1;
+    text-align: center;
+  }
+
+  .evaluations-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Alignement des icônes dans les lignes d'info */
+.info-label {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Espace entre le SVG et le texte */
+  color: #64748b;
+  font-size: 0.85rem;
+
+  svg {
+    opacity: 0.7;
+  }
+}
+
+/* Style spécifique pour les icônes du menu contextuel */
+.context-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 15px;
+
+  svg {
+    stroke-width: 2;
+  }
+}
+
+/* Animation sur le bouton menu */
+.menu-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  &:hover {
+    background: #f1f5f9;
+    border-radius: 50%;
+  }
+}

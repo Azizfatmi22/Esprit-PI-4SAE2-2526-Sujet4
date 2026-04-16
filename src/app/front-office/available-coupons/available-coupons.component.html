@@ -1,0 +1,81 @@
+<!-- Dynamic Background -->
+<div class="dynamic-bg">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+    <div class="shape shape-4"></div>
+</div>
+
+<div class="hiring-container">
+    <div class="header-section">
+        <h1>🎟️ <span class="highlight">Special Offers</span></h1>
+        <p>Claim your coupons before they expire! 100% Free access to our premium courses.</p>
+    </div>
+
+    <!-- Redirection Banner -->
+    <div class="congrats-banner" *ngIf="showCongrats">
+        <div class="congrats-content">
+            <div class="congrats-icon">🎉</div>
+            <div class="congrats-text">
+                <h3>Congratulations!</h3>
+                <p>You've unlocked <strong>{{ claimedCouponName }}</strong> for free!</p>
+                <div class="redirect-info">
+                    Redirecting to your course in 3s...
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" [style.width.%]="redirectProgress"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="hiring-cards" *ngIf="availableCoupons.length > 0; else noCoupons">
+        <div class="hiring-card partner" *ngFor="let coupon of availableCoupons">
+            <!-- Decorative SVG background -->
+            <div class="card-decor">
+                <!-- ... existing SVG ... -->
+            </div>
+
+            <div class="partner-header" *ngIf="coupon.partnerName">
+                <div class="partner-logo-container">
+                    <img *ngIf="coupon.partnerLogo" [src]="'data:image/png;base64,' + coupon.partnerLogo" alt="Logo"
+                        class="partner-logo">
+                    <div *ngIf="!coupon.partnerLogo" class="partner-placeholder">{{ coupon.partnerName[0] }}</div>
+                </div>
+                <span class="partner-name">{{ coupon.partnerName }}</span>
+            </div>
+
+            <div class="card-icon">
+                <span class="timer" [style.color]="getTimerColor(coupon.minutesRemaining || 0)">
+                    ⏳
+                </span>
+            </div>
+
+            <h2>{{ coupon.courseName }}</h2>
+
+            <div class="card-footer-info">
+                <div class="feat">
+                    <i class="fas fa-check-circle"></i> 100% Discount
+                </div>
+                <div class="feat">
+                    <i class="fas fa-clock"></i> {{ coupon.minutesRemaining }} min left
+                </div>
+            </div>
+
+            <p>Unlock full access to this course immediately after claiming your coupon.</p>
+
+            <button class="action-btn" (click)="claim(coupon)" [disabled]="claiming">
+                <span *ngIf="!claiming">Claim For Free</span>
+                <span *ngIf="claiming" class="loading-spinner"></span>
+            </button>
+        </div>
+    </div>
+
+    <ng-template #noCoupons>
+        <div class="hiring-card job animated-step" style="max-width: 600px; margin: 0 auto; padding: 4rem;">
+            <div class="card-icon">🎫</div>
+            <h2>No coupons available</h2>
+            <p>Check back later for new free training opportunities!</p>
+        </div>
+    </ng-template>
+</div>

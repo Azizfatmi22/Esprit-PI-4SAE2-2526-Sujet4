@@ -1,0 +1,184 @@
+<div class="events-container">
+    <!-- Interactive Waves Background -->
+    <div class="waves-bg-container">
+        <app-ribbons [colors]="['#FC8EAC']" [baseSpring]="0.03" [baseFriction]="0.9" [baseThickness]="30"
+            [offsetFactor]="0.05" [maxAge]="500" [pointCount]="50" [speedMultiplier]="0.6" [enableFade]="false"
+            [enableShaderEffect]="false" [effectAmplitude]="2">
+        </app-ribbons>
+    </div>
+
+    <!-- Header Section -->
+    <div class="header-section">
+        <div class="header-content">
+            <h1>Events</h1>
+            <p class="subtitle">Discover and join amazing events</p>
+        </div>
+        <button class="btn-create" (click)="createEvent()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M12 5v14M5 12h14" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            Create Event
+        </button>
+    </div>
+
+    <!-- ── TOP EVENTS SECTION ── -->
+    <div class="top-events-section" *ngIf="!loading && topEvents.length > 0">
+        <div class="top-events-header">
+            <div class="top-events-title-group">
+                <span class="top-events-icon">🔥</span>
+                <div>
+                    <h2 class="top-events-title">Top Events</h2>
+                    <p class="top-events-subtitle">Most popular upcoming events right now</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="top-events-grid">
+            <div class="top-event-card" *ngFor="let event of topEvents; let i = index" (click)="viewEvent(event.id)"
+                [attr.data-rank]="i">
+
+                <!-- Rank medal -->
+                <div class="rank-badge" [ngClass]="'rank-' + (i + 1)">
+                    {{ i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉' }}
+                </div>
+
+                <!-- Hero Image -->
+                <div class="top-event-image">
+                    <img [src]="event.imageUrl || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&auto=format&fit=crop'"
+                        [alt]="event.name" />
+                    <div class="top-event-gradient"></div>
+                    <div class="top-event-overlay">
+                        <span class="top-event-category">{{ event.category }}</span>
+                        <div class="top-event-attendees">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                            </svg>
+                            {{ event.attendees }} attending
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="top-event-body">
+                    <h3 class="top-event-name">{{ event.name }}</h3>
+                    <p class="top-event-description">{{ event.description }}</p>
+
+                    <div class="top-event-meta">
+                        <div class="top-meta-item">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" />
+                                <line x1="16" y1="2" x2="16" y2="6" />
+                                <line x1="8" y1="2" x2="8" y2="6" />
+                                <line x1="3" y1="10" x2="21" y2="10" />
+                            </svg>
+                            <span>{{ event.date | date:'MMM d, y' }}</span>
+                        </div>
+                        <div class="top-meta-item">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                <circle cx="12" cy="10" r="3" />
+                            </svg>
+                            <span>{{ event.location }}</span>
+                        </div>
+                    </div>
+
+                    <div class="top-event-progress" *ngIf="event.maxParticipants">
+                        <div class="progress-label">
+                            <span>{{ event.currentParticipants || 0 }} / {{ event.maxParticipants }} spots</span>
+                            <span class="progress-pct">{{ ((event.currentParticipants || 0) / event.maxParticipants *
+                                100) | number:'1.0-0' }}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill"
+                                [style.width.%]="(event.currentParticipants || 0) / event.maxParticipants! * 100">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="top-event-cta" (click)="viewEvent(event.id)">
+                        View Event
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+
+    <div class="loading-state" *ngIf="loading">
+        <div class="spinner"></div>
+        <p>Loading events...</p>
+    </div>
+
+    <!-- Events Grid -->
+    <div class="events-grid" *ngIf="!loading && events.length > 0">
+        <div class="event-card" *ngFor="let event of events" (click)="viewEvent(event.id)">
+            <!-- Event Image -->
+            <div class="event-image">
+                <img [src]="event.imageUrl" [alt]="event.name" />
+                <div class="event-category">{{ event.category }}</div>
+                <button class="btn-delete" (click)="deleteEvent($event, event.id)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                            stroke-width="2" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Event Content -->
+            <div class="event-content">
+                <!-- Date Badge -->
+                <div class="date-badge">
+                    <span class="date-month">{{ formatDate(event.date).month }}</span>
+                    <span class="date-day">{{ formatDate(event.date).day }}</span>
+                </div>
+
+                <!-- Event Info -->
+                <div class="event-info">
+                    <h3 class="event-name">{{ event.name }}</h3>
+                    <p class="event-description">{{ event.description }}</p>
+
+                    <div class="event-meta">
+                        <div class="meta-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke-width="2" />
+                                <circle cx="12" cy="10" r="3" stroke-width="2" />
+                            </svg>
+                            <span>{{ event.location }}</span>
+                        </div>
+                        <div class="meta-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-width="2" />
+                                <circle cx="9" cy="7" r="4" stroke-width="2" />
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke-width="2" />
+                            </svg>
+                            <span>{{ event.attendees }} attending</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!loading && events.length === 0">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-width="2" />
+            <path d="M16 2v4M8 2v4M3 10h18" stroke-width="2" />
+        </svg>
+        <h3>No Events Yet</h3>
+        <p>Create your first event to get started!</p>
+        <button class="btn-create-empty" (click)="createEvent()">
+            Create Your First Event
+        </button>
+    </div>
+</div>

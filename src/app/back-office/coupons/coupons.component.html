@@ -1,0 +1,77 @@
+<div class="coupons-manager">
+    <div class="page-header">
+        <h1>🎟️ Gestion des Coupons</h1>
+        <p>Générez des accès 100% gratuits pour vos cours.</p>
+    </div>
+
+    <div class="manager-grid">
+        <!-- Creation Form -->
+        <div class="card creation-card">
+            <div class="card-header">
+                <h3>Nouveau Coupon</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label>Sélectionner le Cours</label>
+                    <select [(ngModel)]="selectedCourseId" class="form-control">
+                        <option [ngValue]="null" disabled>Choisir un cours...</option>
+                        <option *ngFor="let course of courses" [ngValue]="course.id">
+                            {{ course.title }}
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Temps d'expiration (minutes)</label>
+                    <div class="timer-input">
+                        <input type="number" [(ngModel)]="expirationMinutes" class="form-control" min="1">
+                        <span class="unit">min</span>
+                    </div>
+                    <small class="text-muted">Le coupon sera valide pour tout claim pendant cette durée.</small>
+                </div>
+
+                <button class="btn-create" (click)="createCoupon()" [disabled]="!selectedCourseId || isCreating">
+                    {{ isCreating ? 'Création...' : 'Générer le Coupon' }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Active Coupons List -->
+        <div class="card list-card">
+            <div class="card-header">
+                <h3>Mes Coupons Actifs</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive" *ngIf="myCoupons.length > 0; else noCoupons">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Cours</th>
+                                <th>Expiration</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let coupon of myCoupons">
+                                <td><code class="coupon-code">{{ coupon.code }}</code></td>
+                                <td>{{ coupon.courseName }}</td>
+                                <td>{{ coupon.minutesRemaining }} min</td>
+                                <td>
+                                    <span class="status-badge" [class.active]="coupon.status === 'ACTIVE'">
+                                        {{ coupon.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <ng-template #noCoupons>
+                    <div class="empty-list">
+                        <p>Aucun coupon actif pour le moment.</p>
+                    </div>
+                </ng-template>
+            </div>
+        </div>
+    </div>
+</div>

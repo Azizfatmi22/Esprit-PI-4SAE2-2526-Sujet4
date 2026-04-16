@@ -1,0 +1,217 @@
+<div class="admin-forum-container">
+    <!-- Interactive Ribbons Background -->
+    <div class="ribbons-bg-container">
+        <app-ribbons [colors]="['#FC8EAC']" [baseSpring]="0.03" [baseFriction]="0.9" [baseThickness]="30"
+            [offsetFactor]="0.05" [maxAge]="500" [pointCount]="50" [speedMultiplier]="0.6" [enableFade]="true"
+            [enableShaderEffect]="true" [effectAmplitude]="1.5">
+        </app-ribbons>
+    </div>
+
+    <div class="admin-content">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="header-titles">
+                <h1>Forum Management</h1>
+                <p>Monitor and moderate community discussions</p>
+            </div>
+            <div class="header-actions">
+                <div class="search-bar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="11" cy="11" r="8" stroke-width="2.5" />
+                        <path d="M21 21l-4.35-4.35" stroke-width="2.5" stroke-linecap="round" />
+                    </svg>
+                    <input type="text" [(ngModel)]="searchTerm" placeholder="Search posts, titles or authors..." />
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card" (click)="currentTab = 'all'" [class.active]="currentTab === 'all'">
+                <div class="stat-icon posts">💬</div>
+                <div class="stat-info">
+                    <span class="stat-label">Total Posts</span>
+                    <span class="stat-value">{{ stats.totalPosts }}</span>
+                </div>
+            </div>
+            <div class="stat-card" (click)="currentTab = 'pending-posts'" [class.active]="currentTab === 'pending-posts'">
+                <div class="stat-icon pending">⏳</div>
+                <div class="stat-info">
+                    <span class="stat-label">Pending Posts</span>
+                    <span class="stat-value">{{ stats.pendingPosts }}</span>
+                </div>
+            </div>
+            <div class="stat-card" (click)="currentTab = 'pending-comments'" [class.active]="currentTab === 'pending-comments'">
+                <div class="stat-icon new">💬</div>
+                <div class="stat-info">
+                    <span class="stat-label">Pending Comments</span>
+                    <span class="stat-value">{{ stats.pendingComments }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Posts Table Section -->
+        <div class="table-container" *ngIf="currentTab === 'all'">
+            <div class="table-header">
+                <h2>Community Discussions</h2>
+                <div class="badge-total">{{ filteredForums.length }} posts found</div>
+            </div>
+
+            <div class="loading-overlay" *ngIf="loading">
+                <div class="spinner"></div>
+                <span>Syncing forum data...</span>
+            </div>
+
+            <div class="table-wrapper" *ngIf="!loading">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Content Details</th>
+                            <th>Author Info</th>
+                            <th>Timeline</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let post of filteredForums">
+                            <td class="col-title">
+                                <div class="post-title">{{ post.title }}</div>
+                                <div class="post-preview">{{ post.content | slice:0:100 }}{{ post.content.length > 100 ?
+                                    '...' : '' }}</div>
+                            </td>
+                            <td class="col-author">
+                                <span class="author-badge">ID: {{ post.userId }}</span>
+                            </td>
+                            <td class="col-date">
+                                <span class="date-main">{{ formatDate(post.createdAt) }}</span>
+                                <span class="date-relative">Scheduled post</span>
+                            </td>
+                            <td class="col-actions">
+                                <div class="action-btns">
+                                    <button class="btn-icon view" (click)="viewPost(post.id)" title="View Details">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke-width="2" />
+                                            <circle cx="12" cy="12" r="3" stroke-width="2" />
+                                        </svg>
+                                    </button>
+                                    <button class="btn-icon edit" (click)="editPost(post.id)" title="Edit Discussion">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                                                stroke-width="2" />
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                                                stroke-width="2" />
+                                        </svg>
+                                    </button>
+                                    <button class="btn-icon delete" (click)="deletePost(post.id)" title="Delete Post">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor">
+                                            <path
+                                                d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                                                stroke-width="2" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr *ngIf="filteredForums.length === 0">
+                            <td colspan="4" class="no-results">
+                                <div class="empty-illustration">🔍</div>
+                                <div class="empty-text">We couldn't find any posts matching "{{ searchTerm }}"</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Pending Posts Section -->
+        <div class="table-container" *ngIf="currentTab === 'pending-posts'">
+            <div class="table-header">
+                <h2>Pending Posts</h2>
+                <div class="badge-total">{{ pendingPosts.length }} posts waiting for review</div>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Content Details</th>
+                            <th>Author Info</th>
+                            <th>Timeline</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let post of pendingPosts">
+                            <td class="col-title">
+                                <div class="post-title">{{ post.title }}</div>
+                                <div class="post-preview">{{ post.content | slice:0:100 }}{{ post.content.length > 100 ? '...' : '' }}</div>
+                            </td>
+                            <td class="col-author">
+                                <span class="author-badge">ID: {{ post.userId }}</span>
+                            </td>
+                            <td class="col-date">
+                                <span class="date-main">{{ formatDate(post.createdAt) }}</span>
+                            </td>
+                            <td class="col-actions">
+                                <div class="action-btns">
+                                    <button class="btn-approve" (click)="approvePost(post.id)" title="Approve Post">
+                                        Approve
+                                    </button>
+                                    <button class="btn-reject" (click)="rejectPost(post.id)" title="Reject Post">
+                                        Reject
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pending Comments Section -->
+        <div class="table-container" *ngIf="currentTab === 'pending-comments'">
+            <div class="table-header">
+                <h2>Pending Comments</h2>
+                <div class="badge-total">{{ pendingComments.length }} comments waiting for review</div>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Comment Content</th>
+                            <th>Author Info</th>
+                            <th>Timeline</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let comment of pendingComments">
+                            <td class="col-title">
+                                <div class="post-preview">{{ comment.content }}</div>
+                            </td>
+                            <td class="col-author">
+                                <span class="author-badge">ID: {{ comment.userId }}</span>
+                            </td>
+                            <td class="col-date">
+                                <span class="date-main">{{ formatDate(comment.createdAt) }}</span>
+                            </td>
+                            <td class="col-actions">
+                                <div class="action-btns">
+                                    <button class="btn-approve" (click)="approveComment(comment.id)" title="Approve Comment">
+                                        Approve
+                                    </button>
+                                    <button class="btn-reject" (click)="rejectComment(comment.id)" title="Reject Comment">
+                                        Reject
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
