@@ -95,9 +95,12 @@ pipeline {
             }
         }
 
+    }
+
     post {
         success { echo '✅ Pipeline réussi !' }
         failure { echo '❌ Pipeline échoué !' }
         always  { cleanWs() }
     }
+
 }
