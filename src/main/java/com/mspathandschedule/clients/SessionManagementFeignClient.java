@@ -8,7 +8,8 @@ import java.util.Map;
 
 @FeignClient(
         name = "MS-SESSIONMANGEMENT",
-        url = "${api.gateway.url:http://localhost:8085}"  // Use API Gateway URL
+        url = "${api.gateway.url:http://localhost:8085}" ,
+        configuration = FeignConfig.class// Use API Gateway URL
 )
 public interface SessionManagementFeignClient {
 
