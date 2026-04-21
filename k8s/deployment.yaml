@@ -11,6 +11,12 @@ spec:
     metadata:
       labels:
         app: evaluation
+      # --- ADD THESE ANNOTATIONS FOR PROMETHEUS ---
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8081"
+      # --------------------------------------------
     spec:
       containers:
       - name: evaluation
@@ -20,13 +26,11 @@ spec:
         - containerPort: 8081
         env:
         - name: SPRING_DATASOURCE_URL
-          # Changed from mysql-db to host.docker.internal
           value: jdbc:mysql://host.docker.internal:3306/formini_db
         - name: SPRING_DATASOURCE_USERNAME
           value: root
         - name: SPRING_DATASOURCE_PASSWORD
           value: root
-        # Added to prevent errors if you aren't using a Discovery Server (Eureka) yet
         - name: EUREKA_CLIENT_ENABLED
           value: "false"
         - name: SPRING_CLOUD_DISCOVERY_ENABLED
