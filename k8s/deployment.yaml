@@ -20,11 +20,17 @@ spec:
         - containerPort: 8081
         env:
         - name: SPRING_DATASOURCE_URL
-          value: jdbc:mysql://mysql-db:3306/formini_db
+          # Changed from mysql-db to host.docker.internal
+          value: jdbc:mysql://host.docker.internal:3306/formini_db
         - name: SPRING_DATASOURCE_USERNAME
           value: root
         - name: SPRING_DATASOURCE_PASSWORD
           value: root
+        # Added to prevent errors if you aren't using a Discovery Server (Eureka) yet
+        - name: EUREKA_CLIENT_ENABLED
+          value: "false"
+        - name: SPRING_CLOUD_DISCOVERY_ENABLED
+          value: "false"
 ---
 apiVersion: v1
 kind: Service
