@@ -82,6 +82,7 @@ pipeline {
                         -e SPRING_DATASOURCE_PASSWORD= ^
                         -e EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://host.docker.internal:8761/eureka/ ^
                         -e APP_ADMIN_EMAIL=inesjlassi245@gmail.com ^
+                        -e SPRING_JPA_HIBERNATE_DDL_AUTO=update ^
                         ${DOCKER_IMAGE}:${DOCKER_TAG}
                 """
             }
@@ -90,8 +91,27 @@ pipeline {
         stage('Health Check') {
             steps {
                 echo '🏥 Vérification santé...'
-                sleep(time: 40, unit: 'SECONDS')
-                bat 'docker exec reclamation-service curl -f http://localhost:8093/msreclamation/health'
+                sleep(time: 60, unit: 'SECONDS')
+                script {
+                    // Afficher statut du container
+                    bat "docker ps -a --filter name=${CONTAINER}"
+
+                    // Afficher les logs Spring Boot
+                    bat "docker logs ${CONTAINER} --tail 80"
+
+                    // Health check depuis le HOST (pas depuis l'intérieur du container)
+                    def status = bat(
+                        script: "curl -f http://localhost:${PORT}/msreclamation/health",
+                        returnStatus: true
+                    )
+
+                    if (status != 0) {
+                        bat "docker logs ${CONTAINER}"
+                        error('❌ Health check échoué — voir les logs ci-dessus')
+                    }
+
+                    echo '✅ Service opérationnel !'
+                }
             }
         }
 
