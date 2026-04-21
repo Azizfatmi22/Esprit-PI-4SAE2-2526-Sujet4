@@ -90,11 +90,10 @@ pipeline {
         stage('Health Check') {
             steps {
                 echo '🏥 Vérification santé...'
-                sleep(time: 30, unit: 'SECONDS')
-                bat "curl -f http://localhost:${PORT}/msreclamation/health"
+                sleep(time: 40, unit: 'SECONDS')
+                bat 'docker exec reclamation-service curl -f http://localhost:8093/msreclamation/health'
             }
         }
-    }
 
     post {
         success { echo '✅ Pipeline réussi !' }
