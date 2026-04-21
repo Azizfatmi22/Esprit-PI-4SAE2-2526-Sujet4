@@ -13,18 +13,18 @@ spec:
         app: evaluation
     spec:
       containers:
-        - name: evaluation
-          image: evaluation-service:latest
-          imagePullPolicy: Never
-          ports:
-            - containerPort: 8081
-          env:
-            - name: SPRING_DATASOURCE_URL
-              value: jdbc:mysql://mysql-db:3306/formini_db
-            - name: SPRING_DATASOURCE_USERNAME
-              value: root
-            - name: SPRING_DATASOURCE_PASSWORD
-              value: root
+      - name: evaluation
+        image: evaluation-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8081
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:mysql://mysql-db:3306/formini_db
+        - name: SPRING_DATASOURCE_USERNAME
+          value: root
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: root
 ---
 apiVersion: v1
 kind: Service
