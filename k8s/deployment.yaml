@@ -20,11 +20,17 @@ spec:
             - containerPort: 8090
           env:
             - name: SPRING_DATASOURCE_URL
-              value: jdbc:mysql://mysql-db:3306/formini_db
+              # Changed to allow K8s to talk to Docker Desktop MySQL
+              value: jdbc:mysql://host.docker.internal:3306/formini_db
             - name: SPRING_DATASOURCE_USERNAME
               value: root
             - name: SPRING_DATASOURCE_PASSWORD
               value: root
+            # Disabling Eureka for standalone testing
+            - name: EUREKA_CLIENT_ENABLED
+              value: "false"
+            - name: SPRING_CLOUD_DISCOVERY_ENABLED
+              value: "false"
 ---
 apiVersion: v1
 kind: Service
