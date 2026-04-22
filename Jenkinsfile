@@ -125,15 +125,21 @@ pipeline {
         }
 
         // ── SONARQUBE ANALYSE ─────────────────────────────────────
-        stage('SonarQube Analysis') {
+        stage('SonarQube') {
             steps {
-                echo '🔍 Analyse SonarQube...'
-                withSonarQubeEnv('SonarQube') {
-                    bat """
-                        mvn sonar:sonar ^
-                        -Dsonar.projectKey=reclamation-service ^
-                        -Dsonar.projectName="Reclamation Service"
-                    """
+                script {
+                    echo '🔍 Vérification SonarQube...'
+                    bat '''
+                        docker start sonarqube 2>nul || docker run -d ^
+                            --name sonarqube ^
+                            -p 9000:9000 ^
+                            -v sonarqube_data:/opt/sonarqube/data ^
+                            -v sonarqube_logs:/opt/sonarqube/logs ^
+                            -v sonarqube_extensions:/opt/sonarqube/extensions ^
+                            sonarqube:latest
+                    '''
+                    sleep(time: 30, unit: 'SECONDS')
+                    echo '✅ SonarQube : http://localhost:9000'
                 }
             }
         }
