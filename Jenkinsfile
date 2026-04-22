@@ -129,15 +129,11 @@ pipeline {
             steps {
                 echo '🔍 Analyse SonarQube...'
                 withSonarQubeEnv('SonarQube') {
-                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                        bat """
-                            mvn sonar:sonar ^
-                            -Dsonar.projectKey=reclamation-service ^
-                            -Dsonar.projectName="Reclamation Service" ^
-                            -Dsonar.host.url=${SONAR_URL} ^
-                            -Dsonar.token=%SONAR_TOKEN%
-                        """
-                    }
+                    bat """
+                        mvn sonar:sonar ^
+                        -Dsonar.projectKey=reclamation-service ^
+                        -Dsonar.projectName="Reclamation Service"
+                    """
                 }
             }
         }
