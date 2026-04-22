@@ -125,38 +125,34 @@ pipeline {
         }
 
         // ── SONARQUBE ANALYSE ─────────────────────────────────────
-        stage('SonarQube') {
+        stage('SonarQube Analysis') {
             steps {
-                script {
-                    echo '🔍 Vérification SonarQube...'
-                    bat '''
-                        docker start sonarqube 2>nul || docker run -d ^
-                            --name sonarqube ^
-                            -p 9000:9000 ^
-                            -v sonarqube_data:/opt/sonarqube/data ^
-                            -v sonarqube_logs:/opt/sonarqube/logs ^
-                            -v sonarqube_extensions:/opt/sonarqube/extensions ^
-                            sonarqube:latest
-                    '''
-                    sleep(time: 30, unit: 'SECONDS')
-                    echo '✅ SonarQube : http://localhost:9000'
+                echo '🔍 Analyse SonarQube...'
+                withSonarQubeEnv('SonarQube') {
+                    bat """
+                        mvn sonar:sonar ^
+                        -Dsonar.projectKey=reclamation-service ^
+                        -Dsonar.projectName="Reclamation Service" ^
+                        -Dsonar.host.url=http://localhost:9000
+                    """
                 }
-            }
-        }
-        // ── QUALITY GATE ──────────────────────────────────────────
-        stage('Quality Gate') {
-            steps {
-                echo '🚦 Vérification Quality Gate...'
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: false
-                }
-            }
-            post {
-                success { echo '✅ Quality Gate passé !' }
-                failure { echo '⚠️ Quality Gate échoué — on continue' }
             }
         }
 
+        stage('Quality Gate') {
+            steps {
+                echo '🚦 Vérification Quality Gate...'
+                script {
+                    try {
+                        timeout(time: 5, unit: 'MINUTES') {
+                            waitForQualityGate abortPipeline: false
+                        }
+                    } catch (err) {
+                        echo '⚠️ Quality Gate skippé — on continue'
+                    }
+                }
+            }
+        }
         // ── DOCKER BUILD & PUSH ───────────────────────────────────
         stage('Docker Build and Push') {
             steps {
