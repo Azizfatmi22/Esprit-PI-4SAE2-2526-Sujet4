@@ -34,7 +34,8 @@ pipeline {
                                     mysql:8.0
                             '''
                             echo '⏳ Attendre MySQL...'
-                            sleep(time: 20, unit: 'SECONDS')
+                            sleep(time: 30, unit: 'SECONDS')
+                            echo '✅ MySQL démarré'
                         }
                     }
                 }
@@ -76,7 +77,7 @@ pipeline {
                                     sonarqube:latest
                             '''
                             echo '⏳ Attendre SonarQube...'
-                            sleep(time: 30, unit: 'SECONDS')
+                            sleep(time: 40, unit: 'SECONDS')
                             echo '✅ SonarQube : http://localhost:9000'
                         }
                     }
@@ -84,64 +85,41 @@ pipeline {
             }
         }
 
-        // ── FIX DATABASE ──────────────────────────────────────────
-        stage('Fix Database Schema') {
+        // ── BUILD JAR ─────────────────────────────────────────────
+        stage('Build JAR') {
             steps {
-                echo '🔧 Correction schéma base de données...'
-                bat """
-                    mysql -u root -proot formini_reclamation_db -e ^
-                    "UPDATE reclamation_responses SET sender_type='ADMIN' WHERE sender_type IS NULL OR sender_type='';" 2>nul || echo ok
-
-                    mysql -u root -proot formini_reclamation_db -e ^
-                    "UPDATE reclamation_responses SET sender_id=learner_id WHERE sender_id IS NULL OR sender_id='';" 2>nul || echo ok
-
-                    mysql -u root -proot formini_reclamation_db -e ^
-                    "ALTER TABLE reclamation_responses MODIFY COLUMN sender_type VARCHAR(50) NOT NULL DEFAULT 'ADMIN';" 2>nul || echo ok
-
-                    mysql -u root -proot formini_reclamation_db -e ^
-                    "ALTER TABLE reclamation_responses MODIFY COLUMN sender_id VARCHAR(255) NOT NULL DEFAULT 'unknown';" 2>nul || echo ok
-                """
-                echo '✅ Schéma corrigé'
+                echo '🔨 Compilation Maven...'
+                bat 'mvn clean package -DskipTests -Dnet.bytebuddy.experimental=true'
+            }
+            post {
+                success {
+                    archiveArtifacts artifacts: 'target/*.jar',
+                                     fingerprint: true
+                    echo '✅ JAR archivé'
+                }
+                failure {
+                    echo '❌ Compilation échouée !'
+                }
             }
         }
 
-        // ── BUILD & TEST ──────────────────────────────────────────
-        stage('Build and Analyse') {
-            parallel {
-
-                stage('Build JAR') {
-                    steps {
-                        echo '🔨 Compilation Maven...'
-                        bat 'mvn clean package -DskipTests -Dnet.bytebuddy.experimental=true'
-                    }
-                    post {
-                        success {
-                            archiveArtifacts artifacts: 'target/*.jar',
-                                             fingerprint: true
-                            echo '✅ JAR archivé'
-                        }
-                    }
+        // ── TESTS UNITAIRES ───────────────────────────────────────
+        stage('Tests Unitaires') {
+            steps {
+                echo '🧪 Exécution des tests...'
+                bat 'mvn test -Dnet.bytebuddy.experimental=true'
+            }
+            post {
+                always {
+                    junit testResults: 'target/surefire-reports/*.xml',
+                          allowEmptyResults: true
+                    echo '📊 Rapport tests généré'
                 }
-
-                stage('Tests Unitaires') {
-                    steps {
-                        echo '🧪 Exécution des tests...'
-                        bat 'mvn test -Dnet.bytebuddy.experimental=true'
-                    }
-                    post {
-                        always {
-                            junit testResults: 'target/surefire-reports/*.xml',
-                                  allowEmptyResults: true
-                            echo '📊 Rapport tests généré'
-                        }
-                        success {
-                            echo '✅ Tous les tests passent !'
-                        }
-                        failure {
-                            echo '❌ Tests échoués !'
-                            error 'Pipeline arrêté — tests échoués'
-                        }
-                    }
+                success {
+                    echo '✅ Tous les tests passent !'
+                }
+                failure {
+                    echo '❌ Tests échoués !'
                 }
             }
         }
@@ -176,11 +154,11 @@ pipeline {
             }
             post {
                 success { echo '✅ Quality Gate passé !' }
-                failure { echo '⚠️ Quality Gate échoué — continuer quand même' }
+                failure { echo '⚠️ Quality Gate échoué — on continue' }
             }
         }
 
-        // ── DOCKER ────────────────────────────────────────────────
+        // ── DOCKER BUILD & PUSH ───────────────────────────────────
         stage('Docker Build and Push') {
             steps {
                 echo '🐳 Construction et push image Docker...'
@@ -213,16 +191,17 @@ pipeline {
                         docker rm   ${CONTAINER} 2>nul || echo ok
                         docker run -d ^
                             --name ${CONTAINER} ^
+                            --link mysql-db:mysql ^
                             -p ${PORT}:${PORT} ^
-                            -e SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/formini_reclamation_db ^
+                            -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/formini_reclamation_db?createDatabaseIfNotExist=true ^
                             -e SPRING_DATASOURCE_USERNAME=root ^
-                            -e SPRING_DATASOURCE_PASSWORD= ^
+                            -e SPRING_DATASOURCE_PASSWORD=root ^
                             -e SPRING_JPA_HIBERNATE_DDL_AUTO=update ^
                             -e EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://host.docker.internal:8761/eureka/ ^
                             -e APP_ADMIN_EMAIL=inesjlassi245@gmail.com ^
                             -e SPRING_MAIL_HOST=smtp.gmail.com ^
                             -e SPRING_MAIL_USERNAME=inesjlasi588@gmail.com ^
-                            -e SPRING_MAIL_PASSWORD=awof cxoj auid oxcf ^
+                            -e "SPRING_MAIL_PASSWORD=awof cxoj auid oxcf" ^
                             ${DOCKER_IMAGE}:${DOCKER_TAG}
                     """
                     echo "✅ Conteneur lancé sur le port ${PORT}"
@@ -250,10 +229,10 @@ pipeline {
                     }
 
                     echo '✅ Service Réclamation opérationnel !'
-                    echo "🌐 API         : http://localhost:${PORT}/msreclamation"
-                    echo "📊 Prometheus  : http://localhost:9090"
-                    echo "📈 Grafana     : http://localhost:3000  (admin/admin)"
-                    echo "🔍 SonarQube   : http://localhost:9000"
+                    echo "🌐 API        : http://localhost:${PORT}/msreclamation"
+                    echo "📊 Prometheus : http://localhost:9090"
+                    echo "📈 Grafana    : http://localhost:3000 (admin/admin)"
+                    echo "🔍 SonarQube  : http://localhost:9000"
                 }
             }
         }
