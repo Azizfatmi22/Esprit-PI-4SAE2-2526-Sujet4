@@ -121,9 +121,10 @@ pipeline {
                         mvn clean verify sonar:sonar ^
                         -Dsonar.projectKey=reclamation-service ^
                         -Dsonar.host.url=http://localhost:9000 ^
-                        -Dsonar.token=%SONAR_TOKEN% ^
+                        -Dsonar.login=%SONAR_TOKEN% ^
                         -Dsonar.java.binaries=target/classes ^
-                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml ^
+                        -Dsonar.scm.disabled=true
                         """
                     }
                 }
