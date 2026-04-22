@@ -3,16 +3,14 @@ pipeline {
 
     tools {
         maven 'Maven-3.9'
-        jdk   'JDK-17'
+        jdk   'JDK-21'        // ← corrigé de JDK-17 à JDK-21
     }
 
     environment {
-        REPO_URL     = 'https://github.com/TON-USERNAME/reclamation-service.git'
         DOCKER_IMAGE = 'inesjlasi/reclamation'
         DOCKER_TAG   = '1.0.0'
         CONTAINER    = 'reclamation-service'
         PORT         = '8093'
-        SONAR_TOKEN  = credentials('sonar-token')
         SONAR_URL    = 'http://localhost:9000'
     }
 
@@ -86,7 +84,7 @@ pipeline {
             }
         }
 
-        // ── BUILD & TEST & SONAR ──────────────────────────────────
+        // ── BUILD & TEST ──────────────────────────────────────────
         stage('Build and Analyse') {
             parallel {
 
@@ -131,16 +129,18 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 echo '🔍 Analyse qualité du code SonarQube...'
-                withSonarQubeEnv('SonarQube') {
-                    bat """
-                        mvn sonar:sonar ^
-                            -Dsonar.projectKey=reclamation-service ^
-                            -Dsonar.projectName="Reclamation Service" ^
-                            -Dsonar.host.url=${SONAR_URL} ^
-                            -Dsonar.token=${SONAR_TOKEN} ^
-                            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml ^
-                            -Dnet.bytebuddy.experimental=true
-                    """
+                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                    withSonarQubeEnv('SonarQube') {
+                        bat """
+                            mvn sonar:sonar ^
+                                -Dsonar.projectKey=reclamation-service ^
+                                -Dsonar.projectName="Reclamation Service" ^
+                                -Dsonar.host.url=${SONAR_URL} ^
+                                -Dsonar.token=%SONAR_TOKEN% ^
+                                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml ^
+                                -Dnet.bytebuddy.experimental=true
+                        """
+                    }
                 }
             }
         }
@@ -215,13 +215,9 @@ pipeline {
                 echo '🏥 Vérification santé du service...'
                 sleep(time: 60, unit: 'SECONDS')
                 script {
-                    // Statut conteneur
                     bat "docker ps -a --filter name=${CONTAINER}"
-
-                    // Logs Spring Boot
                     bat "docker logs ${CONTAINER} --tail 80"
 
-                    // Health check
                     def status = bat(
                         script: "curl -f http://localhost:${PORT}/msreclamation/health",
                         returnStatus: true
