@@ -135,7 +135,7 @@ pipeline {
                                 -Dsonar.projectKey=reclamation-service ^
                                 -Dsonar.projectName="Reclamation Service" ^
                                 -Dsonar.host.url=${SONAR_URL} ^
-                                -Dsonar.token=%SONAR_TOKEN% ^
+                                -Dsonar.login=%SONAR_TOKEN% ^
                                 -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml ^
                                 -Dnet.bytebuddy.experimental=true
                         """
