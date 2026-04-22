@@ -6,9 +6,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.ResponseEntity;
 import tn.esprit.microservice.reclamation.entities.Reclamation;
 import tn.esprit.microservice.reclamation.repositories.ReclamationRepository;
+import tn.esprit.microservice.reclamation.services.impl.JiraTicketService;
 import tn.esprit.microservice.reclamation.services.interfaces.TicketService;
 import tn.esprit.microservice.reclamation.DTO.TicketResponseDTO;
 
@@ -17,7 +19,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class AdminTicketControllerTest {
 
