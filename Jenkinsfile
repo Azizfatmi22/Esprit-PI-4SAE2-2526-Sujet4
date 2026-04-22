@@ -125,19 +125,19 @@ pipeline {
         }
 
         // ── SONARQUBE ANALYSE ─────────────────────────────────────
-        stage('SonarQube') {
+        stage('SonarQube Analysis') {
             steps {
-                script {
-                    echo '🔍 Vérification SonarQube...'
-                    bat '''
-                        docker start sonarqube 2>nul || docker run -d ^
-                            --name sonarqube ^
-                            -p 9000:9000 ^
-                            sonarqube:latest
-                    '''
-                    echo '⏳ Attendre SonarQube...'
-                    sleep(time: 30, unit: 'SECONDS')
-                    echo '✅ SonarQube : http://localhost:9000'
+                echo '🔍 Analyse SonarQube...'
+                withSonarQubeEnv('SonarQube') {
+                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                        bat """
+                            mvn sonar:sonar ^
+                            -Dsonar.projectKey=reclamation-service ^
+                            -Dsonar.projectName="Reclamation Service" ^
+                            -Dsonar.host.url=${SONAR_URL} ^
+                            -Dsonar.token=%SONAR_TOKEN%
+                        """
+                    }
                 }
             }
         }
