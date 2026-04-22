@@ -3,7 +3,7 @@ pipeline {
 
     tools {
         maven 'Maven-3.9'
-        jdk   'JDK-21'        // ← corrigé de JDK-17 à JDK-21
+        jdk   'JDK-21'
     }
 
     environment {
@@ -84,6 +84,27 @@ pipeline {
             }
         }
 
+        // ── FIX DATABASE ──────────────────────────────────────────
+        stage('Fix Database Schema') {
+            steps {
+                echo '🔧 Correction schéma base de données...'
+                bat """
+                    mysql -u root -proot formini_reclamation_db -e ^
+                    "UPDATE reclamation_responses SET sender_type='ADMIN' WHERE sender_type IS NULL OR sender_type='';" 2>nul || echo ok
+
+                    mysql -u root -proot formini_reclamation_db -e ^
+                    "UPDATE reclamation_responses SET sender_id=learner_id WHERE sender_id IS NULL OR sender_id='';" 2>nul || echo ok
+
+                    mysql -u root -proot formini_reclamation_db -e ^
+                    "ALTER TABLE reclamation_responses MODIFY COLUMN sender_type VARCHAR(50) NOT NULL DEFAULT 'ADMIN';" 2>nul || echo ok
+
+                    mysql -u root -proot formini_reclamation_db -e ^
+                    "ALTER TABLE reclamation_responses MODIFY COLUMN sender_id VARCHAR(255) NOT NULL DEFAULT 'unknown';" 2>nul || echo ok
+                """
+                echo '✅ Schéma corrigé'
+            }
+        }
+
         // ── BUILD & TEST ──────────────────────────────────────────
         stage('Build and Analyse') {
             parallel {
@@ -160,7 +181,7 @@ pipeline {
         }
 
         // ── DOCKER ────────────────────────────────────────────────
-        stage('Docker Build & Push') {
+        stage('Docker Build and Push') {
             steps {
                 echo '🐳 Construction et push image Docker...'
                 script {

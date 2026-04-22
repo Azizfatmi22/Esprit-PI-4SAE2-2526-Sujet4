@@ -18,7 +18,7 @@ public class ReclamationResponse {
     @Column(name = "reclamation_id", nullable = false)
     private Long reclamationId;
 
-    @Column(name = "learner_id")
+    @Column(name = "learner_id")          // ← renommer en learnerId, type String
     private String learnerId;
 
     @Column(name = "response_text", nullable = false, columnDefinition = "TEXT")
@@ -30,11 +30,13 @@ public class ReclamationResponse {
     @Column(name = "created_date", nullable = false)
     private LocalDateTime createdDate = LocalDateTime.now();
 
-    @Column(name = "sender_id", nullable = true)   // ← nullable = true
+    @Column(name = "sender_id", nullable = false)
     private String senderId;
 
-    @Column(name = "sender_type", length = 50)     // ← nullable = true, length = 50
-    private String senderType = "ADMIN";           // ← valeur par défaut
+    @Column(name = "sender_type", nullable = false)
+    private String senderType; // ADMIN ou LEARNER
+
+
 
     @Column(nullable = true)
     private String reaction;
