@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SlaService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Reclamation-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.microservice.reclamation.services.impl</a> &gt; <span class="el_source">SlaService.java</span></div><h1>SlaService.java</h1><pre class="source lang-java linenums">package tn.esprit.microservice.reclamation.services.impl;
+
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.stereotype.Service;
+import tn.esprit.microservice.reclamation.config.SlaConfig;
+import tn.esprit.microservice.reclamation.entities.Reclamation;
+import tn.esprit.microservice.reclamation.entities.ReclamationStatus;
+import tn.esprit.microservice.reclamation.entities.SlaAlert;
+import tn.esprit.microservice.reclamation.repositories.SlaAlertRepository;
+
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class SlaService {
+
+    private final SlaAlertRepository slaAlertRepository;
+    private final JavaMailSender mailSender;
+    private final SlaConfig slaConfig;
+
+    @Value(&quot;${app.admin.email}&quot;)
+    private String adminEmail;
+
+    // ── Vérifier si une réclamation dépasse son SLA ──────────────────────────
+    public boolean isSlaBreached(Reclamation r) {
+<span class="nc bnc" id="L32" title="All 2 branches missed.">        if (r.getStatus() == ReclamationStatus.RESOLVED ||</span>
+<span class="nc bnc" id="L33" title="All 2 branches missed.">                r.getStatus() == ReclamationStatus.CLOSED   ||</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">                r.getStatus() == ReclamationStatus.REJECTED) {</span>
+<span class="nc" id="L35">            return false;</span>
+        }
+
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        int priority  = r.getPriority() != null ? r.getPriority() : 3;</span>
+<span class="nc" id="L39">        int slaMin    = slaConfig.getSlaMinutes(priority);</span>
+<span class="nc" id="L40">        LocalDateTime deadline = r.getCreatedDate().plusMinutes(slaMin);</span>
+
+<span class="nc" id="L42">        return LocalDateTime.now().isAfter(deadline);</span>
+    }
+
+    // ── Calculer les minutes écoulées depuis la création ──────────────────────
+    public long getElapsedMinutes(Reclamation r) {
+<span class="nc" id="L47">        return ChronoUnit.MINUTES.between(r.getCreatedDate(), LocalDateTime.now());</span>
+    }
+
+    // ── Créer une alerte SLA et envoyer l'email ───────────────────────────────
+    public void createAlertIfNotExists(Reclamation r) {
+        // Eviter les doublons : une seule alerte active par réclamation
+<span class="nc" id="L53">        boolean alreadyAlerted = slaAlertRepository</span>
+<span class="nc" id="L54">                .findByReclamationIdAndResolvedFalse(r.getId())</span>
+<span class="nc" id="L55">                .isPresent();</span>
+
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (alreadyAlerted) return;</span>
+
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        int priority     = r.getPriority() != null ? r.getPriority() : 3;</span>
+<span class="nc" id="L60">        int slaMin       = slaConfig.getSlaMinutes(priority);</span>
+<span class="nc" id="L61">        long elapsedMin  = getElapsedMinutes(r);</span>
+
+        // Sauvegarder l'alerte en base
+<span class="nc" id="L64">        SlaAlert alert = SlaAlert.builder()</span>
+<span class="nc" id="L65">                .reclamationId(r.getId())</span>
+<span class="nc" id="L66">                .priority(priority)</span>
+<span class="nc" id="L67">                .slaMinutes(slaMin)</span>
+<span class="nc" id="L68">                .elapsedMinutes(elapsedMin)</span>
+<span class="nc" id="L69">                .alertDate(LocalDateTime.now())</span>
+<span class="nc" id="L70">                .emailSent(false)</span>
+<span class="nc" id="L71">                .resolved(false)</span>
+<span class="nc" id="L72">                .build();</span>
+
+<span class="nc" id="L74">        SlaAlert saved = slaAlertRepository.save(alert);</span>
+
+        // Envoyer l'email
+        try {
+<span class="nc" id="L78">            sendSlaEmail(r, slaMin, elapsedMin);</span>
+<span class="nc" id="L79">            saved.setEmailSent(true);</span>
+<span class="nc" id="L80">            slaAlertRepository.save(saved);</span>
+<span class="nc" id="L81">            System.out.println(&quot;📧 Email SLA envoyé pour réclamation #&quot; + r.getId());</span>
+<span class="nc" id="L82">        } catch (Exception e) {</span>
+<span class="nc" id="L83">            System.err.println(&quot;❌ Erreur envoi email SLA: &quot; + e.getMessage());</span>
+<span class="nc" id="L84">        }</span>
+<span class="nc" id="L85">    }</span>
+
+    // ── Marquer l'alerte comme résolue quand la réclamation est traitée ───────
+    public void resolveAlert(Long reclamationId) {
+<span class="nc" id="L89">        slaAlertRepository.findByReclamationIdAndResolvedFalse(reclamationId)</span>
+<span class="nc" id="L90">                .ifPresent(alert -&gt; {</span>
+<span class="nc" id="L91">                    alert.setResolved(true);</span>
+<span class="nc" id="L92">                    slaAlertRepository.save(alert);</span>
+<span class="nc" id="L93">                });</span>
+<span class="nc" id="L94">    }</span>
+
+    // ── Récupérer toutes les alertes actives ──────────────────────────────────
+    public List&lt;SlaAlert&gt; getActiveAlerts() {
+<span class="nc" id="L98">        return slaAlertRepository.findByResolvedFalseOrderByAlertDateDesc();</span>
+    }
+
+    // ── Envoyer l'email d'alerte ──────────────────────────────────────────────
+    private void sendSlaEmail(Reclamation r, int slaMin, long elapsedMin) {
+<span class="nc" id="L103">        String priorityLabel = slaConfig.getPriorityLabel(</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">                r.getPriority() != null ? r.getPriority() : 3</span>
+        );
+
+<span class="nc" id="L107">        SimpleMailMessage message = new SimpleMailMessage();</span>
+<span class="nc" id="L108">        message.setTo(adminEmail);</span>
+<span class="nc" id="L109">        message.setSubject(&quot;🚨 ALERTE SLA — Réclamation #&quot; + r.getId() + &quot; dépasse le délai&quot;);</span>
+<span class="nc" id="L110">        message.setText(</span>
+                &quot;⚠️ ALERTE SLA DÉPASSÉE\n\n&quot; +
+<span class="nc" id="L112">                        &quot;Réclamation  : #&quot; + r.getId() + &quot;\n&quot; +</span>
+<span class="nc" id="L113">                        &quot;Sujet        : &quot; + r.getSubject() + &quot;\n&quot; +</span>
+<span class="nc" id="L114">                        &quot;Type         : &quot; + r.getType() + &quot;\n&quot; +</span>
+                        &quot;Priorité     : &quot; + priorityLabel + &quot;\n&quot; +
+<span class="nc" id="L116">                        &quot;Statut actuel: &quot; + r.getStatus() + &quot;\n&quot; +</span>
+<span class="nc" id="L117">                        &quot;Apprenant    : #&quot; + r.getLearnerId() + &quot;\n\n&quot; +</span>
+                        &quot;Délai SLA    : &quot; + slaMin + &quot; minutes\n&quot; +
+                        &quot;Temps écoulé : &quot; + elapsedMin + &quot; minutes\n&quot; +
+                        &quot;Dépassement  : &quot; + (elapsedMin - slaMin) + &quot; minutes\n\n&quot; +
+                        &quot;→ Veuillez traiter cette réclamation immédiatement.\n\n&quot; +
+                        &quot;Plateforme de Réclamations&quot;
+        );
+
+<span class="nc" id="L125">        mailSender.send(message);</span>
+<span class="nc" id="L126">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

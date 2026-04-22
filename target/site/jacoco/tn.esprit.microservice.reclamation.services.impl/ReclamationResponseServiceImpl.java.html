@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReclamationResponseServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Reclamation-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.microservice.reclamation.services.impl</a> &gt; <span class="el_source">ReclamationResponseServiceImpl.java</span></div><h1>ReclamationResponseServiceImpl.java</h1><pre class="source lang-java linenums">package tn.esprit.microservice.reclamation.services.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import tn.esprit.microservice.reclamation.entities.Reclamation;
+import tn.esprit.microservice.reclamation.entities.ReclamationResponse;
+import tn.esprit.microservice.reclamation.entities.ReclamationStatus;
+import tn.esprit.microservice.reclamation.repositories.ReclamationRepository;
+import tn.esprit.microservice.reclamation.repositories.ReclamationResponseRepository;
+import tn.esprit.microservice.reclamation.services.interfaces.IReclamationResponseService;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Service
+<span class="fc" id="L17">public class ReclamationResponseServiceImpl implements IReclamationResponseService {</span>
+
+    @Autowired
+    private ReclamationResponseRepository responseRepository;
+
+    @Autowired
+    private ReclamationRepository reclamationRepository;
+
+    @Override
+    @Transactional
+    public ReclamationResponse createResponse(Long reclamationId, String learnerId,
+                                              String responseText, Boolean isInternal) {
+<span class="fc" id="L29">        Reclamation reclamation = reclamationRepository.findById(reclamationId)</span>
+<span class="pc" id="L30">                .orElseThrow(() -&gt; new RuntimeException(&quot;Réclamation non trouvée : &quot; + reclamationId));</span>
+
+<span class="fc" id="L32">        ReclamationResponse response = ReclamationResponse.builder()</span>
+<span class="fc" id="L33">                .reclamationId(reclamationId)</span>
+<span class="fc" id="L34">                .senderId(learnerId) // ou adminId</span>
+<span class="fc" id="L35">                .senderType(&quot;LEARNER&quot;) // ou ADMIN</span>
+<span class="fc" id="L36">                .responseText(responseText)</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">                .isInternal(isInternal != null ? isInternal : false)</span>
+<span class="fc" id="L38">                .createdDate(LocalDateTime.now())</span>
+<span class="fc" id="L39">                .build();</span>
+
+<span class="fc" id="L41">        ReclamationResponse saved = responseRepository.save(response);</span>
+
+<span class="pc bpc" id="L43" title="2 of 4 branches missed.">        if (!saved.getIsInternal() &amp;&amp; reclamation.getStatus() == ReclamationStatus.PENDING) {</span>
+<span class="fc" id="L44">            reclamation.setStatus(ReclamationStatus.IN_PROGRESS);</span>
+<span class="fc" id="L45">            reclamation.setUpdatedDate(LocalDateTime.now());</span>
+<span class="fc" id="L46">            reclamationRepository.save(reclamation);</span>
+        }
+
+<span class="fc" id="L49">        return saved;</span>
+    }
+    @Override
+    public ReclamationResponse getResponseById(Long id) {
+<span class="fc" id="L53">        return responseRepository.findById(id)</span>
+<span class="pc" id="L54">                .orElseThrow(() -&gt; new RuntimeException(&quot;Réponse non trouvée avec l'ID : &quot; + id));</span>
+    }
+
+    @Override
+    public List&lt;ReclamationResponse&gt; getResponsesByReclamationId(Long reclamationId) {
+<span class="fc" id="L59">        return responseRepository.findByReclamationId(reclamationId);</span>
+    }
+
+    @Override
+    public List&lt;ReclamationResponse&gt; getPublicResponsesByReclamationId(Long reclamationId) {
+<span class="nc" id="L64">        return responseRepository.findByReclamationIdAndIsInternalFalse(reclamationId);</span>
+    }
+
+    @Override
+    public List&lt;ReclamationResponse&gt; getInternalCommentsByReclamationId(Long reclamationId) {
+<span class="nc" id="L69">        return responseRepository.findByReclamationIdAndIsInternalTrue(reclamationId);</span>
+    }
+
+    @Override
+    @Transactional
+    public ReclamationResponse updateResponse(Long id, String responseText) {
+<span class="nc" id="L75">        ReclamationResponse response = getResponseById(id);</span>
+<span class="nc" id="L76">        response.setResponseText(responseText);</span>
+<span class="nc" id="L77">        return responseRepository.save(response);</span>
+    }
+
+    @Override
+    @Transactional
+    public void deleteResponse(Long id) {
+<span class="fc" id="L83">        ReclamationResponse response = getResponseById(id);</span>
+<span class="fc" id="L84">        responseRepository.delete(response);</span>
+<span class="fc" id="L85">    }</span>
+
+    @Override
+    public List&lt;ReclamationResponse&gt; getResponsesByLearnerId(String learnerId) {
+<span class="nc" id="L89">        return responseRepository.findByLearnerId(learnerId);</span>
+    }
+
+
+
+    @Override
+    public ReclamationResponse saveResponse(ReclamationResponse response) {
+<span class="nc" id="L96">        return responseRepository.save(response);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

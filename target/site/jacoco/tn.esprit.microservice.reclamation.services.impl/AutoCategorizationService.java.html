@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AutoCategorizationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Reclamation-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.microservice.reclamation.services.impl</a> &gt; <span class="el_source">AutoCategorizationService.java</span></div><h1>AutoCategorizationService.java</h1><pre class="source lang-java linenums">package tn.esprit.microservice.reclamation.services.impl;
+
+
+import org.springframework.stereotype.Service;
+import tn.esprit.microservice.reclamation.entities.ReclamationType;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class AutoCategorizationService {
+
+    // Définition des mots-clés par type de réclamation
+<span class="fc" id="L15">    private final Map&lt;ReclamationType, List&lt;String&gt;&gt; keywords = new HashMap&lt;&gt;();</span>
+
+<span class="fc" id="L17">    public AutoCategorizationService() {</span>
+        // Mots-clés pour les problèmes techniques
+<span class="fc" id="L19">        keywords.put(ReclamationType.TECHNICAL, List.of(</span>
+                &quot;bug&quot;, &quot;erreur&quot;, &quot;plante&quot;, &quot;crash&quot;, &quot;beug&quot;, &quot;lent&quot;, &quot;ralenti&quot;,
+                &quot;502&quot;, &quot;404&quot;, &quot;500&quot;, &quot;erreur serveur&quot;, &quot;page blanche&quot;, &quot;ne charge pas&quot;,
+                &quot;ne s'affiche pas&quot;, &quot;video ne marche pas&quot;, &quot;son&quot;, &quot;audio&quot;
+        ));
+
+        // Mots-clés pour les problèmes de paiement
+<span class="fc" id="L26">        keywords.put(ReclamationType.PAYMENT, List.of(</span>
+                &quot;paiement&quot;, &quot;carte&quot;, &quot;cb&quot;, &quot;carte bancaire&quot;, &quot;remboursement&quot;,
+                &quot;facture&quot;, &quot;transaction&quot;, &quot;paypal&quot;, &quot;virement&quot;, &quot;débit&quot;, &quot;crédit&quot;,
+                &quot;non remboursé&quot;, &quot;facturé deux fois&quot;, &quot;montant&quot;, &quot;prix&quot;
+        ));
+
+        // Mots-clés pour les problèmes de contenu
+<span class="fc" id="L33">        keywords.put(ReclamationType.CONTENT, List.of(</span>
+                &quot;cours&quot;, &quot;leçon&quot;, &quot;module&quot;, &quot;chapitre&quot;, &quot;video&quot;, &quot;quiz&quot;, &quot;exercice&quot;,
+                &quot;examen&quot;, &quot;contenu&quot;, &quot;pdf&quot;, &quot;document&quot;, &quot;erreur de contenu&quot;,
+                &quot;fausse réponse&quot;, &quot;mauvaise réponse&quot;, &quot;information erronée&quot;
+        ));
+
+        // Mots-clés pour les problèmes d'accès
+<span class="fc" id="L40">        keywords.put(ReclamationType.ACCESS, List.of(</span>
+                &quot;connexion&quot;, &quot;login&quot;, &quot;mot de passe&quot;, &quot;accès&quot;, &quot;bloqué&quot;, &quot;verrouillé&quot;,
+                &quot;compte&quot;, &quot;session&quot;, &quot;expiré&quot;, &quot;refusé&quot;, &quot;interdit&quot;, &quot;plus accès&quot;,
+                &quot;impossible de se connecter&quot;, &quot;oublié&quot;
+        ));
+
+        // Mots-clés pour les problèmes de certificat
+<span class="fc" id="L47">        keywords.put(ReclamationType.CERTIFICATE, List.of(</span>
+                &quot;certificat&quot;, &quot;attestation&quot;, &quot;diplôme&quot;, &quot;validation&quot;, &quot;complétion&quot;,
+                &quot;certificat manquant&quot;, &quot;certificat erroné&quot;, &quot;fini le cours&quot;,
+                &quot;termine le cours&quot;, &quot;finalisé&quot;, &quot;ne reçois pas mon certificat&quot;
+        ));
+<span class="fc" id="L52">    }</span>
+
+    /**
+     * Détecte le type de réclamation basé sur le texte
+     */
+    public CategorizationResult detectType(String subject, String description) {
+<span class="nc" id="L58">        String text = (subject + &quot; &quot; + description).toLowerCase();</span>
+
+<span class="nc" id="L60">        Map&lt;ReclamationType, Integer&gt; scores = new HashMap&lt;&gt;();</span>
+
+        // Calculer le score pour chaque type
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        for (Map.Entry&lt;ReclamationType, List&lt;String&gt;&gt; entry : keywords.entrySet()) {</span>
+<span class="nc" id="L64">            int score = 0;</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">            for (String keyword : entry.getValue()) {</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">                if (text.contains(keyword)) {</span>
+<span class="nc" id="L67">                    score++;</span>
+                    // Bonus pour mots-clés plus spécifiques
+<span class="nc bnc" id="L69" title="All 2 branches missed.">                    if (keyword.length() &gt; 8) {</span>
+<span class="nc" id="L70">                        score++;</span>
+                    }
+                }
+<span class="nc" id="L73">            }</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">            if (score &gt; 0) {</span>
+<span class="nc" id="L75">                scores.put(entry.getKey(), score);</span>
+            }
+<span class="nc" id="L77">        }</span>
+
+        // Trouver le type avec le meilleur score
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        if (scores.isEmpty()) {</span>
+<span class="nc" id="L81">            return CategorizationResult.builder()</span>
+<span class="nc" id="L82">                    .suggestedType(ReclamationType.OTHER)</span>
+<span class="nc" id="L83">                    .confidence(0)</span>
+<span class="nc" id="L84">                    .hasSuggestion(false)</span>
+<span class="nc" id="L85">                    .build();</span>
+        }
+
+<span class="nc" id="L88">        ReclamationType bestType = scores.entrySet().stream()</span>
+<span class="nc" id="L89">                .max(Map.Entry.comparingByValue())</span>
+<span class="nc" id="L90">                .get()</span>
+<span class="nc" id="L91">                .getKey();</span>
+
+<span class="nc" id="L93">        int bestScore = scores.get(bestType);</span>
+<span class="nc" id="L94">        int confidence = Math.min(100, (bestScore * 100) / 5); // Max 100%</span>
+
+<span class="nc" id="L96">        return CategorizationResult.builder()</span>
+<span class="nc" id="L97">                .suggestedType(bestType)</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                .confidence(confidence)</span>
+<span class="nc" id="L99">                .hasSuggestion(confidence &gt;= 30)</span>
+<span class="nc" id="L100">                .matchedKeywords(getMatchedKeywords(text, bestType))</span>
+<span class="nc" id="L101">                .build();</span>
+    }
+
+    private List&lt;String&gt; getMatchedKeywords(String text, ReclamationType type) {
+<span class="nc" id="L105">        return keywords.get(type).stream()</span>
+<span class="nc" id="L106">                .filter(text::contains)</span>
+<span class="nc" id="L107">                .limit(3)</span>
+<span class="nc" id="L108">                .toList();</span>
+    }
+
+    /**
+     * Retourne le libellé du type pour affichage
+     */
+    public String getTypeLabel(ReclamationType type) {
+<span class="nc bnc" id="L115" title="All 6 branches missed.">        return switch (type) {</span>
+<span class="nc" id="L116">            case TECHNICAL -&gt; &quot;Problème technique&quot;;</span>
+<span class="nc" id="L117">            case PAYMENT -&gt; &quot;Problème de paiement&quot;;</span>
+<span class="nc" id="L118">            case CONTENT -&gt; &quot;Problème de contenu&quot;;</span>
+<span class="nc" id="L119">            case ACCESS -&gt; &quot;Problème d'accès&quot;;</span>
+<span class="nc" id="L120">            case CERTIFICATE -&gt; &quot;Problème de certificat&quot;;</span>
+<span class="nc" id="L121">            case OTHER -&gt; &quot;Autre&quot;;</span>
+        };
+    }
+
+    /**
+     * Résultat de la catégorisation
+     */
+<span class="nc" id="L128">    public static class CategorizationResult {</span>
+        private ReclamationType suggestedType;
+        private int confidence;
+        private boolean hasSuggestion;
+        private List&lt;String&gt; matchedKeywords;
+
+        // Constructeurs, getters, setters
+        public static Builder builder() {
+<span class="nc" id="L136">            return new Builder();</span>
+        }
+
+<span class="nc" id="L139">        public static class Builder {</span>
+            private ReclamationType suggestedType;
+            private int confidence;
+            private boolean hasSuggestion;
+            private List&lt;String&gt; matchedKeywords;
+
+            public Builder suggestedType(ReclamationType type) {
+<span class="nc" id="L146">                this.suggestedType = type;</span>
+<span class="nc" id="L147">                return this;</span>
+            }
+
+            public Builder confidence(int confidence) {
+<span class="nc" id="L151">                this.confidence = confidence;</span>
+<span class="nc" id="L152">                return this;</span>
+            }
+
+            public Builder hasSuggestion(boolean hasSuggestion) {
+<span class="nc" id="L156">                this.hasSuggestion = hasSuggestion;</span>
+<span class="nc" id="L157">                return this;</span>
+            }
+
+            public Builder matchedKeywords(List&lt;String&gt; keywords) {
+<span class="nc" id="L161">                this.matchedKeywords = keywords;</span>
+<span class="nc" id="L162">                return this;</span>
+            }
+
+            public CategorizationResult build() {
+<span class="nc" id="L166">                CategorizationResult result = new CategorizationResult();</span>
+<span class="nc" id="L167">                result.suggestedType = this.suggestedType;</span>
+<span class="nc" id="L168">                result.confidence = this.confidence;</span>
+<span class="nc" id="L169">                result.hasSuggestion = this.hasSuggestion;</span>
+<span class="nc" id="L170">                result.matchedKeywords = this.matchedKeywords;</span>
+<span class="nc" id="L171">                return result;</span>
+            }
+        }
+
+        // Getters
+<span class="nc" id="L176">        public ReclamationType getSuggestedType() { return suggestedType; }</span>
+<span class="nc" id="L177">        public int getConfidence() { return confidence; }</span>
+<span class="nc" id="L178">        public boolean isHasSuggestion() { return hasSuggestion; }</span>
+<span class="nc" id="L179">        public List&lt;String&gt; getMatchedKeywords() { return matchedKeywords; }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

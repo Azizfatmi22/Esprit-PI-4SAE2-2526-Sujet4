@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExtractionService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Reclamation-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.microservice.reclamation.services.impl</a> &gt; <span class="el_source">ExtractionService.java</span></div><h1>ExtractionService.java</h1><pre class="source lang-java linenums">package tn.esprit.microservice.reclamation.services.impl;
+
+// ExtractionService.java
+
+import org.springframework.stereotype.Service;
+import java.util.*;
+import java.util.regex.*;
+
+@Service
+<span class="fc" id="L10">public class ExtractionService {</span>
+
+    // ── MOTIFS REGEX ──────────────────────────────────────────────────────────────
+
+    // Montants: 99 DT, 150.50 DT, 200€, 75 dinar
+<span class="fc" id="L15">    private static final Pattern AMOUNT_PATTERN =</span>
+<span class="fc" id="L16">            Pattern.compile(&quot;(\\d+(?:[.,]\\d{1,2})?)\\s*(?:DT|dinar|€|EUR|euro|dinars)&quot;,</span>
+                    Pattern.CASE_INSENSITIVE);
+
+    // ID Transaction: TXN-12345, TRX_ABC123, transaction: XYZ
+<span class="fc" id="L20">    private static final Pattern TRANSACTION_PATTERN =</span>
+<span class="fc" id="L21">            Pattern.compile(&quot;(?:TXN|TRX|transaction|trans)[\\s:-]*([A-Z0-9_-]{5,20})&quot;,</span>
+                    Pattern.CASE_INSENSITIVE);
+
+    // Codes erreur: ERR-404, code 500, erreur: PAYMENT_FAILED
+<span class="fc" id="L25">    private static final Pattern ERROR_CODE_PATTERN =</span>
+<span class="fc" id="L26">            Pattern.compile(&quot;(?:erreur|error|code)[\\s:-]*([A-Z0-9_-]{3,20})&quot;,</span>
+                    Pattern.CASE_INSENSITIVE);
+
+    // Emails
+<span class="fc" id="L30">    private static final Pattern EMAIL_PATTERN =</span>
+<span class="fc" id="L31">            Pattern.compile(&quot;[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}&quot;);</span>
+
+    // Dates: 15/04/2025, 15-04-2025, 15 avril 2025
+<span class="fc" id="L34">    private static final Pattern DATE_PATTERN =</span>
+<span class="fc" id="L35">            Pattern.compile(&quot;(\\d{1,2})[/-](\\d{1,2})[/-](\\d{2,4})|(\\d{1,2})\\s+(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)\\s+(\\d{4})&quot;,</span>
+                    Pattern.CASE_INSENSITIVE);
+
+    // Numéro facture: INV-12345, FACTURE-ABC
+<span class="fc" id="L39">    private static final Pattern INVOICE_PATTERN =</span>
+<span class="fc" id="L40">            Pattern.compile(&quot;(?:INV|FACTURE|invoice)[\\s:-]*([A-Z0-9_-]{5,20})&quot;,</span>
+                    Pattern.CASE_INSENSITIVE);
+
+    // Méthode principale d'extraction
+    public ExtractedData extract(String text) {
+<span class="nc bnc" id="L45" title="All 4 branches missed.">        if (text == null || text.isEmpty()) {</span>
+<span class="nc" id="L46">            return new ExtractedData();</span>
+        }
+
+<span class="nc" id="L49">        ExtractedData data = new ExtractedData();</span>
+
+        // Extraire les montants
+<span class="nc" id="L52">        Matcher amountMatcher = AMOUNT_PATTERN.matcher(text);</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (amountMatcher.find()) {</span>
+<span class="nc" id="L54">            String amountStr = amountMatcher.group(1).replace(',', '.');</span>
+            try {
+<span class="nc" id="L56">                data.setAmount(Double.parseDouble(amountStr));</span>
+<span class="nc" id="L57">            } catch (NumberFormatException e) {}</span>
+        }
+
+        // Extraire l'ID de transaction
+<span class="nc" id="L61">        Matcher transMatcher = TRANSACTION_PATTERN.matcher(text);</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (transMatcher.find()) {</span>
+<span class="nc" id="L63">            data.setTransactionId(transMatcher.group(1));</span>
+        }
+
+        // Extraire le code erreur
+<span class="nc" id="L67">        Matcher errorMatcher = ERROR_CODE_PATTERN.matcher(text);</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (errorMatcher.find()) {</span>
+<span class="nc" id="L69">            data.setErrorCode(errorMatcher.group(1));</span>
+        }
+
+        // Extraire l'email
+<span class="nc" id="L73">        Matcher emailMatcher = EMAIL_PATTERN.matcher(text);</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        if (emailMatcher.find()) {</span>
+<span class="nc" id="L75">            data.setEmail(emailMatcher.group());</span>
+        }
+
+        // Extraire la date
+<span class="nc" id="L79">        Matcher dateMatcher = DATE_PATTERN.matcher(text);</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        if (dateMatcher.find()) {</span>
+<span class="nc" id="L81">            String dateStr = extractDate(dateMatcher);</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">            if (dateStr != null) {</span>
+<span class="nc" id="L83">                data.setExtractedDate(dateStr);</span>
+            }
+        }
+
+        // Extraire le numéro de facture
+<span class="nc" id="L88">        Matcher invoiceMatcher = INVOICE_PATTERN.matcher(text);</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        if (invoiceMatcher.find()) {</span>
+<span class="nc" id="L90">            data.setInvoiceNumber(invoiceMatcher.group(1));</span>
+        }
+
+<span class="nc" id="L93">        return data;</span>
+    }
+
+    private String extractDate(Matcher matcher) {
+        try {
+            // Format JJ/MM/AAAA ou JJ-MM-AAAA
+<span class="nc bnc" id="L99" title="All 2 branches missed.">            if (matcher.group(1) != null) {</span>
+<span class="nc" id="L100">                int day = Integer.parseInt(matcher.group(1));</span>
+<span class="nc" id="L101">                int month = Integer.parseInt(matcher.group(2));</span>
+<span class="nc" id="L102">                int year = Integer.parseInt(matcher.group(3));</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">                if (year &lt; 100) year += 2000;</span>
+<span class="nc" id="L104">                return String.format(&quot;%04d-%02d-%02d&quot;, year, month, day);</span>
+            }
+            // Format JJ mois AAAA
+<span class="nc bnc" id="L107" title="All 2 branches missed.">            else if (matcher.group(4) != null) {</span>
+<span class="nc" id="L108">                int day = Integer.parseInt(matcher.group(4));</span>
+<span class="nc" id="L109">                String monthStr = matcher.group(5).toLowerCase();</span>
+<span class="nc" id="L110">                int month = getMonthNumber(monthStr);</span>
+<span class="nc" id="L111">                int year = Integer.parseInt(matcher.group(6));</span>
+<span class="nc" id="L112">                return String.format(&quot;%04d-%02d-%02d&quot;, year, month, day);</span>
+            }
+<span class="nc" id="L114">        } catch (Exception e) {}</span>
+<span class="nc" id="L115">        return null;</span>
+    }
+
+    private int getMonthNumber(String month) {
+<span class="nc bnc" id="L119" title="All 13 branches missed.">        return switch (month.toLowerCase()) {</span>
+<span class="nc" id="L120">            case &quot;janvier&quot; -&gt; 1;</span>
+<span class="nc" id="L121">            case &quot;fevrier&quot; -&gt; 2;</span>
+<span class="nc" id="L122">            case &quot;mars&quot; -&gt; 3;</span>
+<span class="nc" id="L123">            case &quot;avril&quot; -&gt; 4;</span>
+<span class="nc" id="L124">            case &quot;mai&quot; -&gt; 5;</span>
+<span class="nc" id="L125">            case &quot;juin&quot; -&gt; 6;</span>
+<span class="nc" id="L126">            case &quot;juillet&quot; -&gt; 7;</span>
+<span class="nc" id="L127">            case &quot;aout&quot; -&gt; 8;</span>
+<span class="nc" id="L128">            case &quot;septembre&quot; -&gt; 9;</span>
+<span class="nc" id="L129">            case &quot;octobre&quot; -&gt; 10;</span>
+<span class="nc" id="L130">            case &quot;novembre&quot; -&gt; 11;</span>
+<span class="nc" id="L131">            case &quot;decembre&quot; -&gt; 12;</span>
+<span class="nc" id="L132">            default -&gt; 1;</span>
+        };
+    }
+
+    // Classe pour les données extraites
+<span class="nc" id="L137">    public static class ExtractedData {</span>
+        private Double amount;
+        private String transactionId;
+        private String errorCode;
+        private String email;
+        private String extractedDate;
+        private String invoiceNumber;
+<span class="nc" id="L144">        private List&lt;String&gt; allDetected = new ArrayList&lt;&gt;();</span>
+
+        // Getters et Setters
+<span class="nc" id="L147">        public Double getAmount() { return amount; }</span>
+<span class="nc" id="L148">        public void setAmount(Double amount) { this.amount = amount; }</span>
+
+<span class="nc" id="L150">        public String getTransactionId() { return transactionId; }</span>
+<span class="nc" id="L151">        public void setTransactionId(String transactionId) { this.transactionId = transactionId; }</span>
+
+<span class="nc" id="L153">        public String getErrorCode() { return errorCode; }</span>
+<span class="nc" id="L154">        public void setErrorCode(String errorCode) { this.errorCode = errorCode; }</span>
+
+<span class="nc" id="L156">        public String getEmail() { return email; }</span>
+<span class="nc" id="L157">        public void setEmail(String email) { this.email = email; }</span>
+
+<span class="nc" id="L159">        public String getExtractedDate() { return extractedDate; }</span>
+<span class="nc" id="L160">        public void setExtractedDate(String extractedDate) { this.extractedDate = extractedDate; }</span>
+
+<span class="nc" id="L162">        public String getInvoiceNumber() { return invoiceNumber; }</span>
+<span class="nc" id="L163">        public void setInvoiceNumber(String invoiceNumber) { this.invoiceNumber = invoiceNumber; }</span>
+
+<span class="nc" id="L165">        public List&lt;String&gt; getAllDetected() { return allDetected; }</span>
+<span class="nc" id="L166">        public void setAllDetected(List&lt;String&gt; allDetected) { this.allDetected = allDetected; }</span>
+
+        public boolean hasData() {
+<span class="nc bnc" id="L169" title="All 12 branches missed.">            return amount != null || transactionId != null || errorCode != null ||</span>
+                    email != null || extractedDate != null || invoiceNumber != null;
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

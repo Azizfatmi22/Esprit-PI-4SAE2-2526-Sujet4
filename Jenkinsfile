@@ -115,23 +115,14 @@ pipeline {
         // ─────────────────────────────────────────────
         stage('SonarQube Analysis') {
             steps {
-                echo '🔍 Analyse SonarQube...'
-
                 withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-
                     bat """
-                        mvn org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar ^
-                        -Dsonar.projectKey=reclamation-service ^
-                        -Dsonar.projectName="Reclamation Service" ^
-                        -Dsonar.host.url=http://localhost:9000 ^
-                        -Dsonar.login=%SONAR_TOKEN% ^
-                        -Dsonar.java.binaries=target/classes ^
-                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml ^
-                        -Dsonar.scm.disabled=true
+                    mvn org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar ^
+                    -Dsonar.projectKey=reclamation-service ^
+                    -Dsonar.host.url=http://localhost:9000 ^
+                    -Dsonar.login=%SONAR_TOKEN%
                     """
                 }
-
-                echo '✅ Analyse SonarQube terminée'
             }
         }
         // ─────────────────────────────────────────────

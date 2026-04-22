@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReclamationServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Reclamation-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.microservice.reclamation.services.impl</a> &gt; <span class="el_source">ReclamationServiceImpl.java</span></div><h1>ReclamationServiceImpl.java</h1><pre class="source lang-java linenums">package tn.esprit.microservice.reclamation.services.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import tn.esprit.microservice.reclamation.entities.ModerationResult;
+import tn.esprit.microservice.reclamation.entities.Reclamation;
+import tn.esprit.microservice.reclamation.entities.ReclamationStatus;
+import tn.esprit.microservice.reclamation.entities.ReclamationType;
+import tn.esprit.microservice.reclamation.repositories.ReclamationRepository;
+import tn.esprit.microservice.reclamation.services.interfaces.IGravityCalculationService;
+import tn.esprit.microservice.reclamation.services.interfaces.IModerationService;
+import tn.esprit.microservice.reclamation.services.interfaces.IReclamationService;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Service
+<span class="fc" id="L22">public class ReclamationServiceImpl implements IReclamationService {</span>
+
+    @Autowired
+    private ReclamationRepository reclamationRepository;
+
+    @Autowired
+    private IModerationService moderationService;
+
+    @Autowired
+    private JavaMailSender mailSender;
+
+    @Autowired
+    private IGravityCalculationService gravityService;
+
+    @Value(&quot;${app.admin.email}&quot;)
+    private String adminEmail;
+
+    // ==============================================================
+    // UNE SEULE méthode createReclamation (pas deux !)
+    // ==============================================================
+    @Override
+    @Transactional
+    public Reclamation createReclamation(Reclamation reclamation) {
+<span class="fc" id="L45">        reclamation.setCreatedDate(LocalDateTime.now());</span>
+<span class="fc" id="L46">        reclamation.setStatus(ReclamationStatus.PENDING);</span>
+
+        // 🔍 SCAN DE MODÉRATION (existant)
+<span class="fc" id="L49">        ModerationResult moderation = moderationService.scanReclamation(reclamation);</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">        if (moderation.isSuspect()) {</span>
+<span class="nc" id="L51">            reclamation.setIsSuspect(true);</span>
+<span class="nc" id="L52">            reclamation.setModerationReason(moderation.getReason());</span>
+<span class="nc" id="L53">            sendModerationAlert(reclamation, moderation.getDetectedWords());</span>
+        }
+
+        // ⭐ CALCUL DE GRAVITÉ (NOUVEAU)
+<span class="fc" id="L57">        GravityCalculationService.GravityResult gravity = gravityService.calculateGravity(reclamation);</span>
+<span class="fc" id="L58">        reclamation.setGravityScore(gravity.getScore());</span>
+<span class="fc" id="L59">        reclamation.setGravityLevel(gravity.getLevel().toString());</span>
+
+<span class="fc" id="L61">        return reclamationRepository.save(reclamation);</span>
+    }
+
+    @Override
+    public Reclamation getReclamationById(Long id) {
+<span class="fc" id="L66">        return reclamationRepository.findById(id)</span>
+<span class="fc" id="L67">                .orElseThrow(() -&gt; new RuntimeException(&quot;Réclamation non trouvée avec l'ID : &quot; + id));</span>
+    }
+
+    @Override
+    public List&lt;Reclamation&gt; getAllReclamations() {
+<span class="nc" id="L72">        return reclamationRepository.findAll();</span>
+    }
+
+    @Override
+    public List&lt;Reclamation&gt; getReclamationsByLearner(String learnerId) {
+<span class="nc" id="L77">        return reclamationRepository.findByLearnerId(learnerId);</span>
+    }
+
+    @Override
+    public List&lt;Reclamation&gt; getReclamationsByStatus(ReclamationStatus status) {
+<span class="nc" id="L82">        return reclamationRepository.findByStatus(status);</span>
+    }
+
+    @Override
+    public List&lt;Reclamation&gt; getReclamationsByType(ReclamationType type) {
+<span class="nc" id="L87">        return reclamationRepository.findByType(type);</span>
+    }
+
+    @Override
+    @Transactional
+    public Reclamation updateReclamationStatus(Long id, ReclamationStatus status, Long adminId) {
+<span class="fc" id="L93">        Reclamation reclamation = getReclamationById(id);</span>
+<span class="fc" id="L94">        reclamation.setStatus(status);</span>
+<span class="fc" id="L95">        reclamation.setUpdatedDate(LocalDateTime.now());</span>
+
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">        if (adminId != null) {</span>
+<span class="fc" id="L98">            reclamation.setAdminId(adminId);</span>
+        }
+
+<span class="pc bpc" id="L101" title="2 of 4 branches missed.">        if (status == ReclamationStatus.RESOLVED &amp;&amp; reclamation.getResolvedDate() == null) {</span>
+<span class="fc" id="L102">            reclamation.setResolvedDate(LocalDateTime.now());</span>
+        }
+
+<span class="fc" id="L105">        return reclamationRepository.save(reclamation);</span>
+    }
+
+    @Override
+    @Transactional
+    public Reclamation updateReclamation(Long id, Reclamation reclamation) {
+<span class="nc" id="L111">        Reclamation existing = getReclamationById(id);</span>
+
+<span class="nc bnc" id="L113" title="All 2 branches missed.">        if (reclamation.getSubject() != null) {</span>
+<span class="nc" id="L114">            existing.setSubject(reclamation.getSubject());</span>
+        }
+<span class="nc bnc" id="L116" title="All 2 branches missed.">        if (reclamation.getDescription() != null) {</span>
+<span class="nc" id="L117">            existing.setDescription(reclamation.getDescription());</span>
+        }
+<span class="nc bnc" id="L119" title="All 2 branches missed.">        if (reclamation.getType() != null) {</span>
+<span class="nc" id="L120">            existing.setType(reclamation.getType());</span>
+        }
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (reclamation.getCourseId() != null) {</span>
+<span class="nc" id="L123">            existing.setCourseId(reclamation.getCourseId());</span>
+        }
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        if (reclamation.getPriority() != null) {</span>
+<span class="nc" id="L126">            existing.setPriority(reclamation.getPriority());</span>
+        }
+
+<span class="nc" id="L129">        existing.setUpdatedDate(LocalDateTime.now());</span>
+
+<span class="nc" id="L131">        return reclamationRepository.save(existing);</span>
+    }
+
+    @Override
+    @Transactional
+    public void deleteReclamation(Long id) {
+<span class="fc" id="L137">        Reclamation reclamation = getReclamationById(id);</span>
+<span class="fc" id="L138">        reclamationRepository.delete(reclamation);</span>
+<span class="fc" id="L139">    }</span>
+
+    @Override
+    public List&lt;Reclamation&gt; getUnresolvedReclamations() {
+<span class="nc" id="L143">        return reclamationRepository.findByStatusNot(ReclamationStatus.RESOLVED);</span>
+    }
+
+    @Override
+    @Transactional
+    public Reclamation submitSatisfaction(Long id, Integer score, String comment) {
+<span class="fc" id="L149">        Reclamation rec = getReclamationById(id);</span>
+<span class="fc" id="L150">        rec.setSatisfactionScore(score);</span>
+<span class="fc" id="L151">        rec.setSatisfactionComment(comment);</span>
+<span class="fc" id="L152">        rec.setSatisfactionDate(LocalDateTime.now());</span>
+<span class="fc" id="L153">        return reclamationRepository.save(rec);</span>
+    }
+
+    // ==============================================================
+    // Méthode privée pour l'alerte email
+    // ==============================================================
+    private void sendModerationAlert(Reclamation reclamation, List&lt;String&gt; words) {
+        try {
+<span class="nc" id="L161">            SimpleMailMessage email = new SimpleMailMessage();</span>
+<span class="nc" id="L162">            email.setTo(adminEmail);</span>
+<span class="nc" id="L163">            email.setSubject(&quot;🚨 ALERTE MODÉRATION - Réclamation suspecte #&quot; + reclamation.getId());</span>
+<span class="nc" id="L164">            email.setText(String.format(</span>
+                    &quot;Une réclamation a été marquée comme suspecte.\n\n&quot; +
+                            &quot;ID: #%d\n&quot; +
+                            &quot;Apprenant: #%d\n&quot; +
+                            &quot;Mots détectés: %s\n\n&quot; +
+                            &quot;Sujet: %s\n\n&quot; +
+                            &quot;Description: %s\n\n&quot; +
+                            &quot;Connectez-vous pour modérer.&quot;,
+<span class="nc" id="L172">                    reclamation.getId(),</span>
+<span class="nc" id="L173">                    reclamation.getLearnerId(),</span>
+<span class="nc" id="L174">                    String.join(&quot;, &quot;, words),</span>
+<span class="nc" id="L175">                    reclamation.getSubject(),</span>
+<span class="nc" id="L176">                    reclamation.getDescription()</span>
+            ));
+<span class="nc" id="L178">            mailSender.send(email);</span>
+<span class="nc" id="L179">        } catch (Exception e) {</span>
+<span class="nc" id="L180">            System.err.println(&quot;Erreur envoi email modération: &quot; + e.getMessage());</span>
+<span class="nc" id="L181">        }</span>
+<span class="nc" id="L182">    }</span>
+
+    @Override
+    @Transactional
+    public Reclamation approveReclamation(Long id) {
+<span class="nc" id="L187">        Reclamation reclamation = getReclamationById(id);</span>
+<span class="nc" id="L188">        reclamation.setIsSuspect(false);</span>
+<span class="nc" id="L189">        reclamation.setModerationReason(null);</span>
+<span class="nc" id="L190">        reclamation.setModeratedDate(LocalDateTime.now());</span>
+<span class="nc" id="L191">        return reclamationRepository.save(reclamation);</span>
+    }
+
+    @Override
+    @Transactional
+    public Reclamation rejectReclamation(Long id) {
+<span class="nc" id="L197">        Reclamation reclamation = getReclamationById(id);</span>
+<span class="nc" id="L198">        reclamation.setIsSuspect(false);</span>
+<span class="nc" id="L199">        reclamation.setStatus(ReclamationStatus.REJECTED);</span>
+<span class="nc" id="L200">        reclamation.setModeratedDate(LocalDateTime.now());</span>
+<span class="nc" id="L201">        return reclamationRepository.save(reclamation);</span>
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Reclamation.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Reclamation-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.microservice.reclamation.entities</a> &gt; <span class="el_source">Reclamation.java</span></div><h1>Reclamation.java</h1><pre class="source lang-java linenums">package tn.esprit.microservice.reclamation.entities;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Entity
+@Table(name = &quot;reclamations&quot;)
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+public class Reclamation {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // ── Champs communs ────────────────────────────────────────
+    @Column(name = &quot;learner_id&quot;, nullable = false)
+    private String learnerId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = &quot;type&quot;, nullable = false)
+    private ReclamationType type;
+
+    @Column(name = &quot;subject&quot;, nullable = false, length = 200)
+    private String subject;
+
+    @Column(name = &quot;description&quot;, nullable = false, columnDefinition = &quot;TEXT&quot;)
+    private String description;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = &quot;status&quot;, nullable = false)
+    private ReclamationStatus status = ReclamationStatus.PENDING;
+
+    @Column(name = &quot;priority&quot;)
+    private Integer priority = 3;
+
+    @Column(name = &quot;created_date&quot;, nullable = false)
+    private LocalDateTime createdDate;
+
+    @Column(name = &quot;updated_date&quot;)
+    private LocalDateTime updatedDate;
+
+    @Column(name = &quot;resolved_date&quot;)
+    private LocalDateTime resolvedDate;
+
+    @Column(name = &quot;admin_id&quot;)
+    private Long adminId;
+
+    @Column(name = &quot;contact_phone&quot;, length = 20)
+    private String contactPhone;           // Commun optionnel
+
+    @Column(name = &quot;desired_resolution_date&quot;)
+    private LocalDate desiredResolutionDate; // Commun optionnel
+
+    @Column(name = &quot;attachment_url&quot;, length = 500)
+    private String attachmentUrl;          // Commun optionnel
+
+    @Column(name = &quot;additional_info&quot;, columnDefinition = &quot;TEXT&quot;)
+    private String additionalInfo;         // Commun optionnel
+
+    // ── TECHNICAL ─────────────────────────────────────────────
+    @Column(name = &quot;browser_name&quot;, length = 100)
+    private String browserName;            // Ex: Chrome 120, Firefox
+
+    @Column(name = &quot;os_version&quot;, length = 100)
+    private String osVersion;              // Ex: Windows 11, macOS 14
+
+    @Column(name = &quot;error_code&quot;, length = 50)
+    private String errorCode;             // Ex: 500, ERR_CONNECTION
+
+    @Column(name = &quot;error_message&quot;, columnDefinition = &quot;TEXT&quot;)
+    private String errorMessage;           // Message d'erreur exact
+
+    // ── PAYMENT ───────────────────────────────────────────────
+    @Column(name = &quot;transaction_id&quot;, length = 100)
+    private String transactionId;          // Référence transaction
+
+    @Column(name = &quot;payment_date&quot;)
+    private LocalDate paymentDate;     // Date du paiement
+
+    @Column(name = &quot;amount&quot;)
+    private Double amount;                 // Montant concerné
+
+    @Column(name = &quot;payment_method&quot;, length = 50)
+    private String paymentMethod;          // CB, Virement, PayPal...
+
+    @Column(name = &quot;invoice_number&quot;, length = 50)
+    private String invoiceNumber;          // Numéro de facture
+
+    // ── CONTENT ───────────────────────────────────────────────
+    @Column(name = &quot;course_id&quot;)
+    private Long courseId;                 // Cours concerné
+
+    @Column(name = &quot;lesson_id&quot;)
+    private Long lessonId;                 // Leçon précise
+
+    @Column(name = &quot;content_type&quot;, length = 50)
+    private String contentType;            // Vidéo, Quiz, PDF...
+
+    @Column(name = &quot;page_url&quot;, length = 500)
+    private String pageUrl;                // URL de la page problème
+
+    // ── ACCESS ────────────────────────────────────────────────
+    @Column(name = &quot;access_date&quot;)
+    private LocalDate accessDate;      // Quand l'accès a échoué
+
+    @Column(name = &quot;device_type&quot;, length = 50)
+    private String deviceType;             // Mobile, PC, Tablette
+
+    // ── CERTIFICATE ───────────────────────────────────────────
+    @Column(name = &quot;completion_date&quot;)
+    private LocalDate completionDate;  // Date de fin du cours
+
+    @Column(name = &quot;certificate_type&quot;, length = 100)
+    private String certificateType;        // Type de certificat
+
+    @Column(name = &quot;satisfaction_score&quot;)
+    private Integer satisfactionScore;
+
+    @Column(name = &quot;satisfaction_comment&quot;, columnDefinition = &quot;TEXT&quot;)
+    private String satisfactionComment;
+
+    @Column(name = &quot;satisfaction_date&quot;)
+    private LocalDateTime satisfactionDate;
+
+    // Dans Reclamation.java - Ajouter ces champs
+    @Column(name = &quot;external_ticket_id&quot;, length = 100)
+    private String externalTicketId;
+
+    @Column(name = &quot;external_ticket_url&quot;, length = 500)
+    private String externalTicketUrl;
+
+    @Column(name = &quot;external_tool&quot;, length = 50)
+    private String externalTool;
+
+    // Dans Reclamation.java - Ajouter
+    @Column(name = &quot;is_suspect&quot;)
+    private Boolean isSuspect = false;
+
+    @Column(name = &quot;moderation_reason&quot;, columnDefinition = &quot;TEXT&quot;)
+    private String moderationReason;
+
+    @Column(name = &quot;moderated_by&quot;)
+    private Long moderatedBy;
+
+    @Column(name = &quot;moderated_date&quot;)
+    private LocalDateTime moderatedDate;
+
+    @Column(name = &quot;gravity_score&quot;)
+    private Integer gravityScore;  // 1-10
+
+    @Column(name = &quot;gravity_level&quot;)
+    private String gravityLevel;   // &quot;CRITICAL&quot;, &quot;HIGH&quot;, &quot;MEDIUM&quot;, &quot;LOW&quot;
+
+    @OneToMany(mappedBy = &quot;reclamation&quot;, cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List&lt;ReclamationResponse&gt; responses;
+
+    @PrePersist
+    public void prePersist() {
+<span class="nc" id="L165">        this.createdDate = LocalDateTime.now();</span>
+<span class="nc" id="L166">        this.status = ReclamationStatus.PENDING;</span>
+<span class="nc" id="L167">    }</span>
+
+    @PreUpdate
+    public void preUpdate() {
+<span class="nc" id="L171">        this.updatedDate = LocalDateTime.now();</span>
+<span class="nc bnc" id="L172" title="All 4 branches missed.">        if (this.status == ReclamationStatus.RESOLVED &amp;&amp; this.resolvedDate == null) {</span>
+<span class="nc" id="L173">            this.resolvedDate = LocalDateTime.now();</span>
+        }
+<span class="nc" id="L175">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

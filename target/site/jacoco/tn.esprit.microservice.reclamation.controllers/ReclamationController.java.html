@@ -1,0 +1,513 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReclamationController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Reclamation-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.microservice.reclamation.controllers</a> &gt; <span class="el_source">ReclamationController.java</span></div><h1>ReclamationController.java</h1><pre class="source lang-java linenums">package tn.esprit.microservice.reclamation.controllers;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import tn.esprit.microservice.reclamation.entities.Reclamation;
+import tn.esprit.microservice.reclamation.entities.ReclamationResponse;
+import tn.esprit.microservice.reclamation.entities.ReclamationStatus;
+import tn.esprit.microservice.reclamation.entities.ReclamationType;
+import tn.esprit.microservice.reclamation.repositories.ReclamationRepository;
+import tn.esprit.microservice.reclamation.services.impl.AutoCategorizationService;
+import tn.esprit.microservice.reclamation.services.impl.ExtractionService;
+import tn.esprit.microservice.reclamation.services.interfaces.IReclamationService;
+import tn.esprit.microservice.reclamation.services.interfaces.IReclamationResponseService;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping(&quot;/msreclamation&quot;)
+//@CrossOrigin(&quot;http://localhost:4200&quot;)
+<span class="fc" id="L25">public class ReclamationController {</span>
+
+    @Autowired
+    private IReclamationService reclamationService;
+
+    @Autowired
+    private IReclamationResponseService responseService;
+
+    // Dans ReclamationController.java — ajouter :
+    @Autowired
+    private ReclamationRepository reclamationRepository;
+
+    @Autowired
+    private AutoCategorizationService autoCategorizationService;
+
+    @Autowired
+    private ExtractionService extractionService;
+
+    // Endpoint de test pour vérifier que le service fonctionne
+    @GetMapping(&quot;/health&quot;)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; health() {
+<span class="nc" id="L46">        Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L47">        response.put(&quot;status&quot;, &quot;UP&quot;);</span>
+<span class="nc" id="L48">        response.put(&quot;service&quot;, &quot;Reclamation-service&quot;);</span>
+<span class="nc" id="L49">        response.put(&quot;message&quot;, &quot;Service is running&quot;);</span>
+<span class="nc" id="L50">        return ResponseEntity.ok(response);</span>
+    }
+
+    // Créer une nouvelle réclamation
+    @PostMapping(&quot;/reclamations&quot;)
+    public ResponseEntity&lt;?&gt; createReclamation(@RequestBody Reclamation reclamation) {
+        try {
+<span class="nc" id="L57">            Reclamation created = reclamationService.createReclamation(reclamation);</span>
+<span class="nc" id="L58">            return ResponseEntity.status(HttpStatus.CREATED).body(created);</span>
+<span class="nc" id="L59">        } catch (Exception e) {</span>
+<span class="nc" id="L60">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L61">                    .body(&quot;Erreur lors de la création de la réclamation: &quot; + e.getMessage());</span>
+        }
+    }
+
+    // Récupérer toutes les réclamations
+    @GetMapping(&quot;/reclamations&quot;)
+    public ResponseEntity&lt;List&lt;Reclamation&gt;&gt; getAllReclamations() {
+<span class="nc" id="L68">        return ResponseEntity.ok(reclamationService.getAllReclamations());</span>
+    }
+
+    // Récupérer une réclamation par ID
+    @GetMapping(&quot;/reclamations/{id}&quot;)
+    public ResponseEntity&lt;?&gt; getReclamationById(@PathVariable Long id) {
+        try {
+<span class="nc" id="L75">            Reclamation reclamation = reclamationService.getReclamationById(id);</span>
+<span class="nc" id="L76">            return ResponseEntity.ok(reclamation);</span>
+<span class="nc" id="L77">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L78">            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());</span>
+        }
+    }
+
+    // Récupérer les réclamations d'un apprenant
+    @GetMapping(&quot;/reclamations/learner/{learnerId}&quot;)
+    public ResponseEntity&lt;List&lt;Reclamation&gt;&gt; getReclamationsByLearner(@PathVariable String learnerId) {
+<span class="nc" id="L85">        return ResponseEntity.ok(reclamationService.getReclamationsByLearner(learnerId));</span>
+    }
+
+    // Récupérer les réclamations par statut
+    @GetMapping(&quot;/reclamations/status/{status}&quot;)
+    public ResponseEntity&lt;List&lt;Reclamation&gt;&gt; getReclamationsByStatus(@PathVariable String status) {
+        try {
+<span class="nc" id="L92">            ReclamationStatus reclamationStatus = ReclamationStatus.valueOf(status.toUpperCase());</span>
+<span class="nc" id="L93">            return ResponseEntity.ok(reclamationService.getReclamationsByStatus(reclamationStatus));</span>
+<span class="nc" id="L94">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L95">            return ResponseEntity.badRequest().build();</span>
+        }
+    }
+
+    // Récupérer les réclamations par type
+    @GetMapping(&quot;/reclamations/type/{type}&quot;)
+    public ResponseEntity&lt;List&lt;Reclamation&gt;&gt; getReclamationsByType(@PathVariable String type) {
+        try {
+<span class="nc" id="L103">            ReclamationType reclamationType = ReclamationType.valueOf(type.toUpperCase());</span>
+<span class="nc" id="L104">            return ResponseEntity.ok(reclamationService.getReclamationsByType(reclamationType));</span>
+<span class="nc" id="L105">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L106">            return ResponseEntity.badRequest().build();</span>
+        }
+    }
+
+    // Récupérer les réclamations non résolues
+    @GetMapping(&quot;/reclamations/unresolved&quot;)
+    public ResponseEntity&lt;List&lt;Reclamation&gt;&gt; getUnresolvedReclamations() {
+<span class="nc" id="L113">        return ResponseEntity.ok(reclamationService.getUnresolvedReclamations());</span>
+    }
+
+    // Mettre à jour une réclamation
+    @PutMapping(&quot;/reclamations/{id}&quot;)
+    public ResponseEntity&lt;?&gt; updateReclamation(@PathVariable Long id, @RequestBody Reclamation reclamation) {
+        try {
+<span class="nc" id="L120">            Reclamation updated = reclamationService.updateReclamation(id, reclamation);</span>
+<span class="nc" id="L121">            return ResponseEntity.ok(updated);</span>
+<span class="nc" id="L122">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L123">            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());</span>
+<span class="nc" id="L124">        } catch (Exception e) {</span>
+<span class="nc" id="L125">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L126">                    .body(&quot;Erreur lors de la mise à jour: &quot; + e.getMessage());</span>
+        }
+    }
+
+    // Mettre à jour le statut d'une réclamation (pour les admins)
+    @PutMapping(&quot;/reclamations/{id}/status&quot;)
+    public ResponseEntity&lt;?&gt; updateReclamationStatus(
+            @PathVariable Long id,
+            @RequestBody Map&lt;String, Object&gt; payload) {
+        try {
+<span class="nc" id="L136">            String statusStr = payload.get(&quot;status&quot;).toString().toUpperCase();</span>
+<span class="nc" id="L137">            ReclamationStatus status = ReclamationStatus.valueOf(statusStr);</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">            Long adminId = payload.containsKey(&quot;adminId&quot;) ? </span>
+<span class="nc" id="L139">                    Long.valueOf(payload.get(&quot;adminId&quot;).toString()) : null;</span>
+
+<span class="nc" id="L141">            Reclamation updated = reclamationService.updateReclamationStatus(id, status, adminId);</span>
+<span class="nc" id="L142">            return ResponseEntity.ok(updated);</span>
+<span class="nc" id="L143">        } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L144">            return ResponseEntity.badRequest().body(&quot;Statut invalide&quot;);</span>
+<span class="nc" id="L145">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L146">            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());</span>
+<span class="nc" id="L147">        } catch (Exception e) {</span>
+<span class="nc" id="L148">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L149">                    .body(&quot;Erreur lors de la mise à jour du statut: &quot; + e.getMessage());</span>
+        }
+    }
+
+    // --- GESTION DES RÉPONSES ---
+
+    // Ajouter une réponse à une réclamation
+    @PostMapping(&quot;/reclamations/{id}/responses&quot;)
+    public ResponseEntity&lt;?&gt; addResponse(
+            @PathVariable Long id,
+            @RequestBody Map&lt;String, Object&gt; payload) {
+        try {
+<span class="nc" id="L161">            String responseText = payload.get(&quot;responseText&quot;).toString();</span>
+
+            // ← learnerId est String (UUID ou numérique)
+<span class="nc" id="L164">            String learnerId = null;</span>
+<span class="nc bnc" id="L165" title="All 4 branches missed.">            if (payload.containsKey(&quot;learnerId&quot;) &amp;&amp; payload.get(&quot;learnerId&quot;) != null) {</span>
+<span class="nc" id="L166">                learnerId = payload.get(&quot;learnerId&quot;).toString();</span>
+            }
+            // Support ancien champ adminId
+<span class="nc bnc" id="L169" title="All 6 branches missed.">            if (learnerId == null &amp;&amp; payload.containsKey(&quot;adminId&quot;) &amp;&amp; payload.get(&quot;adminId&quot;) != null) {</span>
+<span class="nc" id="L170">                learnerId = payload.get(&quot;adminId&quot;).toString();</span>
+            }
+
+<span class="nc" id="L173">            Boolean isInternal = false;</span>
+<span class="nc bnc" id="L174" title="All 4 branches missed.">            if (payload.containsKey(&quot;isInternal&quot;) &amp;&amp; payload.get(&quot;isInternal&quot;) != null) {</span>
+<span class="nc" id="L175">                isInternal = Boolean.valueOf(payload.get(&quot;isInternal&quot;).toString());</span>
+            }
+
+<span class="nc" id="L178">            String senderType = &quot;ADMIN&quot;;</span>
+<span class="nc bnc" id="L179" title="All 4 branches missed.">            if (payload.containsKey(&quot;senderType&quot;) &amp;&amp; payload.get(&quot;senderType&quot;) != null) {</span>
+<span class="nc" id="L180">                senderType = payload.get(&quot;senderType&quot;).toString();</span>
+            }
+
+<span class="nc bnc" id="L183" title="All 4 branches missed.">            String quotedText = payload.containsKey(&quot;quotedText&quot;) &amp;&amp; payload.get(&quot;quotedText&quot;) != null</span>
+<span class="nc" id="L184">                    ? payload.get(&quot;quotedText&quot;).toString() : null;</span>
+<span class="nc bnc" id="L185" title="All 4 branches missed.">            String quotedAuthor = payload.containsKey(&quot;quotedAuthor&quot;) &amp;&amp; payload.get(&quot;quotedAuthor&quot;) != null</span>
+<span class="nc" id="L186">                    ? payload.get(&quot;quotedAuthor&quot;).toString() : null;</span>
+
+<span class="nc" id="L188">            ReclamationResponse response = responseService.createResponse(id, learnerId, responseText, isInternal);</span>
+
+            // Mettre à jour les champs supplémentaires
+<span class="nc" id="L191">            response.setSenderType(senderType);</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">            if (quotedText != null) response.setQuotedText(quotedText);</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">            if (quotedAuthor != null) response.setQuotedAuthor(quotedAuthor);</span>
+<span class="nc" id="L194">            ReclamationResponse saved = responseService.saveResponse(response);</span>
+
+<span class="nc" id="L196">            return ResponseEntity.status(HttpStatus.CREATED).body(saved);</span>
+
+<span class="nc" id="L198">        } catch (Exception e) {</span>
+<span class="nc" id="L199">            e.printStackTrace();</span>
+<span class="nc" id="L200">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L201">                    .body(&quot;Erreur: &quot; + e.getMessage());</span>
+        }
+    }
+    // Récupérer toutes les réponses d'une réclamation
+    @GetMapping(&quot;/reclamations/{id}/responses&quot;)
+    public ResponseEntity&lt;List&lt;ReclamationResponse&gt;&gt; getReclamationResponses(@PathVariable Long id) {
+<span class="nc" id="L207">        return ResponseEntity.ok(responseService.getResponsesByReclamationId(id));</span>
+    }
+
+    // Récupérer les réponses publiques d'une réclamation (pour l'apprenant)
+    @GetMapping(&quot;/reclamations/{id}/responses/public&quot;)
+    public ResponseEntity&lt;List&lt;ReclamationResponse&gt;&gt; getPublicResponses(@PathVariable Long id) {
+<span class="nc" id="L213">        return ResponseEntity.ok(responseService.getPublicResponsesByReclamationId(id));</span>
+    }
+
+    // Récupérer les commentaires internes d'une réclamation (pour les admins)
+    @GetMapping(&quot;/reclamations/{id}/responses/internal&quot;)
+    public ResponseEntity&lt;List&lt;ReclamationResponse&gt;&gt; getInternalComments(@PathVariable Long id) {
+<span class="nc" id="L219">        return ResponseEntity.ok(responseService.getInternalCommentsByReclamationId(id));</span>
+    }
+
+    // Mettre à jour une réponse
+    @PutMapping(&quot;/responses/{id}&quot;)
+    public ResponseEntity&lt;?&gt; updateResponse(
+            @PathVariable Long id,
+            @RequestBody Map&lt;String, Object&gt; payload) {
+        try {
+<span class="nc" id="L228">            String responseText = payload.get(&quot;responseText&quot;).toString();</span>
+<span class="nc" id="L229">            ReclamationResponse updated = responseService.updateResponse(id, responseText);</span>
+<span class="nc" id="L230">            return ResponseEntity.ok(updated);</span>
+<span class="nc" id="L231">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L232">            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());</span>
+<span class="nc" id="L233">        } catch (Exception e) {</span>
+<span class="nc" id="L234">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L235">                    .body(&quot;Erreur lors de la mise à jour: &quot; + e.getMessage());</span>
+        }
+    }
+
+    // Supprimer une réponse
+    @DeleteMapping(&quot;/responses/{id}&quot;)
+    public ResponseEntity&lt;?&gt; deleteResponse(@PathVariable Long id) {
+        try {
+<span class="nc" id="L243">            responseService.deleteResponse(id);</span>
+<span class="nc" id="L244">            Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L245">            response.put(&quot;message&quot;, &quot;Réponse supprimée avec succès&quot;);</span>
+<span class="nc" id="L246">            return ResponseEntity.ok(response);</span>
+<span class="nc" id="L247">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L248">            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());</span>
+<span class="nc" id="L249">        } catch (Exception e) {</span>
+<span class="nc" id="L250">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L251">                    .body(&quot;Erreur lors de la suppression: &quot; + e.getMessage());</span>
+        }
+    }
+
+    // Supprimer une réclamation
+    @DeleteMapping(&quot;/reclamations/{id}&quot;)
+    public ResponseEntity&lt;?&gt; deleteReclamation(@PathVariable Long id) {
+        try {
+<span class="nc" id="L259">            reclamationService.deleteReclamation(id);</span>
+<span class="nc" id="L260">            Map&lt;String, String&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L261">            response.put(&quot;message&quot;, &quot;Réclamation supprimée avec succès&quot;);</span>
+<span class="nc" id="L262">            return ResponseEntity.ok(response);</span>
+<span class="nc" id="L263">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L264">            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());</span>
+<span class="nc" id="L265">        } catch (Exception e) {</span>
+<span class="nc" id="L266">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L267">                    .body(&quot;Erreur lors de la suppression: &quot; + e.getMessage());</span>
+        }
+    }
+
+    // Statistiques
+    @GetMapping(&quot;/reclamations/stats&quot;)
+    public ResponseEntity&lt;Map&lt;String, Object&gt;&gt; getStatistics() {
+<span class="nc" id="L274">        Map&lt;String, Object&gt; stats = new HashMap&lt;&gt;();</span>
+        
+<span class="nc" id="L276">        stats.put(&quot;total&quot;, reclamationService.getAllReclamations().size());</span>
+<span class="nc" id="L277">        stats.put(&quot;pending&quot;, reclamationService.getReclamationsByStatus(ReclamationStatus.PENDING).size());</span>
+<span class="nc" id="L278">        stats.put(&quot;inProgress&quot;, reclamationService.getReclamationsByStatus(ReclamationStatus.IN_PROGRESS).size());</span>
+<span class="nc" id="L279">        stats.put(&quot;resolved&quot;, reclamationService.getReclamationsByStatus(ReclamationStatus.RESOLVED).size());</span>
+<span class="nc" id="L280">        stats.put(&quot;closed&quot;, reclamationService.getReclamationsByStatus(ReclamationStatus.CLOSED).size());</span>
+<span class="nc" id="L281">        stats.put(&quot;rejected&quot;, reclamationService.getReclamationsByStatus(ReclamationStatus.REJECTED).size());</span>
+<span class="nc" id="L282">        stats.put(&quot;unresolved&quot;, reclamationService.getUnresolvedReclamations().size());</span>
+        
+<span class="nc" id="L284">        return ResponseEntity.ok(stats);</span>
+    }
+    @PostMapping(&quot;/reclamations/{id}/satisfaction&quot;)
+    public ResponseEntity&lt;?&gt; submitSatisfaction(
+            @PathVariable Long id,
+            @RequestBody Map&lt;String, Object&gt; payload) {
+        try {
+<span class="nc" id="L291">            Reclamation reclamation = reclamationService.getReclamationById(id);</span>
+
+<span class="nc" id="L293">            Integer score = Integer.valueOf(payload.get(&quot;score&quot;).toString());</span>
+<span class="nc bnc" id="L294" title="All 4 branches missed.">            String comment = payload.containsKey(&quot;comment&quot;) &amp;&amp; payload.get(&quot;comment&quot;) != null</span>
+<span class="nc" id="L295">                    ? payload.get(&quot;comment&quot;).toString() : null;</span>
+
+<span class="nc" id="L297">            reclamation.setSatisfactionScore(score);</span>
+<span class="nc" id="L298">            reclamation.setSatisfactionComment(comment);</span>
+<span class="nc" id="L299">            reclamation.setSatisfactionDate(LocalDateTime.now());</span>
+
+<span class="nc" id="L301">            Reclamation updated = reclamationRepository.save(reclamation);</span>
+<span class="nc" id="L302">            return ResponseEntity.ok(updated);</span>
+<span class="nc" id="L303">        } catch (Exception e) {</span>
+<span class="nc" id="L304">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L305">                    .body(&quot;Erreur: &quot; + e.getMessage());</span>
+        }
+    }
+    // ── Analytics ─────────────────────────────────────────────────────────────────
+
+    // Volume par semaine (7 dernières semaines)
+    @GetMapping(&quot;/reclamations/analytics/weekly&quot;)
+    public ResponseEntity&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt; getWeeklyVolume() {
+<span class="nc" id="L313">        List&lt;Reclamation&gt; all = reclamationService.getAllReclamations();</span>
+<span class="nc" id="L314">        List&lt;Map&lt;String, Object&gt;&gt; result = new java.util.ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L316" title="All 2 branches missed.">        for (int i = 6; i &gt;= 0; i--) {</span>
+<span class="nc" id="L317">            java.time.LocalDateTime start = java.time.LocalDateTime.now().minusWeeks(i).with(java.time.DayOfWeek.MONDAY).toLocalDate().atStartOfDay();</span>
+<span class="nc" id="L318">            java.time.LocalDateTime end = start.plusWeeks(1);</span>
+<span class="nc" id="L319">            int week = i;</span>
+<span class="nc" id="L320">            long count = all.stream()</span>
+<span class="nc bnc" id="L321" title="All 6 branches missed.">                    .filter(r -&gt; r.getCreatedDate() != null &amp;&amp; r.getCreatedDate().isAfter(start) &amp;&amp; r.getCreatedDate().isBefore(end))</span>
+<span class="nc" id="L322">                    .count();</span>
+<span class="nc" id="L323">            Map&lt;String, Object&gt; entry = new java.util.HashMap&lt;&gt;();</span>
+<span class="nc" id="L324">            entry.put(&quot;label&quot;, &quot;S-&quot; + i);</span>
+<span class="nc" id="L325">            entry.put(&quot;count&quot;, count);</span>
+<span class="nc" id="L326">            result.add(entry);</span>
+        }
+<span class="nc" id="L328">        return ResponseEntity.ok(result);</span>
+    }
+
+    // Temps moyen de résolution par type (en heures)
+    @GetMapping(&quot;/reclamations/analytics/resolution-time&quot;)
+    public ResponseEntity&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt; getResolutionTimeByType() {
+<span class="nc" id="L334">        List&lt;Reclamation&gt; resolved = reclamationService.getReclamationsByStatus(ReclamationStatus.RESOLVED);</span>
+<span class="nc" id="L335">        List&lt;Reclamation&gt; closed   = reclamationService.getReclamationsByStatus(ReclamationStatus.CLOSED);</span>
+<span class="nc" id="L336">        List&lt;Reclamation&gt; all = new java.util.ArrayList&lt;&gt;();</span>
+<span class="nc" id="L337">        all.addAll(resolved); all.addAll(closed);</span>
+
+<span class="nc" id="L339">        Map&lt;String, List&lt;Long&gt;&gt; byType = new java.util.HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L340" title="All 2 branches missed.">        for (Reclamation r : all) {</span>
+<span class="nc bnc" id="L341" title="All 4 branches missed.">            if (r.getResolvedDate() != null &amp;&amp; r.getCreatedDate() != null) {</span>
+<span class="nc" id="L342">                long hours = java.time.temporal.ChronoUnit.HOURS.between(r.getCreatedDate(), r.getResolvedDate());</span>
+<span class="nc" id="L343">                byType.computeIfAbsent(r.getType().toString(), k -&gt; new java.util.ArrayList&lt;&gt;()).add(hours);</span>
+            }
+<span class="nc" id="L345">        }</span>
+
+<span class="nc" id="L347">        List&lt;Map&lt;String, Object&gt;&gt; result = new java.util.ArrayList&lt;&gt;();</span>
+<span class="nc" id="L348">        byType.forEach((type, times) -&gt; {</span>
+<span class="nc" id="L349">            Map&lt;String, Object&gt; entry = new java.util.HashMap&lt;&gt;();</span>
+<span class="nc" id="L350">            entry.put(&quot;type&quot;, type);</span>
+<span class="nc" id="L351">            entry.put(&quot;avgHours&quot;, times.stream().mapToLong(Long::longValue).average().orElse(0));</span>
+<span class="nc" id="L352">            result.add(entry);</span>
+<span class="nc" id="L353">        });</span>
+<span class="nc" id="L354">        return ResponseEntity.ok(result);</span>
+    }
+
+    // Distribution par statut
+    @GetMapping(&quot;/reclamations/analytics/by-status&quot;)
+    public ResponseEntity&lt;Map&lt;String, Long&gt;&gt; getByStatus() {
+<span class="nc" id="L360">        Map&lt;String, Long&gt; result = new java.util.LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L361">        result.put(&quot;PENDING&quot;,     (long) reclamationService.getReclamationsByStatus(ReclamationStatus.PENDING).size());</span>
+<span class="nc" id="L362">        result.put(&quot;IN_PROGRESS&quot;, (long) reclamationService.getReclamationsByStatus(ReclamationStatus.IN_PROGRESS).size());</span>
+<span class="nc" id="L363">        result.put(&quot;RESOLVED&quot;,    (long) reclamationService.getReclamationsByStatus(ReclamationStatus.RESOLVED).size());</span>
+<span class="nc" id="L364">        result.put(&quot;CLOSED&quot;,      (long) reclamationService.getReclamationsByStatus(ReclamationStatus.CLOSED).size());</span>
+<span class="nc" id="L365">        result.put(&quot;REJECTED&quot;,    (long) reclamationService.getReclamationsByStatus(ReclamationStatus.REJECTED).size());</span>
+<span class="nc" id="L366">        return ResponseEntity.ok(result);</span>
+    }
+
+    // Distribution par type
+    @GetMapping(&quot;/reclamations/analytics/by-type&quot;)
+    public ResponseEntity&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt; getByType() {
+<span class="nc" id="L372">        List&lt;Reclamation&gt; all = reclamationService.getAllReclamations();</span>
+<span class="nc" id="L373">        Map&lt;String, Long&gt; counts = new java.util.LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L374" title="All 2 branches missed.">        for (Reclamation r : all) {</span>
+<span class="nc" id="L375">            String t = r.getType().toString();</span>
+<span class="nc" id="L376">            counts.put(t, counts.getOrDefault(t, 0L) + 1);</span>
+<span class="nc" id="L377">        }</span>
+<span class="nc" id="L378">        List&lt;Map&lt;String, Object&gt;&gt; result = new java.util.ArrayList&lt;&gt;();</span>
+<span class="nc" id="L379">        counts.forEach((type, count) -&gt; {</span>
+<span class="nc" id="L380">            Map&lt;String, Object&gt; entry = new java.util.HashMap&lt;&gt;();</span>
+<span class="nc" id="L381">            entry.put(&quot;type&quot;, type); entry.put(&quot;count&quot;, count);</span>
+<span class="nc" id="L382">            result.add(entry);</span>
+<span class="nc" id="L383">        });</span>
+<span class="nc" id="L384">        return ResponseEntity.ok(result);</span>
+    }
+
+    // Distribution par priorité
+    @GetMapping(&quot;/reclamations/analytics/by-priority&quot;)
+    public ResponseEntity&lt;List&lt;Map&lt;String, Object&gt;&gt;&gt; getByPriority() {
+<span class="nc" id="L390">        List&lt;Reclamation&gt; all = reclamationService.getAllReclamations();</span>
+<span class="nc" id="L391">        Map&lt;Integer, Long&gt; counts = new java.util.TreeMap&lt;&gt;();</span>
+<span class="nc bnc" id="L392" title="All 2 branches missed.">        for (Reclamation r : all) {</span>
+<span class="nc bnc" id="L393" title="All 2 branches missed.">            int p = r.getPriority() != null ? r.getPriority() : 3;</span>
+<span class="nc" id="L394">            counts.put(p, counts.getOrDefault(p, 0L) + 1);</span>
+<span class="nc" id="L395">        }</span>
+<span class="nc" id="L396">        List&lt;Map&lt;String, Object&gt;&gt; result = new java.util.ArrayList&lt;&gt;();</span>
+<span class="nc" id="L397">        counts.forEach((priority, count) -&gt; {</span>
+<span class="nc" id="L398">            Map&lt;String, Object&gt; entry = new java.util.HashMap&lt;&gt;();</span>
+<span class="nc" id="L399">            entry.put(&quot;priority&quot;, priority); entry.put(&quot;count&quot;, count);</span>
+<span class="nc" id="L400">            result.add(entry);</span>
+<span class="nc" id="L401">        });</span>
+<span class="nc" id="L402">        return ResponseEntity.ok(result);</span>
+    }
+
+    @PostMapping(&quot;/responses/{id}/react&quot;)
+    public ResponseEntity&lt;?&gt; addReaction(
+            @PathVariable Long id,
+            @RequestBody Map&lt;String, Object&gt; payload) {
+        try {
+<span class="nc" id="L410">            String emoji = payload.get(&quot;emoji&quot;).toString();</span>
+<span class="nc" id="L411">            ReclamationResponse response = responseService.getResponseById(id);</span>
+<span class="nc" id="L412">            response.setReaction(emoji);</span>
+<span class="nc" id="L413">            ReclamationResponse updated = responseService.saveResponse(response);</span>
+<span class="nc" id="L414">            return ResponseEntity.ok(updated);</span>
+<span class="nc" id="L415">        } catch (Exception e) {</span>
+<span class="nc" id="L416">            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L417">                    .body(&quot;Erreur: &quot; + e.getMessage());</span>
+        }
+    }
+
+    // Version minimale qui fonctionne
+
+    @PostMapping(&quot;/reclamations/{id}/approve&quot;)
+    public ResponseEntity&lt;?&gt; approveReclamation(@PathVariable Long id) {
+        try {
+<span class="nc" id="L426">            Reclamation reclamation = reclamationService.getReclamationById(id);</span>
+<span class="nc" id="L427">            reclamation.setIsSuspect(false);</span>
+<span class="nc" id="L428">            reclamation.setModerationReason(null);</span>
+<span class="nc" id="L429">            return ResponseEntity.ok(reclamationRepository.save(reclamation));</span>
+<span class="nc" id="L430">        } catch (Exception e) {</span>
+<span class="nc" id="L431">            return ResponseEntity.status(500).body(&quot;Erreur: &quot; + e.getMessage());</span>
+        }
+    }
+
+    @PostMapping(&quot;/reclamations/{id}/reject&quot;)
+    public ResponseEntity&lt;?&gt; rejectReclamation(@PathVariable Long id) {
+        try {
+<span class="nc" id="L438">            Reclamation reclamation = reclamationService.getReclamationById(id);</span>
+<span class="nc" id="L439">            reclamation.setIsSuspect(false);</span>
+<span class="nc" id="L440">            reclamation.setStatus(ReclamationStatus.REJECTED);</span>
+<span class="nc" id="L441">            return ResponseEntity.ok(reclamationRepository.save(reclamation));</span>
+<span class="nc" id="L442">        } catch (Exception e) {</span>
+<span class="nc" id="L443">            return ResponseEntity.status(500).body(&quot;Erreur: &quot; + e.getMessage());</span>
+        }
+    }
+
+    // Ajouter cet endpoint
+    @PostMapping(&quot;/reclamations/detect-type&quot;)
+    public ResponseEntity&lt;?&gt; detectReclamationType(@RequestBody Map&lt;String, String&gt; payload) {
+        try {
+<span class="nc" id="L451">            String subject = payload.getOrDefault(&quot;subject&quot;, &quot;&quot;);</span>
+<span class="nc" id="L452">            String description = payload.getOrDefault(&quot;description&quot;, &quot;&quot;);</span>
+
+<span class="nc" id="L454">            AutoCategorizationService.CategorizationResult result =</span>
+<span class="nc" id="L455">                    autoCategorizationService.detectType(subject, description);</span>
+
+<span class="nc bnc" id="L457" title="All 2 branches missed.">            if (result.isHasSuggestion()) {</span>
+<span class="nc" id="L458">                return ResponseEntity.ok(Map.of(</span>
+<span class="nc" id="L459">                        &quot;hasSuggestion&quot;, true,</span>
+<span class="nc" id="L460">                        &quot;suggestedType&quot;, result.getSuggestedType().toString(),</span>
+<span class="nc" id="L461">                        &quot;suggestedLabel&quot;, autoCategorizationService.getTypeLabel(result.getSuggestedType()),</span>
+<span class="nc" id="L462">                        &quot;confidence&quot;, result.getConfidence(),</span>
+<span class="nc" id="L463">                        &quot;matchedKeywords&quot;, result.getMatchedKeywords()</span>
+                ));
+            } else {
+<span class="nc" id="L466">                return ResponseEntity.ok(Map.of(&quot;hasSuggestion&quot;, false));</span>
+            }
+<span class="nc" id="L468">        } catch (Exception e) {</span>
+<span class="nc" id="L469">            return ResponseEntity.status(500).body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+    @PostMapping(&quot;/reclamations/extract&quot;)
+    public ResponseEntity&lt;?&gt; extractInformation(@RequestBody Map&lt;String, String&gt; payload) {
+        try {
+<span class="nc" id="L476">            String text = payload.getOrDefault(&quot;text&quot;, &quot;&quot;);</span>
+<span class="nc" id="L477">            ExtractionService.ExtractedData data = extractionService.extract(text);</span>
+
+<span class="nc" id="L479">            Map&lt;String, Object&gt; response = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L480">            response.put(&quot;hasData&quot;, data.hasData());</span>
+
+<span class="nc bnc" id="L482" title="All 2 branches missed.">            if (data.getAmount() != null) {</span>
+<span class="nc" id="L483">                response.put(&quot;amount&quot;, data.getAmount());</span>
+            }
+<span class="nc bnc" id="L485" title="All 2 branches missed.">            if (data.getTransactionId() != null) {</span>
+<span class="nc" id="L486">                response.put(&quot;transactionId&quot;, data.getTransactionId());</span>
+            }
+<span class="nc bnc" id="L488" title="All 2 branches missed.">            if (data.getErrorCode() != null) {</span>
+<span class="nc" id="L489">                response.put(&quot;errorCode&quot;, data.getErrorCode());</span>
+            }
+<span class="nc bnc" id="L491" title="All 2 branches missed.">            if (data.getEmail() != null) {</span>
+<span class="nc" id="L492">                response.put(&quot;email&quot;, data.getEmail());</span>
+            }
+<span class="nc bnc" id="L494" title="All 2 branches missed.">            if (data.getExtractedDate() != null) {</span>
+<span class="nc" id="L495">                response.put(&quot;extractedDate&quot;, data.getExtractedDate());</span>
+            }
+<span class="nc bnc" id="L497" title="All 2 branches missed.">            if (data.getInvoiceNumber() != null) {</span>
+<span class="nc" id="L498">                response.put(&quot;invoiceNumber&quot;, data.getInvoiceNumber());</span>
+            }
+
+<span class="nc" id="L501">            return ResponseEntity.ok(response);</span>
+<span class="nc" id="L502">        } catch (Exception e) {</span>
+<span class="nc" id="L503">            return ResponseEntity.status(500).body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+        }
+    }
+
+
+
+
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

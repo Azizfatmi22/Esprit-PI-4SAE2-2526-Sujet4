@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TranslationController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Reclamation-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.microservice.reclamation.controllers</a> &gt; <span class="el_source">TranslationController.java</span></div><h1>TranslationController.java</h1><pre class="source lang-java linenums">package tn.esprit.microservice.reclamation.controllers;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping(&quot;/msreclamation/translation&quot;)
+<span class="fc" id="L15">public class TranslationController {</span>
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Value(&quot;${anthropic.api.key}&quot;)
+    private String geminiApiKey;
+
+    @PostMapping(&quot;/detect&quot;)
+    public ResponseEntity&lt;?&gt; detectLanguage(@RequestBody Map&lt;String, String&gt; payload) {
+<span class="nc" id="L25">        String text = payload.getOrDefault(&quot;text&quot;, &quot;&quot;).trim();</span>
+<span class="nc" id="L26">        String lang = detectLang(text);</span>
+<span class="nc" id="L27">        String[] info = getLangInfo(lang);</span>
+<span class="nc" id="L28">        return ResponseEntity.ok(Map.of(</span>
+                &quot;detectedLanguage&quot;, lang,
+                &quot;languageName&quot;,     info[0],
+                &quot;languageFlag&quot;,     info[1],
+<span class="nc" id="L32">                &quot;isFrench&quot;,         &quot;FR&quot;.equals(lang)</span>
+        ));
+    }
+
+    @PostMapping(&quot;/translate&quot;)
+    public ResponseEntity&lt;?&gt; translate(@RequestBody Map&lt;String, String&gt; payload) {
+<span class="nc" id="L38">        String text       = payload.getOrDefault(&quot;text&quot;, &quot;&quot;).trim();</span>
+<span class="nc" id="L39">        String targetLang = payload.getOrDefault(&quot;targetLang&quot;, &quot;français&quot;);</span>
+
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        if (text.isEmpty()) {</span>
+<span class="nc" id="L42">            return ResponseEntity.badRequest().body(Map.of(&quot;error&quot;, &quot;Texte vide&quot;));</span>
+        }
+
+<span class="nc" id="L45">        String detectedLang = detectLang(text);</span>
+<span class="nc" id="L46">        String[] langInfo   = getLangInfo(detectedLang);</span>
+<span class="nc" id="L47">        String sourceCode   = getLangIsoCode(detectedLang);</span>
+<span class="nc" id="L48">        String targetCode   = getTargetIsoCode(targetLang);</span>
+
+        // ── 1. Essayer Gemini 2.0 Flash ──────────────────────────
+        try {
+<span class="nc" id="L52">            String prompt = &quot;Translate the following text to &quot; + targetLang +</span>
+                    &quot;. Return ONLY the translation, nothing else:\n\n&quot; + text;
+
+<span class="nc" id="L55">            String geminiUrl = &quot;https://generativelanguage.googleapis.com/v1beta/models/&quot;</span>
+                    + &quot;gemini-2.0-flash:generateContent?key=&quot; + geminiApiKey;
+
+<span class="nc" id="L58">            Map&lt;String, Object&gt; body = Map.of(</span>
+<span class="nc" id="L59">                    &quot;contents&quot;, List.of(Map.of(&quot;parts&quot;, List.of(Map.of(&quot;text&quot;, prompt))))</span>
+            );
+
+<span class="nc" id="L62">            HttpHeaders headers = new HttpHeaders();</span>
+<span class="nc" id="L63">            headers.setContentType(MediaType.APPLICATION_JSON);</span>
+
+<span class="nc" id="L65">            ResponseEntity&lt;Map&gt; response = restTemplate.exchange(</span>
+                    geminiUrl, HttpMethod.POST,
+                    new HttpEntity&lt;&gt;(body, headers), Map.class
+            );
+
+<span class="nc" id="L70">            List&lt;Map&gt; candidates = (List&lt;Map&gt;) response.getBody().get(&quot;candidates&quot;);</span>
+<span class="nc" id="L71">            Map content = (Map) candidates.get(0).get(&quot;content&quot;);</span>
+<span class="nc" id="L72">            List&lt;Map&gt; parts = (List&lt;Map&gt;) content.get(&quot;parts&quot;);</span>
+<span class="nc" id="L73">            String translated = ((String) parts.get(0).get(&quot;text&quot;)).trim();</span>
+
+<span class="nc" id="L75">            System.out.println(&quot;✅ Gemini OK: &quot; + translated);</span>
+<span class="nc" id="L76">            return buildResponse(translated, detectedLang, langInfo, text);</span>
+
+<span class="nc" id="L78">        } catch (Exception e1) {</span>
+<span class="nc" id="L79">            System.err.println(&quot;⚠️ Gemini failed: &quot; + e1.getMessage());</span>
+        }
+
+        // ── 2. Fallback MyMemory (sans URLDecoder) ────────────────
+        try {
+<span class="nc" id="L84">            String url = UriComponentsBuilder</span>
+<span class="nc" id="L85">                    .fromHttpUrl(&quot;https://api.mymemory.translated.net/get&quot;)</span>
+<span class="nc" id="L86">                    .queryParam(&quot;q&quot;, text)</span>
+<span class="nc" id="L87">                    .queryParam(&quot;langpair&quot;, sourceCode + &quot;|&quot; + targetCode)</span>
+<span class="nc" id="L88">                    .build().toUriString();</span>
+
+<span class="nc" id="L90">            ResponseEntity&lt;Map&gt; resp = restTemplate.getForEntity(url, Map.class);</span>
+<span class="nc" id="L91">            Map data = (Map) resp.getBody().get(&quot;responseData&quot;);</span>
+<span class="nc" id="L92">            String translated = (String) data.get(&quot;translatedText&quot;);</span>
+
+            // Vérifier que ce n'est pas du texte encodé %XX
+<span class="nc bnc" id="L95" title="All 4 branches missed.">            if (translated != null &amp;&amp; !translated.contains(&quot;%&quot;)</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">                    &amp;&amp; !translated.isBlank()) {</span>
+<span class="nc" id="L97">                System.out.println(&quot;✅ MyMemory OK: &quot; + translated);</span>
+<span class="nc" id="L98">                return buildResponse(translated, detectedLang, langInfo, text);</span>
+            }
+<span class="nc" id="L100">            System.err.println(&quot;⚠️ MyMemory retourné encodé, essai suivant&quot;);</span>
+
+<span class="nc" id="L102">        } catch (Exception e2) {</span>
+<span class="nc" id="L103">            System.err.println(&quot;⚠️ MyMemory failed: &quot; + e2.getMessage());</span>
+<span class="nc" id="L104">        }</span>
+
+        // ── 3. Fallback LibreTranslate (gratuit, fiable) ──────────
+        try {
+<span class="nc" id="L108">            String libreUrl = &quot;https://libretranslate.com/translate&quot;;</span>
+
+<span class="nc" id="L110">            Map&lt;String, String&gt; body = Map.of(</span>
+                    &quot;q&quot;,      text,
+                    &quot;source&quot;, sourceCode,
+                    &quot;target&quot;, targetCode,
+                    &quot;format&quot;, &quot;text&quot;
+            );
+
+<span class="nc" id="L117">            HttpHeaders headers = new HttpHeaders();</span>
+<span class="nc" id="L118">            headers.setContentType(MediaType.APPLICATION_JSON);</span>
+
+<span class="nc" id="L120">            ResponseEntity&lt;Map&gt; resp = restTemplate.exchange(</span>
+                    libreUrl, HttpMethod.POST,
+                    new HttpEntity&lt;&gt;(body, headers), Map.class
+            );
+
+<span class="nc" id="L125">            String translated = (String) resp.getBody().get(&quot;translatedText&quot;);</span>
+<span class="nc bnc" id="L126" title="All 4 branches missed.">            if (translated != null &amp;&amp; !translated.isBlank()) {</span>
+<span class="nc" id="L127">                System.out.println(&quot;✅ LibreTranslate OK: &quot; + translated);</span>
+<span class="nc" id="L128">                return buildResponse(translated, detectedLang, langInfo, text);</span>
+            }
+
+<span class="nc" id="L131">        } catch (Exception e3) {</span>
+<span class="nc" id="L132">            System.err.println(&quot;⚠️ LibreTranslate failed: &quot; + e3.getMessage());</span>
+<span class="nc" id="L133">        }</span>
+
+        // ── 4. Fallback Google Translate non-officiel ─────────────
+        try {
+<span class="nc" id="L137">            String googleUrl = UriComponentsBuilder</span>
+<span class="nc" id="L138">                    .fromHttpUrl(&quot;https://translate.googleapis.com/translate_a/single&quot;)</span>
+<span class="nc" id="L139">                    .queryParam(&quot;client&quot;, &quot;gtx&quot;)</span>
+<span class="nc" id="L140">                    .queryParam(&quot;sl&quot;, sourceCode)</span>
+<span class="nc" id="L141">                    .queryParam(&quot;tl&quot;, targetCode)</span>
+<span class="nc" id="L142">                    .queryParam(&quot;dt&quot;, &quot;t&quot;)</span>
+<span class="nc" id="L143">                    .queryParam(&quot;q&quot;, text)</span>
+<span class="nc" id="L144">                    .build().toUriString();</span>
+
+<span class="nc" id="L146">            ResponseEntity&lt;String&gt; resp = restTemplate.getForEntity(</span>
+                    googleUrl, String.class
+            );
+
+            // Parser la réponse JSON brute de Google
+<span class="nc" id="L151">            String raw = resp.getBody();</span>
+<span class="nc bnc" id="L152" title="All 4 branches missed.">            if (raw != null &amp;&amp; raw.startsWith(&quot;[[&quot;)) {</span>
+                // Format: [[ [&quot;traduction&quot;,&quot;original&quot;,...], ...], ...]
+<span class="nc" id="L154">                String translated = extractGoogleTranslation(raw);</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">                if (!translated.isBlank()) {</span>
+<span class="nc" id="L156">                    System.out.println(&quot;✅ Google Translate OK: &quot; + translated);</span>
+<span class="nc" id="L157">                    return buildResponse(translated, detectedLang, langInfo, text);</span>
+                }
+            }
+
+<span class="nc" id="L161">        } catch (Exception e4) {</span>
+<span class="nc" id="L162">            System.err.println(&quot;⚠️ Google Translate failed: &quot; + e4.getMessage());</span>
+<span class="nc" id="L163">        }</span>
+
+        // ── 5. Dernier recours : retourner le texte original ──────
+<span class="nc" id="L166">        return ResponseEntity.ok(Map.of(</span>
+                &quot;translatedText&quot;,   text,
+                &quot;detectedLanguage&quot;, detectedLang,
+                &quot;languageName&quot;,     langInfo[0],
+                &quot;languageFlag&quot;,     langInfo[1],
+                &quot;originalText&quot;,     text,
+<span class="nc" id="L172">                &quot;isFrench&quot;,         &quot;FR&quot;.equals(detectedLang),</span>
+                &quot;error&quot;,            &quot;Traduction temporairement indisponible&quot;
+        ));
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────
+
+    private ResponseEntity&lt;?&gt; buildResponse(
+            String translated, String detectedLang,
+            String[] langInfo, String originalText) {
+<span class="nc" id="L182">        return ResponseEntity.ok(Map.of(</span>
+                &quot;translatedText&quot;,   translated,
+                &quot;detectedLanguage&quot;, detectedLang,
+                &quot;languageName&quot;,     langInfo[0],
+                &quot;languageFlag&quot;,     langInfo[1],
+                &quot;originalText&quot;,     originalText,
+<span class="nc" id="L188">                &quot;isFrench&quot;,         &quot;FR&quot;.equals(detectedLang)</span>
+        ));
+    }
+
+    private String extractGoogleTranslation(String raw) {
+<span class="nc" id="L193">        StringBuilder result = new StringBuilder();</span>
+        try {
+            // Format brut: [[[&quot;translation&quot;,&quot;original&quot;,null,null,10],...],...]
+<span class="nc" id="L196">            int i = 3;</span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">            while (i &lt; raw.length()) {</span>
+<span class="nc" id="L198">                int start = raw.indexOf(&quot;\&quot;&quot;, i);</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">                if (start == -1) break;</span>
+<span class="nc" id="L200">                int end = raw.indexOf(&quot;\&quot;&quot;, start + 1);</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">                if (end == -1) break;</span>
+<span class="nc" id="L202">                String part = raw.substring(start + 1, end);</span>
+<span class="nc bnc" id="L203" title="All 4 branches missed.">                if (!part.isEmpty() &amp;&amp; !part.equals(&quot;null&quot;)) {</span>
+<span class="nc" id="L204">                    result.append(part);</span>
+                }
+                // Vérifier si on est à la fin du premier segment
+<span class="nc" id="L207">                i = end + 1;</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">                if (raw.charAt(i) == ',') {</span>
+                    // Suivant
+<span class="nc" id="L210">                    int nextBracket = raw.indexOf(&quot;[&quot;, i);</span>
+<span class="nc bnc" id="L211" title="All 4 branches missed.">                    if (nextBracket == -1 || raw.charAt(nextBracket + 1) == '[') break;</span>
+<span class="nc" id="L212">                }</span>
+                break;
+            }
+<span class="nc" id="L215">        } catch (Exception e) {</span>
+<span class="nc" id="L216">            System.err.println(&quot;Parsing Google failed: &quot; + e.getMessage());</span>
+<span class="nc" id="L217">        }</span>
+<span class="nc" id="L218">        return result.toString();</span>
+    }
+
+    private String detectLang(String text) {
+<span class="nc bnc" id="L222" title="All 4 branches missed.">        if (text == null || text.trim().isEmpty()) return &quot;FR&quot;;</span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">        if (text.matches(&quot;.*[\\u0600-\\u06FF].*&quot;)) return &quot;AR&quot;;</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">        if (text.matches(&quot;.*[\\u0400-\\u04FF].*&quot;)) return &quot;RU&quot;;</span>
+<span class="nc bnc" id="L225" title="All 2 branches missed.">        if (text.matches(&quot;.*[\\u4E00-\\u9FFF].*&quot;)) return &quot;ZH&quot;;</span>
+<span class="nc" id="L226">        String lower = text.toLowerCase();</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">        if (lower.matches(&quot;.*(bonjour|merci|j'ai|vous |une |les |des |est |avec|pour|dans|problème|paiement|cours|erreur|certificat).*&quot;)) return &quot;FR&quot;;</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">        if (lower.matches(&quot;.*(hello|thank|please|the |this |have|your |payment|problem|error|course|certificate).*&quot;)) return &quot;EN&quot;;</span>
+<span class="nc bnc" id="L229" title="All 2 branches missed.">        if (lower.matches(&quot;.*(hola|gracias|tengo|problema|pago|certificado|curso).*&quot;)) return &quot;ES&quot;;</span>
+<span class="nc bnc" id="L230" title="All 2 branches missed.">        if (lower.matches(&quot;.*(hallo|danke|bitte|zahlung|problem|fehler|kurs).*&quot;)) return &quot;DE&quot;;</span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">        if (lower.matches(&quot;.*(ciao|grazie|problema|pagamento|errore|corso).*&quot;)) return &quot;IT&quot;;</span>
+<span class="nc" id="L232">        return &quot;FR&quot;;</span>
+    }
+
+    private String getLangIsoCode(String langCode) {
+<span class="nc bnc" id="L236" title="All 9 branches missed.">        return switch (langCode) {</span>
+<span class="nc" id="L237">            case &quot;AR&quot; -&gt; &quot;ar&quot;;</span>
+<span class="nc" id="L238">            case &quot;EN&quot; -&gt; &quot;en&quot;;</span>
+<span class="nc" id="L239">            case &quot;FR&quot; -&gt; &quot;fr&quot;;</span>
+<span class="nc" id="L240">            case &quot;ES&quot; -&gt; &quot;es&quot;;</span>
+<span class="nc" id="L241">            case &quot;DE&quot; -&gt; &quot;de&quot;;</span>
+<span class="nc" id="L242">            case &quot;IT&quot; -&gt; &quot;it&quot;;</span>
+<span class="nc" id="L243">            case &quot;RU&quot; -&gt; &quot;ru&quot;;</span>
+<span class="nc" id="L244">            case &quot;ZH&quot; -&gt; &quot;zh&quot;;</span>
+<span class="nc" id="L245">            default   -&gt; &quot;auto&quot;;</span>
+        };
+    }
+
+    private String getTargetIsoCode(String targetLang) {
+<span class="nc bnc" id="L250" title="All 9 branches missed.">        return switch (targetLang.toLowerCase().trim()) {</span>
+<span class="nc" id="L251">            case &quot;arabe&quot;    -&gt; &quot;ar&quot;;</span>
+<span class="nc" id="L252">            case &quot;anglais&quot;  -&gt; &quot;en&quot;;</span>
+<span class="nc" id="L253">            case &quot;français&quot; -&gt; &quot;fr&quot;;</span>
+<span class="nc" id="L254">            case &quot;espagnol&quot; -&gt; &quot;es&quot;;</span>
+<span class="nc" id="L255">            case &quot;allemand&quot; -&gt; &quot;de&quot;;</span>
+<span class="nc" id="L256">            case &quot;italien&quot;  -&gt; &quot;it&quot;;</span>
+<span class="nc" id="L257">            case &quot;russe&quot;    -&gt; &quot;ru&quot;;</span>
+<span class="nc" id="L258">            case &quot;chinois&quot;  -&gt; &quot;zh&quot;;</span>
+<span class="nc" id="L259">            default         -&gt; &quot;fr&quot;;</span>
+        };
+    }
+
+    private String[] getLangInfo(String lang) {
+<span class="nc bnc" id="L264" title="All 8 branches missed.">        return switch (lang) {</span>
+<span class="nc" id="L265">            case &quot;AR&quot; -&gt; new String[]{&quot;Arabe&quot;,    &quot;🇸🇦&quot;};</span>
+<span class="nc" id="L266">            case &quot;EN&quot; -&gt; new String[]{&quot;Anglais&quot;,  &quot;🇬🇧&quot;};</span>
+<span class="nc" id="L267">            case &quot;DE&quot; -&gt; new String[]{&quot;Allemand&quot;, &quot;🇩🇪&quot;};</span>
+<span class="nc" id="L268">            case &quot;ES&quot; -&gt; new String[]{&quot;Espagnol&quot;, &quot;🇪🇸&quot;};</span>
+<span class="nc" id="L269">            case &quot;IT&quot; -&gt; new String[]{&quot;Italien&quot;,  &quot;🇮🇹&quot;};</span>
+<span class="nc" id="L270">            case &quot;RU&quot; -&gt; new String[]{&quot;Russe&quot;,    &quot;🇷🇺&quot;};</span>
+<span class="nc" id="L271">            case &quot;ZH&quot; -&gt; new String[]{&quot;Chinois&quot;,  &quot;🇨🇳&quot;};</span>
+<span class="nc" id="L272">            default   -&gt; new String[]{&quot;Français&quot;, &quot;🇫🇷&quot;};</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

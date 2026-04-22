@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TypingController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Reclamation-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.microservice.reclamation.controllers</a> &gt; <span class="el_source">TypingController.java</span></div><h1>TypingController.java</h1><pre class="source lang-java linenums">package tn.esprit.microservice.reclamation.controllers;
+
+
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Gère l'indicateur &quot;en train d'écrire&quot; en temps réel via WebSocket STOMP.
+ *
+ * Flux :
+ *  Admin tape  → POST /app/typing/{reclamationId}  { sender: &quot;ADMIN&quot;, isTyping: true  }
+ *  Admin arrête → POST /app/typing/{reclamationId}  { sender: &quot;ADMIN&quot;, isTyping: false }
+ *  Serveur broadcast → /topic/typing/{reclamationId} { sender, isTyping }
+ *  Angular apprenant écoute /topic/typing/{id} et affiche les points
+ *
+ * Auto-stop : si l'admin ne renvoie pas d'événement pendant 4s → isTyping=false automatique
+ */
+@Controller
+<span class="fc" id="L31">public class TypingController {</span>
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
+    // Map reclamationId → ScheduledFuture (timer auto-stop)
+<span class="fc" id="L37">    private final Map&lt;Long, ScheduledFuture&lt;?&gt;&gt; autoStopTimers = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="fc" id="L38">    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);</span>
+
+    // ── DTO ──────────────────────────────────────────────────────────────────────
+    public static class TypingEvent {
+        public String sender;   // &quot;ADMIN&quot; ou &quot;LEARNER&quot;
+        public boolean isTyping;
+        public Long reclamationId;
+
+<span class="nc" id="L46">        public TypingEvent() {}</span>
+<span class="nc" id="L47">        public TypingEvent(String sender, boolean isTyping, Long reclamationId) {</span>
+<span class="nc" id="L48">            this.sender = sender;</span>
+<span class="nc" id="L49">            this.isTyping = isTyping;</span>
+<span class="nc" id="L50">            this.reclamationId = reclamationId;</span>
+<span class="nc" id="L51">        }</span>
+    }
+
+    /**
+     * Reçoit un événement de frappe via STOMP.
+     * Le client envoie vers /app/typing/{reclamationId}
+     * Le serveur broadcast vers /topic/typing/{reclamationId}
+     */
+    @MessageMapping(&quot;/typing/{reclamationId}&quot;)
+    public void handleTyping(
+            @org.springframework.messaging.handler.annotation.DestinationVariable Long reclamationId,
+            TypingEvent event) {
+
+<span class="nc" id="L64">        event.reclamationId = reclamationId;</span>
+
+        // Broadcast à tous les abonnés de ce topic
+<span class="nc" id="L67">        messagingTemplate.convertAndSend(</span>
+                &quot;/topic/typing/&quot; + reclamationId,
+                event
+        );
+
+        // Auto-stop : annuler le timer précédent si existant
+<span class="nc" id="L73">        ScheduledFuture&lt;?&gt; existing = autoStopTimers.get(reclamationId);</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        if (existing != null) existing.cancel(false);</span>
+
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (event.isTyping) {</span>
+            // Programmer un arrêt automatique après 4 secondes sans activité
+<span class="nc" id="L78">            ScheduledFuture&lt;?&gt; timer = scheduler.schedule(() -&gt; {</span>
+<span class="nc" id="L79">                TypingEvent stopEvent = new TypingEvent(event.sender, false, reclamationId);</span>
+<span class="nc" id="L80">                messagingTemplate.convertAndSend(&quot;/topic/typing/&quot; + reclamationId, stopEvent);</span>
+<span class="nc" id="L81">                autoStopTimers.remove(reclamationId);</span>
+<span class="nc" id="L82">            }, 4, TimeUnit.SECONDS);</span>
+
+<span class="nc" id="L84">            autoStopTimers.put(reclamationId, timer);</span>
+<span class="nc" id="L85">        } else {</span>
+<span class="nc" id="L86">            autoStopTimers.remove(reclamationId);</span>
+        }
+<span class="nc" id="L88">    }</span>
+
+    /**
+     * Endpoint REST optionnel pour les clients qui ne supportent pas STOMP.
+     * Utilisé par l'admin via HTTP POST si nécessaire.
+     */
+    @RestController
+    @RequestMapping(&quot;/msreclamation&quot;)
+<span class="fc" id="L96">    public static class TypingRestController {</span>
+
+        @Autowired
+        private SimpMessagingTemplate messagingTemplate;
+
+        @PostMapping(&quot;/reclamations/{id}/typing&quot;)
+        public ResponseEntity&lt;?&gt; notifyTyping(
+                @PathVariable Long id,
+                @RequestBody Map&lt;String, Object&gt; payload) {
+
+<span class="nc" id="L106">            String sender = payload.getOrDefault(&quot;sender&quot;, &quot;ADMIN&quot;).toString();</span>
+<span class="nc" id="L107">            boolean isTyping = Boolean.parseBoolean(</span>
+<span class="nc" id="L108">                    payload.getOrDefault(&quot;isTyping&quot;, &quot;false&quot;).toString()</span>
+            );
+
+<span class="nc" id="L111">            TypingEvent event = new TypingEvent(sender, isTyping, id);</span>
+<span class="nc" id="L112">            messagingTemplate.convertAndSend(&quot;/topic/typing/&quot; + id, event);</span>
+
+<span class="nc" id="L114">            return ResponseEntity.ok(Map.of(&quot;sent&quot;, true));</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
