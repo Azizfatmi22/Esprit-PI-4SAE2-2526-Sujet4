@@ -16,251 +16,233 @@ pipeline {
 
     stages {
 
-        // ── INFRASTRUCTURE ────────────────────────────────────────
+        // ─────────────────────────────────────────────
+        // INFRASTRUCTURE
+        // ─────────────────────────────────────────────
         stage('Setup Infrastructure') {
             parallel {
 
                 stage('Database') {
                     steps {
-                        script {
-                            echo '📦 Démarrage MySQL...'
-                            bat '''
-                                docker rm -f mysql-db 2>nul || echo ok
-                                docker run -d ^
-                                    --name mysql-db ^
-                                    -e MYSQL_ROOT_PASSWORD=root ^
-                                    -e MYSQL_DATABASE=formini_reclamation_db ^
-                                    -p 3306:3306 ^
-                                    mysql:8.0
-                            '''
-                            echo '⏳ Attendre MySQL...'
-                            sleep(time: 30, unit: 'SECONDS')
-                            echo '✅ MySQL démarré'
-                        }
+                        echo '📦 Démarrage MySQL...'
+                        bat '''
+                            docker rm -f mysql-db 2>nul || echo ok
+                            docker run -d ^
+                              --name mysql-db ^
+                              -e MYSQL_ROOT_PASSWORD=root ^
+                              -e MYSQL_DATABASE=formini_reclamation_db ^
+                              -p 3306:3306 ^
+                              mysql:8.0
+                        '''
+                        sleep(time: 30, unit: 'SECONDS')
+                        echo '✅ MySQL prêt'
                     }
                 }
 
                 stage('Monitoring Stack') {
                     steps {
-                        script {
-                            echo '📈 Démarrage Prometheus + Grafana...'
-                            bat '''
-                                docker rm -f prometheus 2>nul || echo ok
-                                docker rm -f grafana    2>nul || echo ok
+                        echo '📈 Démarrage Prometheus + Grafana...'
+                        bat '''
+                            docker rm -f prometheus 2>nul || echo ok
+                            docker rm -f grafana 2>nul || echo ok
 
-                                docker run -d ^
-                                    --name prometheus ^
-                                    -p 9090:9090 ^
-                                    prom/prometheus:latest
+                            docker run -d ^
+                              --name prometheus ^
+                              -p 9090:9090 ^
+                              prom/prometheus
 
-                                docker run -d ^
-                                    --name grafana ^
-                                    -p 3000:3000 ^
-                                    -e GF_SECURITY_ADMIN_PASSWORD=admin ^
-                                    grafana/grafana:latest
-                            '''
-                            echo '✅ Prometheus : http://localhost:9090'
-                            echo '✅ Grafana    : http://localhost:3000'
-                        }
+                            docker run -d ^
+                              --name grafana ^
+                              -p 3000:3000 ^
+                              -e GF_SECURITY_ADMIN_PASSWORD=admin ^
+                              grafana/grafana
+                        '''
+                        echo '✅ Monitoring prêt'
                     }
                 }
 
                 stage('SonarQube') {
                     steps {
-                        script {
-                            echo '🔍 Démarrage SonarQube...'
-                            bat '''
-                                docker rm -f sonarqube 2>nul || echo ok
-                                docker run -d ^
-                                    --name sonarqube ^
-                                    -p 9000:9000 ^
-                                    sonarqube:latest
-                            '''
-                            echo '⏳ Attendre SonarQube...'
-                            sleep(time: 40, unit: 'SECONDS')
-                            echo '✅ SonarQube : http://localhost:9000'
-                        }
+                        echo '🔍 Démarrage SonarQube...'
+                        bat '''
+                            docker rm -f sonarqube 2>nul || echo ok
+                            docker run -d ^
+                              --name sonarqube ^
+                              -p 9000:9000 ^
+                              sonarqube:lts-community
+                        '''
+                        sleep(time: 70, unit: 'SECONDS')
+                        echo '✅ SonarQube prêt'
                     }
                 }
             }
         }
 
-        // ── BUILD JAR ─────────────────────────────────────────────
+        // ─────────────────────────────────────────────
+        // BUILD
+        // ─────────────────────────────────────────────
         stage('Build JAR') {
             steps {
-                echo '🔨 Compilation Maven...'
-                bat 'mvn clean package -DskipTests -Dnet.bytebuddy.experimental=true'
+                echo '🔨 Build Maven...'
+                bat 'mvn clean package -DskipTests'
             }
             post {
                 success {
-                    archiveArtifacts artifacts: 'target/*.jar',
-                                     fingerprint: true
-                    echo '✅ JAR archivé'
-                }
-                failure {
-                    echo '❌ Compilation échouée !'
+                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                    echo '✅ JAR généré'
                 }
             }
         }
 
-        // ── TESTS UNITAIRES ───────────────────────────────────────
+        // ─────────────────────────────────────────────
+        // TESTS
+        // ─────────────────────────────────────────────
         stage('Tests Unitaires') {
             steps {
-                echo '🧪 Exécution des tests...'
-                bat 'mvn test -Dnet.bytebuddy.experimental=true'
+                echo '🧪 Lancement des tests...'
+                bat 'mvn test'
             }
             post {
                 always {
-                    junit testResults: 'target/surefire-reports/*.xml',
-                          allowEmptyResults: true
-                    echo '📊 Rapport tests généré'
-                }
-                success {
-                    echo '✅ Tous les tests passent !'
-                }
-                failure {
-                    echo '❌ Tests échoués !'
+                    junit 'target/surefire-reports/*.xml'
+                    echo '📊 Rapport tests publié'
                 }
             }
         }
 
-        // ── SONARQUBE ANALYSE ─────────────────────────────────────
+        // ─────────────────────────────────────────────
+        // SONARQUBE
+        // ─────────────────────────────────────────────
         stage('SonarQube Analysis') {
             steps {
                 echo '🔍 Analyse SonarQube...'
-                withSonarQubeEnv('SonarQube') {
+
+                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                     bat """
-                        mvn sonar:sonar ^
+                        mvn org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar ^
                         -Dsonar.projectKey=reclamation-service ^
                         -Dsonar.projectName="Reclamation Service" ^
-                        -Dsonar.host.url=http://localhost:9000
+                        -Dsonar.host.url=${SONAR_URL} ^
+                        -Dsonar.token=%SONAR_TOKEN% ^
+                        -Dsonar.java.binaries=target/classes ^
+                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml ^
+                        -Dsonar.scm.disabled=true
                     """
                 }
+
+                echo '✅ Analyse terminée'
             }
         }
 
+        // ─────────────────────────────────────────────
+        // QUALITY GATE (optionnel)
+        // ─────────────────────────────────────────────
         stage('Quality Gate') {
             steps {
-                echo '🚦 Vérification Quality Gate...'
-                script {
-                    try {
-                        timeout(time: 5, unit: 'MINUTES') {
-                            waitForQualityGate abortPipeline: false
-                        }
-                    } catch (err) {
-                        echo '⚠️ Quality Gate skippé — on continue'
-                    }
-                }
+                echo '🚦 Quality Gate ignoré pour pipeline local'
             }
         }
-        // ── DOCKER BUILD & PUSH ───────────────────────────────────
+
+        // ─────────────────────────────────────────────
+        // DOCKER BUILD + PUSH
+        // ─────────────────────────────────────────────
         stage('Docker Build and Push') {
             steps {
-                echo '🐳 Construction et push image Docker...'
-                script {
-                    bat "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
-                    bat "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
-                    echo "✅ Image créée : ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                echo '🐳 Build image Docker...'
 
-                    withCredentials([usernamePassword(
-                        credentialsId: 'dockerhub-credentials',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )]) {
-                        bat "docker login -u %DOCKER_USER% -p %DOCKER_PASS%"
-                        bat "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
-                        bat "docker push ${DOCKER_IMAGE}:latest"
-                        echo '✅ Image poussée sur Docker Hub'
-                    }
+                bat "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                bat "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
+
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+
+                    bat 'docker login -u %DOCKER_USER% -p %DOCKER_PASS%'
+                    bat "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                    bat "docker push ${DOCKER_IMAGE}:latest"
                 }
+
+                echo '✅ Image Docker publiée'
             }
         }
 
-        // ── DEPLOY ────────────────────────────────────────────────
+        // ─────────────────────────────────────────────
+        // DEPLOY
+        // ─────────────────────────────────────────────
         stage('Deploy') {
             steps {
-                echo '🚀 Déploiement du microservice Réclamation...'
-                script {
-                    bat """
-                        docker stop ${CONTAINER} 2>nul || echo ok
-                        docker rm   ${CONTAINER} 2>nul || echo ok
-                        docker run -d ^
-                            --name ${CONTAINER} ^
-                            --link mysql-db:mysql ^
-                            -p ${PORT}:${PORT} ^
-                            -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/formini_reclamation_db?createDatabaseIfNotExist=true ^
-                            -e SPRING_DATASOURCE_USERNAME=root ^
-                            -e SPRING_DATASOURCE_PASSWORD=root ^
-                            -e SPRING_JPA_HIBERNATE_DDL_AUTO=update ^
-                            -e EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://host.docker.internal:8761/eureka/ ^
-                            -e APP_ADMIN_EMAIL=inesjlassi245@gmail.com ^
-                            -e SPRING_MAIL_HOST=smtp.gmail.com ^
-                            -e SPRING_MAIL_USERNAME=inesjlasi588@gmail.com ^
-                            -e "SPRING_MAIL_PASSWORD=awof cxoj auid oxcf" ^
-                            ${DOCKER_IMAGE}:${DOCKER_TAG}
-                    """
-                    echo "✅ Conteneur lancé sur le port ${PORT}"
-                }
+                echo '🚀 Déploiement...'
+
+                bat """
+                    docker stop ${CONTAINER} 2>nul || echo ok
+                    docker rm ${CONTAINER} 2>nul || echo ok
+
+                    docker run -d ^
+                      --name ${CONTAINER} ^
+                      --link mysql-db:mysql ^
+                      -p ${PORT}:8093 ^
+                      -e SERVER_PORT=8093 ^
+                      -e SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/formini_reclamation_db?createDatabaseIfNotExist=true ^
+                      -e SPRING_DATASOURCE_USERNAME=root ^
+                      -e SPRING_DATASOURCE_PASSWORD=root ^
+                      -e SPRING_JPA_HIBERNATE_DDL_AUTO=update ^
+                      -e EUREKA_CLIENT_ENABLED=false ^
+                      ${DOCKER_IMAGE}:${DOCKER_TAG}
+                """
             }
         }
 
-        // ── HEALTH CHECK ──────────────────────────────────────────
-        stage('Verify Health and Metrics') {
+        // ─────────────────────────────────────────────
+        // HEALTH CHECK
+        // ─────────────────────────────────────────────
+        stage('Verify Health') {
             steps {
-                echo '🏥 Vérification santé du service...'
-                sleep(time: 60, unit: 'SECONDS')
-                script {
-                    bat "docker ps -a --filter name=${CONTAINER}"
-                    bat "docker logs ${CONTAINER} --tail 80"
+                sleep(time: 45, unit: 'SECONDS')
 
+                script {
                     def status = bat(
-                        script: "curl -f http://localhost:${PORT}/msreclamation/health",
+                        script: "curl -f http://localhost:${PORT}/actuator/health",
                         returnStatus: true
                     )
 
                     if (status != 0) {
                         bat "docker logs ${CONTAINER}"
-                        error '❌ Health check échoué — voir les logs ci-dessus'
+                        error('❌ Service non disponible')
                     }
 
-                    echo '✅ Service Réclamation opérationnel !'
-                    echo "🌐 API        : http://localhost:${PORT}/msreclamation"
-                    echo "📊 Prometheus : http://localhost:9090"
-                    echo "📈 Grafana    : http://localhost:3000 (admin/admin)"
-                    echo "🔍 SonarQube  : http://localhost:9000"
+                    echo '✅ Microservice UP'
                 }
             }
         }
     }
 
+    // ─────────────────────────────────────────────
+    // POST
+    // ─────────────────────────────────────────────
     post {
+
         success {
             echo '''
-            ╔══════════════════════════════════════════╗
-            ║   ✅ PIPELINE RÉCLAMATION RÉUSSI         ║
-            ║                                          ║
-            ║   📦 Build JAR       : OK                ║
-            ║   🧪 Tests unitaires : OK                ║
-            ║   🔍 SonarQube       : OK                ║
-            ║   🐳 Docker Build    : OK                ║
-            ║   📤 Docker Push     : OK                ║
-            ║   🚀 Deploy          : OK                ║
-            ║   🏥 Health Check    : OK                ║
-            ║                                          ║
-            ║   🌐 http://localhost:8093               ║
-            ╚══════════════════════════════════════════╝
-            '''
+╔════════════════════════════════════╗
+║   ✅ PIPELINE RÉUSSI              ║
+║   Build / Test / Sonar / Docker   ║
+║   http://localhost:8093           ║
+╚════════════════════════════════════╝
+'''
         }
+
         failure {
             echo '''
-            ╔══════════════════════════════════════════╗
-            ║   ❌ PIPELINE RÉCLAMATION ÉCHOUÉ         ║
-            ║   Vérifiez les logs Jenkins              ║
-            ╚══════════════════════════════════════════╝
-            '''
+╔════════════════════════════════════╗
+║   ❌ PIPELINE ÉCHOUÉ              ║
+║   Vérifiez Jenkins logs           ║
+╚════════════════════════════════════╝
+'''
         }
+
         always {
-            echo '🧹 Nettoyage workspace...'
             cleanWs()
         }
     }
