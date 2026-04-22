@@ -127,22 +127,19 @@ pipeline {
         // ── SONARQUBE ANALYSE ─────────────────────────────────────
         stage('SonarQube Analysis') {
             steps {
-                echo '🔍 Analyse qualité du code SonarQube...'
+                echo '🔍 Analyse SonarQube...'
+
                 withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                    withSonarQubeEnv('SonarQube') {
-                        bat """
-                            mvn sonar:sonar ^
-                                -Dsonar.projectKey=reclamation-service ^
-                                -Dsonar.projectName="Reclamation Service" ^
-                                -Dsonar.host.url=${SONAR_URL} ^
-                                -Dsonar.login=%SONAR_TOKEN% ^
-                                -Dnet.bytebuddy.experimental=true
-                        """
-                    }
+                    bat """
+                        mvn sonar:sonar ^
+                        -Dsonar.projectKey=reclamation-service ^
+                        -Dsonar.projectName="Reclamation Service" ^
+                        -Dsonar.host.url=${SONAR_URL} ^
+                        -Dsonar.token=%SONAR_TOKEN%
+                    """
                 }
             }
         }
-
         // ── QUALITY GATE ──────────────────────────────────────────
         stage('Quality Gate') {
             steps {
