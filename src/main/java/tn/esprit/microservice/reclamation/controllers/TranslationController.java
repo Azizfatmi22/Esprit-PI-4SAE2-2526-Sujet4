@@ -108,9 +108,10 @@ public class TranslationController {
                     new HttpEntity<>(body, headers), Map.class
             );
 
-            if (response.getBody() == null) return null;
+            Map responseBody = response.getBody();  // ✅ stocker dans variable
+            if (responseBody == null) return null;
 
-            List<Map> candidates = (List<Map>) response.getBody().get("candidates");
+            List<Map> candidates = (List<Map>) responseBody.get("candidates");
             Map content = (Map) candidates.get(0).get("content");
             List<Map> parts = (List<Map>) content.get("parts");
             String translated = ((String) parts.get(0).get("text")).trim();
@@ -136,9 +137,10 @@ public class TranslationController {
 
             ResponseEntity<Map> resp = restTemplate.getForEntity(url, Map.class);
 
-            if (resp.getBody() == null) return null;
+            Map respBody = resp.getBody();  // ✅ stocker dans variable
+            if (respBody == null) return null;
 
-            Map data = (Map) resp.getBody().get("responseData");
+            Map data = (Map) respBody.get("responseData");
             if (data == null) return null;
 
             String translated = (String) data.get("translatedText");
@@ -174,9 +176,10 @@ public class TranslationController {
                     new HttpEntity<>(body, headers), Map.class
             );
 
-            if (resp.getBody() == null) return null;
+            Map respBody = resp.getBody();  // ✅ stocker dans variable
+            if (respBody == null) return null;
 
-            String translated = (String) resp.getBody().get("translatedText");
+            String translated = (String) respBody.get("translatedText");
             if (translated != null && !translated.isBlank()) {
                 logger.info("LibreTranslate OK: {}", translated);
                 return buildResponse(translated, detectedLang, langInfo, text);
@@ -186,7 +189,6 @@ public class TranslationController {
         }
         return null;
     }
-
     private ResponseEntity<Object> tryGoogle(String text, String sourceCode,
                                              String targetCode, String detectedLang,
                                              String[] langInfo) {
