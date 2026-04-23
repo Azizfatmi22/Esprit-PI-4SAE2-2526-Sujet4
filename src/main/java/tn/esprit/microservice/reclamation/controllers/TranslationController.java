@@ -1,5 +1,7 @@
 package tn.esprit.microservice.reclamation.controllers;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -14,6 +16,16 @@ import java.util.Map;
 @RequestMapping("/msreclamation/translation")
 public class TranslationController {
 
+    private static final Logger logger = LoggerFactory.getLogger(TranslationController.class);
+
+    private static final String TRANSLATED_TEXT   = "translatedText";
+    private static final String DETECTED_LANGUAGE = "detectedLanguage";
+    private static final String LANGUAGE_NAME     = "languageName";
+    private static final String LANGUAGE_FLAG     = "languageFlag";
+    private static final String ORIGINAL_TEXT     = "originalText";
+    private static final String IS_FRENCH         = "isFrench";
+    private static final String ERROR_KEY         = "error";
+
     @Autowired
     private RestTemplate restTemplate;
 
@@ -21,25 +33,25 @@ public class TranslationController {
     private String geminiApiKey;
 
     @PostMapping("/detect")
-    public ResponseEntity<?> detectLanguage(@RequestBody Map<String, String> payload) {
+    public ResponseEntity<Object> detectLanguage(@RequestBody Map<String, String> payload) {
         String text = payload.getOrDefault("text", "").trim();
         String lang = detectLang(text);
         String[] info = getLangInfo(lang);
         return ResponseEntity.ok(Map.of(
-                "detectedLanguage", lang,
-                "languageName",     info[0],
-                "languageFlag",     info[1],
-                "isFrench",         "FR".equals(lang)
+                DETECTED_LANGUAGE, lang,
+                LANGUAGE_NAME,     info[0],
+                LANGUAGE_FLAG,     info[1],
+                IS_FRENCH,         "FR".equals(lang)
         ));
     }
 
     @PostMapping("/translate")
-    public ResponseEntity<?> translate(@RequestBody Map<String, String> payload) {
+    public ResponseEntity<Object> translate(@RequestBody Map<String, String> payload) {
         String text       = payload.getOrDefault("text", "").trim();
         String targetLang = payload.getOrDefault("targetLang", "français");
 
         if (text.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Texte vide"));
+            return ResponseEntity.badRequest().body(Map.of(ERROR_KEY, "Texte vide"));
         }
 
         String detectedLang = detectLang(text);
@@ -47,7 +59,36 @@ public class TranslationController {
         String sourceCode   = getLangIsoCode(detectedLang);
         String targetCode   = getTargetIsoCode(targetLang);
 
-        // ── 1. Essayer Gemini 2.0 Flash ──────────────────────────
+        // 1. Essayer Gemini
+        ResponseEntity<Object> geminiResult = tryGemini(text, targetLang, detectedLang, langInfo);
+        if (geminiResult != null) return geminiResult;
+
+        // 2. Fallback MyMemory
+        ResponseEntity<Object> myMemoryResult = tryMyMemory(text, sourceCode, targetCode, detectedLang, langInfo);
+        if (myMemoryResult != null) return myMemoryResult;
+
+        // 3. Fallback LibreTranslate
+        ResponseEntity<Object> libreResult = tryLibreTranslate(text, sourceCode, targetCode, detectedLang, langInfo);
+        if (libreResult != null) return libreResult;
+
+        // 4. Fallback Google Translate
+        ResponseEntity<Object> googleResult = tryGoogle(text, sourceCode, targetCode, detectedLang, langInfo);
+        if (googleResult != null) return googleResult;
+
+        // 5. Dernier recours
+        return ResponseEntity.ok(Map.of(
+                TRANSLATED_TEXT,   text,
+                DETECTED_LANGUAGE, detectedLang,
+                LANGUAGE_NAME,     langInfo[0],
+                LANGUAGE_FLAG,     langInfo[1],
+                ORIGINAL_TEXT,     text,
+                IS_FRENCH,         "FR".equals(detectedLang),
+                ERROR_KEY,         "Traduction temporairement indisponible"
+        ));
+    }
+
+    private ResponseEntity<Object> tryGemini(String text, String targetLang,
+                                             String detectedLang, String[] langInfo) {
         try {
             String prompt = "Translate the following text to " + targetLang +
                     ". Return ONLY the translation, nothing else:\n\n" + text;
@@ -67,19 +108,25 @@ public class TranslationController {
                     new HttpEntity<>(body, headers), Map.class
             );
 
+            if (response.getBody() == null) return null;
+
             List<Map> candidates = (List<Map>) response.getBody().get("candidates");
             Map content = (Map) candidates.get(0).get("content");
             List<Map> parts = (List<Map>) content.get("parts");
             String translated = ((String) parts.get(0).get("text")).trim();
 
-            System.out.println("✅ Gemini OK: " + translated);
+            logger.info("Gemini OK: {}", translated);
             return buildResponse(translated, detectedLang, langInfo, text);
 
-        } catch (Exception e1) {
-            System.err.println("⚠️ Gemini failed: " + e1.getMessage());
+        } catch (Exception e) {
+            logger.warn("Gemini failed: {}", e.getMessage());
+            return null;
         }
+    }
 
-        // ── 2. Fallback MyMemory (sans URLDecoder) ────────────────
+    private ResponseEntity<Object> tryMyMemory(String text, String sourceCode,
+                                               String targetCode, String detectedLang,
+                                               String[] langInfo) {
         try {
             String url = UriComponentsBuilder
                     .fromHttpUrl("https://api.mymemory.translated.net/get")
@@ -88,22 +135,27 @@ public class TranslationController {
                     .build().toUriString();
 
             ResponseEntity<Map> resp = restTemplate.getForEntity(url, Map.class);
+
+            if (resp.getBody() == null) return null;
+
             Map data = (Map) resp.getBody().get("responseData");
+            if (data == null) return null;
+
             String translated = (String) data.get("translatedText");
 
-            // Vérifier que ce n'est pas du texte encodé %XX
-            if (translated != null && !translated.contains("%")
-                    && !translated.isBlank()) {
-                System.out.println("✅ MyMemory OK: " + translated);
+            if (translated != null && !translated.contains("%") && !translated.isBlank()) {
+                logger.info("MyMemory OK: {}", translated);
                 return buildResponse(translated, detectedLang, langInfo, text);
             }
-            System.err.println("⚠️ MyMemory retourné encodé, essai suivant");
-
-        } catch (Exception e2) {
-            System.err.println("⚠️ MyMemory failed: " + e2.getMessage());
+        } catch (Exception e) {
+            logger.warn("MyMemory failed: {}", e.getMessage());
         }
+        return null;
+    }
 
-        // ── 3. Fallback LibreTranslate (gratuit, fiable) ──────────
+    private ResponseEntity<Object> tryLibreTranslate(String text, String sourceCode,
+                                                     String targetCode, String detectedLang,
+                                                     String[] langInfo) {
         try {
             String libreUrl = "https://libretranslate.com/translate";
 
@@ -122,17 +174,22 @@ public class TranslationController {
                     new HttpEntity<>(body, headers), Map.class
             );
 
+            if (resp.getBody() == null) return null;
+
             String translated = (String) resp.getBody().get("translatedText");
             if (translated != null && !translated.isBlank()) {
-                System.out.println("✅ LibreTranslate OK: " + translated);
+                logger.info("LibreTranslate OK: {}", translated);
                 return buildResponse(translated, detectedLang, langInfo, text);
             }
-
-        } catch (Exception e3) {
-            System.err.println("⚠️ LibreTranslate failed: " + e3.getMessage());
+        } catch (Exception e) {
+            logger.warn("LibreTranslate failed: {}", e.getMessage());
         }
+        return null;
+    }
 
-        // ── 4. Fallback Google Translate non-officiel ─────────────
+    private ResponseEntity<Object> tryGoogle(String text, String sourceCode,
+                                             String targetCode, String detectedLang,
+                                             String[] langInfo) {
         try {
             String googleUrl = UriComponentsBuilder
                     .fromHttpUrl("https://translate.googleapis.com/translate_a/single")
@@ -143,56 +200,37 @@ public class TranslationController {
                     .queryParam("q", text)
                     .build().toUriString();
 
-            ResponseEntity<String> resp = restTemplate.getForEntity(
-                    googleUrl, String.class
-            );
-
-            // Parser la réponse JSON brute de Google
+            ResponseEntity<String> resp = restTemplate.getForEntity(googleUrl, String.class);
             String raw = resp.getBody();
+
             if (raw != null && raw.startsWith("[[")) {
-                // Format: [[ ["traduction","original",...], ...], ...]
                 String translated = extractGoogleTranslation(raw);
                 if (!translated.isBlank()) {
-                    System.out.println("✅ Google Translate OK: " + translated);
+                    logger.info("Google Translate OK: {}", translated);
                     return buildResponse(translated, detectedLang, langInfo, text);
                 }
             }
-
-        } catch (Exception e4) {
-            System.err.println("⚠️ Google Translate failed: " + e4.getMessage());
+        } catch (Exception e) {
+            logger.warn("Google Translate failed: {}", e.getMessage());
         }
-
-        // ── 5. Dernier recours : retourner le texte original ──────
-        return ResponseEntity.ok(Map.of(
-                "translatedText",   text,
-                "detectedLanguage", detectedLang,
-                "languageName",     langInfo[0],
-                "languageFlag",     langInfo[1],
-                "originalText",     text,
-                "isFrench",         "FR".equals(detectedLang),
-                "error",            "Traduction temporairement indisponible"
-        ));
+        return null;
     }
 
-    // ── Helpers ──────────────────────────────────────────────────
-
-    private ResponseEntity<?> buildResponse(
-            String translated, String detectedLang,
-            String[] langInfo, String originalText) {
+    private ResponseEntity<Object> buildResponse(String translated, String detectedLang,
+                                                 String[] langInfo, String originalText) {
         return ResponseEntity.ok(Map.of(
-                "translatedText",   translated,
-                "detectedLanguage", detectedLang,
-                "languageName",     langInfo[0],
-                "languageFlag",     langInfo[1],
-                "originalText",     originalText,
-                "isFrench",         "FR".equals(detectedLang)
+                TRANSLATED_TEXT,   translated,
+                DETECTED_LANGUAGE, detectedLang,
+                LANGUAGE_NAME,     langInfo[0],
+                LANGUAGE_FLAG,     langInfo[1],
+                ORIGINAL_TEXT,     originalText,
+                IS_FRENCH,         "FR".equals(detectedLang)
         ));
     }
 
     private String extractGoogleTranslation(String raw) {
         StringBuilder result = new StringBuilder();
         try {
-            // Format brut: [[["translation","original",null,null,10],...],...]
             int i = 3;
             while (i < raw.length()) {
                 int start = raw.indexOf("\"", i);
@@ -200,20 +238,18 @@ public class TranslationController {
                 int end = raw.indexOf("\"", start + 1);
                 if (end == -1) break;
                 String part = raw.substring(start + 1, end);
-                if (!part.isEmpty() && !part.equals("null")) {
+                if (!part.isEmpty() && !"null".equals(part)) {
                     result.append(part);
                 }
-                // Vérifier si on est à la fin du premier segment
                 i = end + 1;
-                if (raw.charAt(i) == ',') {
-                    // Suivant
+                if (i < raw.length() && raw.charAt(i) == ',') {
                     int nextBracket = raw.indexOf("[", i);
                     if (nextBracket == -1 || raw.charAt(nextBracket + 1) == '[') break;
                 }
                 break;
             }
         } catch (Exception e) {
-            System.err.println("Parsing Google failed: " + e.getMessage());
+            logger.warn("Parsing Google failed: {}", e.getMessage());
         }
         return result.toString();
     }

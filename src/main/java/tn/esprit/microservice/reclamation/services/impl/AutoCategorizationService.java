@@ -7,6 +7,7 @@ import tn.esprit.microservice.reclamation.entities.ReclamationType;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class AutoCategorizationService {
@@ -85,10 +86,18 @@ public class AutoCategorizationService {
                     .build();
         }
 
-        ReclamationType bestType = scores.entrySet().stream()
-                .max(Map.Entry.comparingByValue())
-                .get()
-                .getKey();
+        Optional<Map.Entry<ReclamationType, Integer>> maxEntry = scores.entrySet().stream()
+                .max(Map.Entry.comparingByValue());
+
+        if (maxEntry.isEmpty()) {
+            return CategorizationResult.builder()
+                    .suggestedType(ReclamationType.OTHER)
+                    .confidence(0)
+                    .hasSuggestion(false)
+                    .build();
+        }
+
+        ReclamationType bestType = maxEntry.get().getKey();
 
         int bestScore = scores.get(bestType);
         int confidence = Math.min(100, (bestScore * 100) / 5); // Max 100%

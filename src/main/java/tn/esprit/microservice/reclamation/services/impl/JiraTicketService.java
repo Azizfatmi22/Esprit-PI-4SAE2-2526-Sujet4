@@ -46,24 +46,24 @@ public class JiraTicketService implements TicketService {
 
         Map<String, Object> payload = buildJiraPayload(reclamation);
         HttpHeaders headers = buildJiraHeaders();
-
         String url = jiraUrl + "/rest/api/3/issue";
-
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
 
         try {
             ResponseEntity<Map> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.POST,
-                    entity,
-                    Map.class
+                    url, HttpMethod.POST, entity, Map.class
             );
 
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+            if (!response.getStatusCode().is2xxSuccessful()) {
                 throw new RuntimeException("Jira API failed: " + response.getStatusCode());
             }
 
             Map responseBody = response.getBody();
+
+            // ✅ Vérification explicite du null
+            if (responseBody == null) {
+                throw new RuntimeException("Jira response body is null");
+            }
 
             if (!responseBody.containsKey("key")) {
                 throw new RuntimeException("Jira response invalid: " + responseBody);
