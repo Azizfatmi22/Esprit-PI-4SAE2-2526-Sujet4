@@ -195,7 +195,7 @@ pipeline {
 
                 script {
                     def status = bat(
-                        script: "curl -f http://localhost:${PORT}/actuator/health",
+                        script: "curl -f http://localhost:${PORT}/msreclamation/health",
                         returnStatus: true
                     )
 
