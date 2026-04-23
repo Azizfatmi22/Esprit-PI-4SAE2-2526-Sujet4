@@ -1,7 +1,7 @@
 package tn.esprit.microservice.reclamation.controllers;
 
-// AdminTicketController.java
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -18,15 +18,25 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/msreclamation/admin")
-//@CrossOrigin(origins = "http://localhost:4200")
 public class AdminTicketController {
 
-    @Autowired
+    private static final Logger logger = LoggerFactory.getLogger(AdminTicketController.class);
 
+    // Constantes pour éviter la duplication
+    private static final String RECLAMATION_NOT_FOUND = "Réclamation non trouvée";
+    private static final String TICKET_ID = "ticketId";
+    private static final String TICKET_URL = "ticketUrl";
+    private static final String TOOL_NAME = "toolName";
+    private static final String ALREADY_EXISTS = "alreadyExists";
+    private static final String EXISTS = "exists";
+    private static final String ERROR = "error";
+
+    @Autowired
     private ReclamationRepository reclamationRepository;
 
     @Autowired
     private JiraTicketService jiraTicketService;
+
     @Autowired
     private ReclamationResponseServiceImpl reclamationService;
 
@@ -43,40 +53,38 @@ public class AdminTicketController {
     private String clickupApiKey;
 
     @PostMapping("/reclamations/{id}/create-ticket")
-    public ResponseEntity<?> createExternalTicket(
+    public ResponseEntity<Object> createExternalTicket(
             @PathVariable Long id,
             @RequestBody(required = false) Map<String, String> payload) {
 
         try {
             Reclamation reclamation = reclamationRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Réclamation non trouvée"));
+                    .orElseThrow(() -> new RuntimeException(RECLAMATION_NOT_FOUND));
 
             if (reclamation.getExternalTicketUrl() != null && !reclamation.getExternalTicketUrl().isEmpty()) {
                 return ResponseEntity.ok(Map.of(
-                        "alreadyExists", true,
-                        "ticketId", reclamation.getExternalTicketId(),
-                        "ticketUrl", reclamation.getExternalTicketUrl(),
-                        "toolName", reclamation.getExternalTool()
+                        ALREADY_EXISTS, true,
+                        TICKET_ID, reclamation.getExternalTicketId(),
+                        TICKET_URL, reclamation.getExternalTicketUrl(),
+                        TOOL_NAME, reclamation.getExternalTool()
                 ));
             }
 
             String tool = payload != null && payload.containsKey("tool") ? payload.get("tool") : "demo";
-
             Map<String, String> result;
 
             switch (tool) {
                 case "jira":
                     try {
                         TicketResponseDTO dto = ticketService.createTicket(reclamation, tool);
-
                         result = new HashMap<>();
-                        result.put("ticketId", dto.getTicketId());
-                        result.put("ticketUrl", dto.getTicketUrl());
-                        result.put("toolName", dto.getToolName());
-
+                        result.put(TICKET_ID, dto.getTicketId());
+                        result.put(TICKET_URL, dto.getTicketUrl());
+                        result.put(TOOL_NAME, dto.getToolName());
                     } catch (Exception e) {
+                        logger.error("Erreur Jira: {}", e.getMessage(), e);
                         result = new HashMap<>();
-                        result.put("error", "Erreur Jira: " + e.getMessage());
+                        result.put(ERROR, "Erreur Jira: " + e.getMessage());
                     }
                     break;
                 case "linear":
@@ -90,138 +98,104 @@ public class AdminTicketController {
                     break;
             }
 
-            if (result.containsKey("error")) {
+            if (result.containsKey(ERROR)) {
                 return ResponseEntity.status(500).body(result);
             }
 
-            reclamation.setExternalTicketId(result.get("ticketId"));
-            reclamation.setExternalTicketUrl(result.get("ticketUrl"));
-            reclamation.setExternalTool(result.get("toolName"));
+            reclamation.setExternalTicketId(result.get(TICKET_ID));
+            reclamation.setExternalTicketUrl(result.get(TICKET_URL));
+            reclamation.setExternalTool(result.get(TOOL_NAME));
             reclamationRepository.save(reclamation);
 
             return ResponseEntity.ok(Map.of(
-                    "ticketId", result.get("ticketId"),
-                    "ticketUrl", result.get("ticketUrl"),
-                    "toolName", result.get("toolName"),
-                    "alreadyExists", false
+                    TICKET_ID, result.get(TICKET_ID),
+                    TICKET_URL, result.get(TICKET_URL),
+                    TOOL_NAME, result.get(TOOL_NAME),
+                    ALREADY_EXISTS, false
             ));
 
         } catch (Exception e) {
+            logger.error("Erreur création ticket: {}", e.getMessage(), e);
             Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
+            error.put(ERROR, e.getMessage());
             return ResponseEntity.status(500).body(error);
         }
     }
+
     @GetMapping("/reclamations/{id}/ticket")
-    public ResponseEntity<?> getTicketInfo(@PathVariable Long id) {
+    public ResponseEntity<Object> getTicketInfo(@PathVariable Long id) {
         try {
             Reclamation rec = reclamationRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Réclamation non trouvée"));
+                    .orElseThrow(() -> new RuntimeException(RECLAMATION_NOT_FOUND));
 
             if (rec.getExternalTicketUrl() != null && !rec.getExternalTicketUrl().isEmpty()) {
                 return ResponseEntity.ok(Map.of(
-                        "exists", true,
-                        "ticketId", rec.getExternalTicketId(),
-                        "ticketUrl", rec.getExternalTicketUrl(),
-                        "toolName", rec.getExternalTool()
+                        EXISTS, true,
+                        TICKET_ID, rec.getExternalTicketId(),
+                        TICKET_URL, rec.getExternalTicketUrl(),
+                        TOOL_NAME, rec.getExternalTool()
                 ));
             }
-            return ResponseEntity.ok(Map.of("exists", false));
+            return ResponseEntity.ok(Map.of(EXISTS, false));
         } catch (Exception e) {
-            return ResponseEntity.ok(Map.of("exists", false));
+            logger.error("Erreur récupération ticket: {}", e.getMessage(), e);
+            return ResponseEntity.ok(Map.of(EXISTS, false));
         }
     }
 
-    // Mode démo - pas besoin d'API externe
+    @PostMapping("/reclamations/{id}/create-ticket-v2")
+    public ResponseEntity<Object> createTicketV2(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        try {
+            String tool = body.get("tool");
+            Reclamation rec = reclamationRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException(RECLAMATION_NOT_FOUND));
+
+            TicketResponseDTO dto = ticketService.createTicket(rec, tool);
+
+            return ResponseEntity.ok(Map.of(
+                    TICKET_ID, dto.getTicketId(),
+                    TICKET_URL, dto.getTicketUrl(),
+                    TOOL_NAME, dto.getToolName(),
+                    ALREADY_EXISTS, false
+            ));
+        } catch (Exception e) {
+            logger.error("Erreur création ticket v2: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of(ERROR, e.getMessage()));
+        }
+    }
+
     private Map<String, String> createDemoTicket(Reclamation rec) {
         String demoId = "DEMO-" + rec.getId();
-        String demoUrl = "https://demo-linear.app/issue/" + demoId;
-
         Map<String, String> result = new HashMap<>();
-        result.put("ticketId", demoId);
-        result.put("ticketUrl", demoUrl);
-        result.put("toolName", "Démo");
-        return result;
-    }
-
-    private Map<String, String> createJiraTicket(Reclamation rec) {
-        Map<String, String> result = new HashMap<>();
-
-        // Vérifier que Jira est configuré
-        if (jiraUrl == null || jiraUrl.isEmpty()) {
-            result.put("error", "Jira non configuré. Vérifiez jira.url dans application.properties");
-            return result;
-        }
-
-        // Ici votre code Jira existant
-        String ticketId = "JIRA-" + rec.getId();
-        String ticketUrl = jiraUrl + "/browse/" + ticketId;
-
-        result.put("ticketId", ticketId);
-        result.put("ticketUrl", ticketUrl);
-        result.put("toolName", "Jira");
+        result.put(TICKET_ID, demoId);
+        result.put(TICKET_URL, "https://demo-linear.app/issue/" + demoId);
+        result.put(TOOL_NAME, "Démo");
         return result;
     }
 
     private Map<String, String> createLinearTicket(Reclamation rec) {
         Map<String, String> result = new HashMap<>();
-
         if (linearApiKey == null || linearApiKey.isEmpty()) {
-            result.put("error", "Linear non configuré. Vérifiez linear.api.key dans application.properties");
+            result.put(ERROR, "Linear non configuré");
             return result;
         }
-
-        String ticketId = "LIN-" + rec.getId();
-        String ticketUrl = "https://linear.app/issue/" + ticketId;
-
-        result.put("ticketId", ticketId);
-        result.put("ticketUrl", ticketUrl);
-        result.put("toolName", "Linear");
+        result.put(TICKET_ID, "LIN-" + rec.getId());
+        result.put(TICKET_URL, "https://linear.app/issue/LIN-" + rec.getId());
+        result.put(TOOL_NAME, "Linear");
         return result;
     }
 
     private Map<String, String> createClickupTicket(Reclamation rec) {
         Map<String, String> result = new HashMap<>();
-
         if (clickupApiKey == null || clickupApiKey.isEmpty()) {
-            result.put("error", "ClickUp non configuré. Vérifiez clickup.api.key dans application.properties");
+            result.put(ERROR, "ClickUp non configuré");
             return result;
         }
-
-        String ticketId = "CUP-" + rec.getId();
-        String ticketUrl = "https://app.clickup.com/task/" + ticketId;
-
-        result.put("ticketId", ticketId);
-        result.put("ticketUrl", ticketUrl);
-        result.put("toolName", "ClickUp");
+        result.put(TICKET_ID, "CUP-" + rec.getId());
+        result.put(TICKET_URL, "https://app.clickup.com/task/CUP-" + rec.getId());
+        result.put(TOOL_NAME, "ClickUp");
         return result;
     }
-    @PostMapping("/reclamations/{id}/create-ticket-v2")
-    public ResponseEntity<?> createTicketV2(
-            @PathVariable Long id,
-            @RequestBody Map<String, String> body
-    ) {
-        try {
-            String tool = body.get("tool");
-
-            Reclamation rec = reclamationRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Réclamation non trouvée"));
-
-            TicketResponseDTO dto = ticketService.createTicket(rec, tool);
-
-            return ResponseEntity.ok(Map.of(
-                    "ticketId", dto.getTicketId(),
-                    "ticketUrl", dto.getTicketUrl(),
-                    "toolName", dto.getToolName(),
-                    "alreadyExists", false
-            ));
-
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of(
-                    "error", e.getMessage()
-            ));
-        }
-    }
-
-
 }
