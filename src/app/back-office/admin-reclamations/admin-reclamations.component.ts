@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { ReclamationService, Reclamation, ReclamationResponse, ReclamationStats, SlaAlert }
   from '../../front-office/services/reclamation.service';
 import { AdminTypingService } from '../../front-office/services/admin-typing.service';
+import { UserService } from '../../front-office/services/user.service';
 
 type SortField = 'id' | 'date' | 'status' | 'type' | 'priority' | 'gravity';
 type SortDirection = 'asc' | 'desc';
@@ -21,6 +22,7 @@ export class AdminReclamationsComponent implements OnInit, OnDestroy {
   error: string | null = null;
   notification: { msg: string; type: 'success' | 'error' } | null = null;
   private refreshTimer: any;
+  currentUser: any;
 
   // ── View ─────────────────────────────────────────────────────────────────────
   viewMode: ViewMode = 'table';
@@ -111,17 +113,17 @@ export class AdminReclamationsComponent implements OnInit, OnDestroy {
   ];
 
   statusOptions = [
-    { value: 'PENDING', label: 'En attente', css: 'pending', icon: '⏳', next: 'IN_PROGRESS' },
-    { value: 'IN_PROGRESS', label: 'En cours', css: 'progress', icon: '🔄', next: 'RESOLVED' },
-    { value: 'RESOLVED', label: 'Résolue', css: 'resolved', icon: '✅', next: 'CLOSED' },
-    { value: 'CLOSED', label: 'Fermée', css: 'closed', icon: '🔒', next: null },
-    { value: 'REJECTED', label: 'Rejetée', css: 'rejected', icon: '❌', next: null }
+    { value: 'PENDING', label: 'Pending', css: 'pending', icon: '⏳', next: 'IN_PROGRESS' },
+    { value: 'IN_PROGRESS', label: 'In Progress', css: 'progress', icon: '🔄', next: 'RESOLVED' },
+    { value: 'RESOLVED', label: 'Resolved', css: 'resolved', icon: '✅', next: 'CLOSED' },
+    { value: 'CLOSED', label: 'Closed', css: 'closed', icon: '🔒', next: null },
+    { value: 'REJECTED', label: 'Rejected', css: 'rejected', icon: '❌', next: null }
   ];
 
   priorityOptions = [
-    { value: '1', label: 'Haute', css: 'high', icon: '🔴' },
-    { value: '2', label: 'Moyenne', css: 'medium', icon: '🟡' },
-    { value: '3', label: 'Basse', css: 'low', icon: '🟢' }
+    { value: '1', label: 'High', css: 'high', icon: '🔴' },
+    { value: '2', label: 'Medium', css: 'medium', icon: '🟡' },
+    { value: '3', label: 'Low', css: 'low', icon: '🟢' }
   ];
 
   creatingTicket = false;
@@ -142,13 +144,15 @@ export class AdminReclamationsComponent implements OnInit, OnDestroy {
   constructor(
     private reclamationService: ReclamationService,
     private adminTypingService: AdminTypingService,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private userService: UserService
   ) {}
 
   ngOnInit(): void {
     this.loadReclamations();
     this.loadStatistics();
     this.loadSlaAlerts();
+    this.currentUser = this.userService.getUser();
 
     this.refreshTimer = setInterval(() => {
       this.ngZone.run(() => {
@@ -261,9 +265,9 @@ export class AdminReclamationsComponent implements OnInit, OnDestroy {
   getGravityConfig(level: string | undefined): { label: string; color: string; bg: string; icon: string } {
     const configs: { [key: string]: { label: string; color: string; bg: string; icon: string } } = {
         'CRITICAL': { label: 'URGENT', color: '#dc2626', bg: '#fef2f2', icon: '🔴' },
-        'HIGH': { label: 'Haute priorité', color: '#f59e0b', bg: '#fffbeb', icon: '🟠' },
-        'MEDIUM': { label: 'Priorité normale', color: '#3b82f6', bg: '#eff6ff', icon: '🟡' },
-        'LOW': { label: 'Basse priorité', color: '#10b981', bg: '#ecfdf5', icon: '🟢' }
+        'HIGH': { label: 'High priority', color: '#f59e0b', bg: '#fffbeb', icon: '🟠' },
+        'MEDIUM': { label: 'Normal priority', color: '#3b82f6', bg: '#eff6ff', icon: '🟡' },
+        'LOW': { label: 'Low priority', color: '#10b981', bg: '#ecfdf5', icon: '🟢' }
     };
     return configs[level || 'MEDIUM'] || configs['MEDIUM'];
 }
@@ -542,7 +546,7 @@ export class AdminReclamationsComponent implements OnInit, OnDestroy {
               },
               error: () => {}
             });
-          this.notify('Réponse ajoutée — statut → En cours automatiquement', 'success');
+          this.notify('Answer added — status → Automatically being processed', 'success');
         } else {
           this.notify(this.isInternalNote ? 'Note interne ajoutée' : 'Réponse envoyée à l\'apprenant', 'success');
         }

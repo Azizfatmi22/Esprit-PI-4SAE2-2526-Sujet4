@@ -1,91 +1,192 @@
-/* Conteneur principal */
+// Variables Modern Light
+$primary: #2563eb;
+$primary-soft: rgba(37, 99, 235, 0.08);
+$primary-hover: #1d4ed8;
+$success: #10b981;
+
+$bg-app: #f8fafc; // Un gris-bleu très léger pour faire ressortir le blanc
+$bg-card: #ffffff;
+
+$text-bold: #0f172a;
+$text-main: #334155;
+$text-muted: #64748b;
+$border-color: #f1f5f9;
+
+$shadow-subtle:
+  0 4px 6px -1px rgba(0, 0, 0, 0.02),
+  0 2px 4px -2px rgba(0, 0, 0, 0.02);
+$shadow-hover:
+  0 20px 25px -5px rgba(0, 0, 0, 0.05),
+  0 8px 10px -6px rgba(0, 0, 0, 0.05);
+
 .container {
-  max-width: 800px;
-  margin-bottom: 3rem;
+  max-width: 850px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  background: $bg-app;
+  min-height: 100vh;
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
-h2 {
-  color: #2c3e50;
-  font-weight: 700;
-  border-bottom: 3px solid #3498db;
-  display: inline-block;
-  padding-bottom: 10px;
-}
+.header {
+  margin-bottom: 2.5rem;
 
-/* Style de la liste */
-.list-group {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-  overflow: hidden; // Pour que les bords arrondis s'appliquent aux éléments enfants
-}
-
-.list-group-item {
-  border: none;
-  border-bottom: 1px solid #edf2f7;
-  padding: 1.25rem;
-  transition: all 0.3s ease;
-  background-color: #ffffff;
-
-  &:last-child {
-    border-bottom: none;
+  h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: $text-bold;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.5rem;
   }
 
-  // Effet au survol
-  &:hover {
-    background-color: #f8fafc;
-    transform: translateY(-2px);
-    box-shadow: inset 4px 0 0 #3498db; // Petite barre bleue à gauche au survol
-    z-index: 1;
-  }
-}
+  .subtitle {
+    color: $text-muted;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 
-/* Titre de l'évaluation */
-strong {
-  font-size: 1.1rem;
-  color: #334155;
-}
-
-/* Badge personnalisé selon le type */
-.badge {
-  padding: 0.5em 0.8em;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-radius: 6px;
-  
-  &-secondary {
-    background-color: #e2e8f0;
-    color: #475569;
-  }
-}
-
-/* Section droite (Durée et Bouton) */
-.text-end {
-  .text-muted {
-    font-size: 0.85rem;
-    margin-bottom: 4px;
-  }
-
-  .btn-outline-primary {
-    border-radius: 20px;
-    padding: 0.4rem 1.2rem;
-    font-weight: 600;
-    transition: all 0.2s ease;
-
-    &:hover {
-      background-color: #3498db;
-      color: white;
-      transform: scale(1.05);
+    &::before {
+      content: "";
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: $success;
+      border-radius: 50%;
     }
   }
 }
 
-/* Animation d'entrée pour la liste */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+.evaluations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }
 
-.list-group-item {
-  animation: fadeIn 0.4s ease-out forwards;
+.evaluation-card {
+  background: $bg-card;
+  border: 1px solid $border-color;
+  border-radius: 16px; // Plus arrondi pour un look moderne
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  box-shadow: $shadow-subtle;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background: transparent;
+    transition: background 0.3s;
+  }
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-hover;
+    border-color: rgba($primary, 0.2);
+
+    &::after {
+      background: $primary;
+    }
+
+    .start-button {
+      background: $primary;
+      color: white;
+    }
+  }
+}
+
+.card-content {
+  padding: 1.5rem;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: $text-bold;
+    margin-bottom: 0.5rem;
+  }
+}
+
+.type-badge {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.65rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px; // Pilule
+  font-weight: 700;
+  background: #f1f5f9;
+  color: $text-muted;
+
+  &.quiz {
+    background: $primary-soft;
+    color: $primary;
+  }
+}
+
+.start-button {
+  padding: 0.6rem 1.2rem;
+  background: $primary-soft;
+  color: $primary;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+
+  svg {
+    transition: transform 0.2s;
+  }
+
+  &:hover {
+    svg {
+      transform: translateX(3px);
+    }
+  }
+}
+
+.card-footer {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba($border-color, 0.6);
+  display: flex;
+  justify-content: flex-start;
+
+  .duration {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: $text-muted;
+    font-size: 0.85rem;
+    font-weight: 500;
+
+    svg {
+      opacity: 0.7;
+    }
+  }
+}
+
+.empty-state {
+  background: white;
+  border: 2px dashed $border-color;
+  border-radius: 16px;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: $text-muted;
 }

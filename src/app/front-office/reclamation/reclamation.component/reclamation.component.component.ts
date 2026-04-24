@@ -667,16 +667,16 @@ private initWebSocket(): void {
   // ── HELPERS ───────────────────────────────────────────────────────────────────
   showNotification(message: string, type: 'success' | 'error'): void { this.notification = { message, type }; setTimeout(() => this.notification = null, 3500); }
   getStatusConfig(status: string): { label: string; css: string; icon: string } {
-    const map: any = { 'PENDING': { label: 'En attente', css: 'pending', icon: '⏳' }, 'IN_PROGRESS': { label: 'En cours', css: 'in-progress', icon: '🔄' }, 'RESOLVED': { label: 'Résolue', css: 'resolved', icon: '✅' }, 'CLOSED': { label: 'Fermée', css: 'closed', icon: '🔒' }, 'REJECTED': { label: 'Rejetée', css: 'rejected', icon: '❌' } };
+    const map: any = { 'PENDING': { label: 'Pending', css: 'pending', icon: '⏳' }, 'IN_PROGRESS': { label: 'In Progress', css: 'in-progress', icon: '🔄' }, 'RESOLVED': { label: 'Resolved', css: 'resolved', icon: '✅' }, 'CLOSED': { label: 'Closed', css: 'closed', icon: '🔒' }, 'REJECTED': { label: 'Rejected', css: 'rejected', icon: '❌' } };
     return map[status] || { label: status, css: 'pending', icon: '❓' };
   }
   getTypeConfig(type: string): { label: string; icon: string } { const t = this.reclamationTypes.find(x => x.value === type); return { label: t?.label || type, icon: t?.icon || '📌' }; }
-  getPriorityConfig(p: number | undefined): { label: string; css: string } { const map: any = { 1: { label: 'Haute', css: 'high' }, 2: { label: 'Moyenne', css: 'medium' }, 3: { label: 'Basse', css: 'low' } }; return map[p || 3] || { label: 'Basse', css: 'low' }; }
+  getPriorityConfig(p: number | undefined): { label: string; css: string } { const map: any = { 1: { label: 'High', css: 'high' }, 2: { label: 'Medium', css: 'medium' }, 3: { label: 'Low', css: 'low' } }; return map[p || 3] || { label: 'Low', css: 'low' }; }
   formatDate(d: string | undefined): string { if (!d) return '-'; return new Date(d).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
   formatRelativeDate(d: string | undefined): string {
     if (!d) return '-';
     const days = Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
-    if (days === 0) return "Aujourd'hui"; if (days === 1) return 'Hier'; if (days < 7) return `Il y a ${days} jours`;
+    if (days === 0) return "Today"; if (days === 1) return 'Yesterday'; if (days < 7) return ` ${days} days ago`;
     return this.formatDate(d);
   }
   get todayDate(): string { return new Date().toISOString().split('T')[0]; }
@@ -684,25 +684,25 @@ private initWebSocket(): void {
   readonly onboardingSteps = [
   {
     icon: '📝',
-    title: 'Décrivez votre problème',
-    desc: 'Choisissez le type de réclamation et décrivez votre problème clairement. Le formulaire s\'adapte automatiquement selon votre choix.',
-    tip: '💡 Plus vous êtes précis, plus vite nous pouvons vous aider !',
+    title: 'Describe your issue',
+    desc: 'Choose the type of reclamation and describe your issue clearly. The form adapts automatically based on your choice.',
+    tip: '💡 The more precise you are, the faster we can help you!',
     color: '#5b4fcf',
     bg: '#ede9ff'
   },
   {
     icon: '⚡',
-    title: 'Suivi en temps réel',
-    desc: 'Suivez l\'avancement de votre réclamation à chaque étape. Vous recevez une notification dès qu\'un admin répond.',
-    tip: '🔔 L\'indicateur animé vous montre quand le support est en train de vous répondre.',
+    title: 'Real-time Tracking',
+    desc: 'Track the progress of your reclamation at each step. You receive a notification as soon as an admin responds.',
+    tip: '🔔 The animated indicator shows when the support is ready to respond to you.',
     color: '#2563eb',
     bg: '#eff6ff'
   },
   {
     icon: '✅',
-    title: 'Échangez avec le support',
-    desc: 'Répondez directement dans le fil de discussion, citez les messages et évaluez la qualité de l\'aide reçue.',
-    tip: '⭐ Votre avis nous aide à améliorer notre service !',
+    title: 'Communicate with Support',
+    desc: 'RRespond directly in the discussion thread, quote messages, and evaluate the quality of assistance received.',
+    tip: '⭐ Your feedback helps us improve our service!',
     color: '#059669',
     bg: '#ecfdf5'
   }

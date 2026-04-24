@@ -16,7 +16,7 @@
     <line x1="12" y1="16" x2="12.01" y2="16"/>
   </svg>
   <strong>{{ slaAlerts.length }} réclamation{{ slaAlerts.length > 1 ? 's' : '' }} dépass{{ slaAlerts.length > 1 ? 'ent' : 'e' }} le délai SLA</strong>
-  <span class="sla-banner__hint">— Cliquez pour voir</span>
+  <span class="sla-banner__hint">— Click to view</span>
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
        [style.transform]="showSlaPanel ? 'rotate(180deg)' : ''">
     <polyline points="6 9 12 15 18 9"/>
@@ -39,7 +39,7 @@
         ⏱ {{ alert.elapsedMinutes }} min écoulées
         (SLA : {{ alert.slaMinutes }} min)
       </span>
-      <span class="sla-item__email" *ngIf="alert.emailSent">📧 Email envoyé</span>
+      <span class="sla-item__email" *ngIf="alert.emailSent">📧 Email sent</span>
     </div>
     <div class="sla-item__actions">
       <button class="sla-item__view" (click)="openDetailById(alert.reclamationId)">
@@ -86,7 +86,7 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
           </svg>
-          Filtres
+          Filters
           <span class="tb-badge" *ngIf="activeFiltersCount>0">{{ activeFiltersCount }}</span>
         </button>
         <button class="tb-btn" (click)="loadReclamations(); loadStatistics()" title="Actualiser">
@@ -99,8 +99,8 @@
     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
     <polyline points="16 18 22 12 16 6"/>
   </svg>
-  <span *ngIf="sortByGravity">📊 Tri gravité</span>
-  <span *ngIf="!sortByGravity">📅 Tri date</span>
+  <span *ngIf="sortByGravity">📊 Sort by gravity</span>
+  <span *ngIf="!sortByGravity">📅 Sort by date</span>
 </button>
           <!-- Bouton de modération -->
 <button class="tb-btn" 
@@ -109,7 +109,7 @@
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
   </svg>
-  Modération
+  Moderation
   <span class="tb-badge" *ngIf="suspectCount > 0">{{ suspectCount }}</span>
 </button>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -128,27 +128,27 @@
       <div class="kcard kcard--pending" (click)="filterStatus='PENDING'; currentPage=1" [class.kcard--sel]="filterStatus==='PENDING'">
         <div class="kcard__ico">⏳</div>
         <div class="kcard__num">{{ stats.pending }}</div>
-        <div class="kcard__lbl">En attente</div>
+        <div class="kcard__lbl">pending</div>
       </div>
       <div class="kcard kcard--progress" (click)="filterStatus='IN_PROGRESS'; currentPage=1" [class.kcard--sel]="filterStatus==='IN_PROGRESS'">
         <div class="kcard__ico">🔄</div>
         <div class="kcard__num">{{ stats.inProgress }}</div>
-        <div class="kcard__lbl">En cours</div>
+        <div class="kcard__lbl">in progress</div>
       </div>
       <div class="kcard kcard--resolved" (click)="filterStatus='RESOLVED'; currentPage=1" [class.kcard--sel]="filterStatus==='RESOLVED'">
         <div class="kcard__ico">✅</div>
         <div class="kcard__num">{{ stats.resolved }}</div>
-        <div class="kcard__lbl">Résolues</div>
+        <div class="kcard__lbl">resolved</div>
       </div>
       <div class="kcard kcard--closed" (click)="filterStatus='CLOSED'; currentPage=1" [class.kcard--sel]="filterStatus==='CLOSED'">
         <div class="kcard__ico">🔒</div>
         <div class="kcard__num">{{ stats.closed }}</div>
-        <div class="kcard__lbl">Fermées</div>
+        <div class="kcard__lbl">Closed</div>
       </div>
       <div class="kcard kcard--rejected" (click)="filterStatus='REJECTED'; currentPage=1" [class.kcard--sel]="filterStatus==='REJECTED'">
         <div class="kcard__ico">❌</div>
         <div class="kcard__num">{{ stats.rejected }}</div>
-        <div class="kcard__lbl">Rejetées</div>
+        <div class="kcard__lbl">Rejected</div>
       </div>
     </div>
 
@@ -194,8 +194,8 @@
         </div>
       </div>
       <div class="fpanel__foot">
-        <button class="lnk-btn" (click)="resetFilters()">Réinitialiser tous les filtres</button>
-        <button class="tb-btn tb-btn--primary" (click)="showFilters=false">Fermer</button>
+        <button class="lnk-btn" (click)="resetFilters()">Reset all filters</button>
+        <button class="tb-btn tb-btn--primary" (click)="showFilters=false">Close</button>
         <!-- Panneau de filtrage modération -->
 <div class="moderation-panel" *ngIf="showModerationPanel">
   <div class="moderation-options">
@@ -212,7 +212,7 @@
     <button class="mod-option mod-option--clean" 
             [class.active]="filterModeration === 'clean'"
             (click)="filterModeration = 'clean'; currentPage = 1">
-      ✅ Approuvées
+      ✅ Approved
     </button>
   </div>
 </div>
@@ -223,20 +223,20 @@
     <div class="ebar" *ngIf="error">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       {{ error }}
-      <button class="ebar__btn" (click)="loadReclamations()">Réessayer</button>
+      <button class="ebar__btn" (click)="loadReclamations()">Retry</button>
     </div>
 
     <!-- Table -->
     <div class="tcard">
       <div class="tcard__loading" *ngIf="loading">
         <div class="ring"></div>
-        <span>Chargement...</span>
+        <span>Loading...</span>
       </div>
 
       <div class="tcard__empty" *ngIf="!loading && filteredReclamations.length === 0">
         <div class="empty-ico">📭</div>
-        <p>Aucune réclamation trouvée</p>
-        <button class="lnk-btn" (click)="resetFilters()" *ngIf="activeFiltersCount>0">Réinitialiser les filtres</button>
+        <p>No complaints found</p>
+        <button class="lnk-btn" (click)="resetFilters()" *ngIf="activeFiltersCount>0">Reset filters</button>
       </div>
 
       <div *ngIf="!loading && filteredReclamations.length > 0">
@@ -247,9 +247,9 @@
               <th>Apprenant</th>
               <th class="dt__sort" (click)="sort('type')">Type <span class="si si--{{ sortIcon('type') }}"></span></th>
               <th>Sujet</th>
-              <th class="dt__sort" (click)="sort('priority')">Priorité <span class="si si--{{ sortIcon('priority') }}"></span></th>
-              <th class="dt__sort" (click)="sort('gravity')">Gravité <span class="si si--{{ sortIcon('gravity') }}"></span></th>
-              <th class="dt__sort" (click)="sort('status')">Statut <span class="si si--{{ sortIcon('status') }}"></span></th>
+              <th class="dt__sort" (click)="sort('priority')">Priority <span class="si si--{{ sortIcon('priority') }}"></span></th>
+              <th class="dt__sort" (click)="sort('gravity')">Gravity <span class="si si--{{ sortIcon('gravity') }}"></span></th>
+              <th class="dt__sort" (click)="sort('status')">Status <span class="si si--{{ sortIcon('status') }}"></span></th>
               <th class="dt__sort" (click)="sort('date')">Date <span class="si si--{{ sortIcon('date') }}"></span></th>
               <th>Actions</th>
             </tr>
@@ -260,7 +260,7 @@
                 (click)="openDetail(rec)">
               <td class="dt__id">#{{ rec.id }}</td>
               <td>
-                <div class="av av--{{ +rec.learnerId % 5 }}">{{ rec.learnerId }}</div>
+                <div class="av av--{{ +rec.learnerId % 5 }}">{{ currentUser?.fullName }}</div>
               </td>
               <td>
                 <span class="tpill"
@@ -375,12 +375,12 @@
           <button class="action-btn action-btn--resolve"
                   *ngIf="selectedReclamation.status === 'IN_PROGRESS'"
                   (click)="markResolved()">
-            ✅ Marquer résolue
+            ✅ Mark as resolved
           </button>
           <button class="action-btn action-btn--reject"
                   *ngIf="selectedReclamation.status === 'PENDING' || selectedReclamation.status === 'IN_PROGRESS'"
                   (click)="markRejected()">
-            ❌ Rejeter
+            ❌ Reject
           </button>
           <button class="action-btn action-btn--delete" (click)="deleteReclamation(selectedReclamation.id!)">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -428,10 +428,10 @@
               [disabled]="isTranslating">
         <div class="ring ring--xs" *ngIf="isTranslating"
              style="border-top-color:#15803d;border-color:rgba(21,128,61,.3)"></div>
-        <span *ngIf="!isTranslating && !isTranslated">🌐 Traduire</span>
-        <span *ngIf="!isTranslating && isTranslated && showTranslation">👁 Masquer</span>
-        <span *ngIf="!isTranslating && isTranslated && !showTranslation">👁 Afficher</span>
-        <span *ngIf="isTranslating">Traduction...</span>
+        <span *ngIf="!isTranslating && !isTranslated">🌐 Translate</span>
+        <span *ngIf="!isTranslating && isTranslated && showTranslation">👁 Hide</span>
+        <span *ngIf="!isTranslating && isTranslated && !showTranslation">👁 Show</span>
+        <span *ngIf="isTranslating">Translation...</span>
       </button>
     </div>
   </div>
@@ -439,7 +439,7 @@
   <!-- Chargement -->
   <div class="translation-banner__loading" *ngIf="isTranslating">
     <div class="ring ring--sm"></div>
-    <span>Traduction via IA en cours...</span>
+    <span>Translation via AI in progress...</span>
   </div>
 
   <!-- Résultat -->
@@ -489,8 +489,8 @@
       </svg>
     </div>
     <div class="mod-header-text">
-      <div class="mod-header-title">Vérification requise</div>
-      <div class="mod-header-sub">Réclamation #{{ selectedReclamation.id }} · Contenu potentiellement inapproprié</div>
+      <div class="mod-header-title">Verification required</div>
+      <div class="mod-header-sub">Complaint #{{ selectedReclamation.id }} · Potentially inappropriate content</div>
     </div>
     <span class="mod-status-pill">{{ getStatusConfig(selectedReclamation.status).label }}</span>
   </div>
@@ -499,7 +499,7 @@
     <div class="mod-alert">
       <div class="mod-alert-dot"></div>
       <div>
-        <div class="mod-alert-label">Mots interdits détectés</div>
+        <div class="mod-alert-label">Forbidden words detected</div>
         <div class="mod-words">
           <span class="mod-word-tag" *ngFor="let w of (selectedReclamation.flaggedWords || [])">{{ w }}</span>
         </div>
@@ -507,7 +507,7 @@
     </div>
 
     <div class="mod-section">
-      <div class="mod-section-label">Sujet</div>
+      <div class="mod-section-label">Subject</div>
       <div class="mod-section-content" 
      [innerHTML]="highlightWords(selectedReclamation.subject, selectedReclamation.flaggedWords || [])">
 </div>
@@ -522,17 +522,17 @@
 
     <div class="mod-actions">
       <button class="mod-btn mod-btn-approve" (click)="approveReclamation()">
-  ✓ Approuver
+  ✓ Approve
 </button>
 
 <!-- Remplacer openEditMode() → editAndApprove() -->
 <button class="mod-btn mod-btn-edit" (click)="editAndApprove()">
-  ✎ Modifier
+  ✎ modify
 </button>
 
 <!-- Remplacer rejectReclamation() reste tel quel — déjà correct -->
 <button class="mod-btn mod-btn-reject" (click)="rejectReclamation()">
-  ✕ Rejeter
+  ✕ Reject
 </button>
     </div>
   </div>
@@ -592,7 +592,7 @@
                 <span class="spec-item__v">{{ selectedReclamation.certificateType }}</span>
               </div>
               <div class="spec-item" *ngIf="selectedReclamation.completionDate">
-                <span class="spec-item__k">Complétion</span>
+                <span class="spec-item__k">Completion</span>
                 <span class="spec-item__v">{{ selectedReclamation.completionDate }}</span>
               </div>
               <div class="spec-item spec-item--full" *ngIf="selectedReclamation.pageUrl">
@@ -619,7 +619,7 @@
 
             <div class="thread" *ngIf="!loadingResponses">
               <div class="thread__empty" *ngIf="reclamationResponses.length === 0">
-                Aucun message pour le moment. Soyez le premier à répondre.
+                No messages yet. Be the first to reply.
               </div>
               <div *ngFor="let resp of reclamationResponses"
                    class="msg"
@@ -721,10 +721,10 @@
                 <div class="reply__hints">
                   <span *ngIf="!isInternalNote && selectedReclamation.status === 'PENDING'"
                         class="reply__auto-hint">
-                    ⚡ Le statut passera automatiquement à <strong>En cours</strong> après envoi
+                    ⚡ The status will automatically change to <strong>En cours</strong> après envoi
                   </span>
                   <span *ngIf="isInternalNote" class="reply__internal-hint">
-                    🔒 Non visible par l'apprenant
+                    🔒 Not visible to the learner
                   </span>
                 </div>
                 <button class="send-btn"
@@ -759,13 +759,13 @@
                       (click)="markResolved()"
                       [disabled]="selectedReclamation.status === 'RESOLVED' || selectedReclamation.status === 'CLOSED'"
                       [class.qa--disabled]="selectedReclamation.status === 'RESOLVED' || selectedReclamation.status === 'CLOSED'">
-                ✅ Marquer résolue
+                ✅ Mark as resolved
               </button>
               <button class="qa qa--reject"
                       (click)="markRejected()"
                       [disabled]="selectedReclamation.status === 'REJECTED' || selectedReclamation.status === 'CLOSED'"
                       [class.qa--disabled]="selectedReclamation.status === 'REJECTED' || selectedReclamation.status === 'CLOSED'">
-                ❌ Rejeter
+                ❌ Reject
               </button>
               <button class="qa qa--advance"
                       (click)="advanceStatus(selectedReclamation)"
@@ -784,7 +784,7 @@
       <line x1="16" y1="17" x2="8" y2="17"/>
       <polyline points="10 9 9 9 8 9"/>
     </svg>
-    Intégration projet
+    Project integration
   </div>
   <div class="sc__body">
     
@@ -839,7 +839,7 @@
             <line x1="12" y1="18" x2="12" y2="12"/>
             <line x1="9" y1="15" x2="15" y2="15"/>
           </svg>
-          Créer un ticket {{ getSelectedToolLabel() }}
+          Create ticket {{ getSelectedToolLabel() }}
         </ng-container>
       </button>
       
@@ -873,19 +873,19 @@
                 <span class="sr__v">ID #{{ selectedReclamation.learnerId }}</span>
               </div>
               <div class="sr">
-                <span class="sr__k">Créée</span>
+                <span class="sr__k">Created</span>
                 <span class="sr__v">{{ formatDate(selectedReclamation.createdDate) }}</span>
               </div>
               <div class="sr" *ngIf="selectedReclamation.updatedDate">
-                <span class="sr__k">Modifiée</span>
+                <span class="sr__k">Updated</span>
                 <span class="sr__v">{{ formatRelative(selectedReclamation.updatedDate) }}</span>
               </div>
               <div class="sr" *ngIf="selectedReclamation.resolvedDate">
-                <span class="sr__k">Résolue</span>
+                <span class="sr__k">Resolved</span>
                 <span class="sr__v sr__v--green">{{ formatDate(selectedReclamation.resolvedDate) }}</span>
               </div>
               <div class="sr" *ngIf="selectedReclamation.adminId">
-                <span class="sr__k">Assignée à</span>
+                <span class="sr__k">Assigned to</span>
                 <span class="sr__v">Admin #{{ selectedReclamation.adminId }}</span>
               </div>
             </div>
@@ -894,22 +894,22 @@
           <!-- Contact -->
           <div class="sc"
                *ngIf="selectedReclamation.contactPhone || selectedReclamation.desiredResolutionDate || selectedReclamation.attachmentUrl">
-            <div class="sc__h">Contact & délais</div>
+            <div class="sc__h">Contact & deadlines</div>
             <div class="sc__rows">
               <div class="sr" *ngIf="selectedReclamation.contactPhone">
-                <span class="sr__k">Téléphone</span>
+                <span class="sr__k">Phone</span>
                 <a [href]="'tel:' + selectedReclamation.contactPhone" class="sr__link">
                   {{ selectedReclamation.contactPhone }}
                 </a>
               </div>
               <div class="sr" *ngIf="selectedReclamation.desiredResolutionDate">
-                <span class="sr__k">Date souhaitée</span>
+                <span class="sr__k">Desired resolution date</span>
                 <span class="sr__v">{{ selectedReclamation.desiredResolutionDate }}</span>
               </div>
               <div class="sr" *ngIf="selectedReclamation.attachmentUrl">
-                <span class="sr__k">Pièce jointe</span>
+                <span class="sr__k">Attachment</span>
                 <a [href]="selectedReclamation.attachmentUrl" target="_blank" class="sr__link">
-                  Voir le fichier ↗
+                  View file ↗
                 </a>
               </div>
             </div>
@@ -917,7 +917,7 @@
 
           <!-- Additional info -->
           <div class="sc" *ngIf="selectedReclamation.additionalInfo">
-            <div class="sc__h">Notes apprenant</div>
+            <div class="sc__h">Learner notes</div>
             <p class="sc__text">{{ selectedReclamation.additionalInfo }}</p>
           </div>
 

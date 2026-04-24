@@ -5,7 +5,9 @@ import { PlanningService } from '../../services/planning.service';
 import { Session, SessionStatus } from '../../models/session';
 import { Planning } from '../../models/planning';
 import { UserService } from '../../../services/user.service';
-
+import { Observable } from 'rxjs/internal/Observable';
+import { of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 @Component({
   selector: 'app-session-list',
   templateUrl: './session-list.component.html',
@@ -110,53 +112,105 @@ export class SessionListComponent implements OnInit {
       return;
     }
 
-    this.sessionService.getSessionsByUserAndCourse(this.userId, this.courseId).subscribe({
-      next: (data) => {
-        this.sessions = data || [];
-        this.applyFilters();
-      },
-      error: (error) => {
-        this.showMessage('Erreur lors du chargement des sessions', 'error');
-        console.error('Error loading sessions:', error);
-        this.sessions = [];
-        this.filteredSessions = [];
-      }
+   this.sessionService.getSessionsByUserAndCourse(this.userId, this.courseId).subscribe({
+  next: (data) => {
+    this.sessions = data || [];
+
+    // 🔥 LOAD PLANNINGS FOR EACH SESSION
+    this.sessions.forEach(session => {
+      this.loadPlanning(session.id);
     });
+
+    this.applyFilters();
+  },
+  error: (error) => {
+    this.showMessage('Erreur lors du chargement des sessions', 'error');
+    this.sessions = [];
+    this.filteredSessions = [];
+  }
+});
   }
 
   // Lazy check if session has a planning
-  hasPlanning(sessionId: number | null | undefined): boolean {
-    return sessionId != null && this.planningsCache.has(sessionId) && !!this.planningsCache.get(sessionId);
+  hasPlanning(sessionId: number | null | undefined): Observable<boolean> {
+  if (sessionId == null) {
+    return of(false);
   }
+
+  return this.planningService.getPlanningsBySession(sessionId).pipe(
+    map(plannings => plannings && plannings.length > 0),
+    catchError(() => of(false))
+  );
+}
 
   // Lazy load planning for a session
-  loadPlanning(sessionId: number | null | undefined): void {
-    if (!sessionId || this.planningsCache.has(sessionId)) return;
+loadPlanning(sessionId: number | null | undefined): void {
+  if (sessionId == null) return;
 
-    this.planningService.getPlanningsBySession(sessionId).subscribe({
-      next: (plannings) => {
-        this.planningsCache.set(sessionId, plannings[0] || null);
-      },
-      error: (err) => {
-        console.error(`Error loading planning for session ${sessionId}:`, err);
-        this.planningsCache.set(sessionId, null);
-      }
-    });
-  }
+  // prevent duplicate calls
+  if (this.planningsCache.has(sessionId)) return;
+
+  this.planningService.getPlanningsBySession(sessionId).subscribe({
+    next: (plannings) => {
+
+      const planning = plannings && plannings.length > 0 ? plannings[0] : null;
+
+      this.planningsCache.set(sessionId, planning);
+
+      // force UI refresh (important in some cases)
+      this.filteredSessions = [...this.filteredSessions];
+    },
+    error: (err) => {
+      console.error(`Error loading planning for session ${sessionId}:`, err);
+      this.planningsCache.set(sessionId, null);
+    }
+  });
+}
+
+
 
   // Get planning object for a session
-  getPlanningBySession(sessionId: number): Planning | undefined {
-    return this.planningsCache.get(sessionId) || undefined;
-  }
-
+  getPlanningBySession(sessionId: number | null | undefined): Planning | undefined {
+  if (sessionId == null) return undefined;
+  return this.planningsCache.get(sessionId) ?? undefined;
+}
   handlePlanningClick(sessionId: number): void {
-    const planning = this.getPlanningBySession(sessionId);
-    if (planning && planning.id) {
-      this.router.navigate(['/plannings', planning.id]);
-    } else {
-      this.router.navigate(['/planning/add'], { queryParams: { sessionId } });
+  this.planningService.getPlanningsBySession(sessionId).subscribe({
+    next: (res: any) => {
+
+      console.log('Planning API response:', res);
+
+      // CASE 1: array
+      let planning = Array.isArray(res) ? res[0] : null;
+
+      // CASE 2: object
+      if (!planning && res?.id) {
+        planning = res;
+      }
+
+      // CASE 3: wrapped response
+      if (!planning && res?.data) {
+        planning = Array.isArray(res.data) ? res.data[0] : res.data;
+      }
+
+      if (planning?.id) {
+        this.router.navigate(['/plannings', planning.id]);
+      } else {
+        this.router.navigate(['/planning/add'], {
+          queryParams: { sessionId }
+        });
+      }
+
+    },
+    error: (err) => {
+      console.error('Error:', err);
+
+      this.router.navigate(['/planning/add'], {
+        queryParams: { sessionId }
+      });
     }
-  }
+  });
+}
 
   onSearchInput(): void {
     clearTimeout(this.searchTimeout);

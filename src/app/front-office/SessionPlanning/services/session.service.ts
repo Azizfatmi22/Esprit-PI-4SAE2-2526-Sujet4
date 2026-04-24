@@ -48,9 +48,14 @@ export class SessionService {
     return this.http.post<void>(`${this.apiUrl}/${id}/cancel`, {});
   }
   // POST /api/sessions/update-statuses - Update all session statuses
-  updateAllStatuses(): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/update-statuses`, {});
-  }
+  updateAllStatuses(): Observable<string> {
+ return this.http.post(
+  `${this.apiUrl
+  }/update-statuses`,
+  {},
+  { responseType: 'text' }
+);
+}
 
   // GET /api/sessions/check-trainer-availability - Check if trainer is available
   checkTrainerAvailability(trainerId: string, date: string): Observable<boolean> {
