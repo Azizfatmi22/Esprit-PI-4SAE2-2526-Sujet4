@@ -28,7 +28,8 @@ import java.util.concurrent.TimeUnit;
  * Auto-stop : si l'admin ne renvoie pas d'événement pendant 4s → isTyping=false automatique
  */
 @Controller
-public class TypingController {
+public class
+TypingController {
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;

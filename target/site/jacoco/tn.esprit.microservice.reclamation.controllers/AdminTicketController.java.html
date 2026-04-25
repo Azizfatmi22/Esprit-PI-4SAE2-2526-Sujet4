@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminTicketController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Reclamation-service</a> &gt; <a href="index.source.html" class="el_package">tn.esprit.microservice.reclamation.controllers</a> &gt; <span class="el_source">AdminTicketController.java</span></div><h1>AdminTicketController.java</h1><pre class="source lang-java linenums">package tn.esprit.microservice.reclamation.controllers;
 
-// AdminTicketController.java
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -18,15 +18,25 @@ import java.util.Map;
 
 @RestController
 @RequestMapping(&quot;/msreclamation/admin&quot;)
-//@CrossOrigin(origins = &quot;http://localhost:4200&quot;)
-<span class="fc" id="L22">public class AdminTicketController {</span>
+<span class="fc" id="L21">public class AdminTicketController {</span>
+
+<span class="fc" id="L23">    private static final Logger logger = LoggerFactory.getLogger(AdminTicketController.class);</span>
+
+    // Constantes pour éviter la duplication
+    private static final String RECLAMATION_NOT_FOUND = &quot;Réclamation non trouvée&quot;;
+    private static final String TICKET_ID = &quot;ticketId&quot;;
+    private static final String TICKET_URL = &quot;ticketUrl&quot;;
+    private static final String TOOL_NAME = &quot;toolName&quot;;
+    private static final String ALREADY_EXISTS = &quot;alreadyExists&quot;;
+    private static final String EXISTS = &quot;exists&quot;;
+    private static final String ERROR = &quot;error&quot;;
 
     @Autowired
-
     private ReclamationRepository reclamationRepository;
 
     @Autowired
     private JiraTicketService jiraTicketService;
+
     @Autowired
     private ReclamationResponseServiceImpl reclamationService;
 
@@ -43,186 +53,150 @@ import java.util.Map;
     private String clickupApiKey;
 
     @PostMapping(&quot;/reclamations/{id}/create-ticket&quot;)
-    public ResponseEntity&lt;?&gt; createExternalTicket(
+    public ResponseEntity&lt;Object&gt; createExternalTicket(
             @PathVariable Long id,
             @RequestBody(required = false) Map&lt;String, String&gt; payload) {
 
         try {
-<span class="fc" id="L51">            Reclamation reclamation = reclamationRepository.findById(id)</span>
-<span class="pc" id="L52">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Réclamation non trouvée&quot;));</span>
+<span class="fc" id="L61">            Reclamation reclamation = reclamationRepository.findById(id)</span>
+<span class="pc" id="L62">                    .orElseThrow(() -&gt; new RuntimeException(RECLAMATION_NOT_FOUND));</span>
 
-<span class="pc bpc" id="L54" title="3 of 4 branches missed.">            if (reclamation.getExternalTicketUrl() != null &amp;&amp; !reclamation.getExternalTicketUrl().isEmpty()) {</span>
-<span class="nc" id="L55">                return ResponseEntity.ok(Map.of(</span>
-<span class="nc" id="L56">                        &quot;alreadyExists&quot;, true,</span>
-<span class="nc" id="L57">                        &quot;ticketId&quot;, reclamation.getExternalTicketId(),</span>
-<span class="nc" id="L58">                        &quot;ticketUrl&quot;, reclamation.getExternalTicketUrl(),</span>
-<span class="nc" id="L59">                        &quot;toolName&quot;, reclamation.getExternalTool()</span>
+<span class="pc bpc" id="L64" title="3 of 4 branches missed.">            if (reclamation.getExternalTicketUrl() != null &amp;&amp; !reclamation.getExternalTicketUrl().isEmpty()) {</span>
+<span class="nc" id="L65">                return ResponseEntity.ok(Map.of(</span>
+<span class="nc" id="L66">                        ALREADY_EXISTS, true,</span>
+<span class="nc" id="L67">                        TICKET_ID, reclamation.getExternalTicketId(),</span>
+<span class="nc" id="L68">                        TICKET_URL, reclamation.getExternalTicketUrl(),</span>
+<span class="nc" id="L69">                        TOOL_NAME, reclamation.getExternalTool()</span>
                 ));
             }
 
-<span class="pc bpc" id="L63" title="2 of 4 branches missed.">            String tool = payload != null &amp;&amp; payload.containsKey(&quot;tool&quot;) ? payload.get(&quot;tool&quot;) : &quot;demo&quot;;</span>
-
+<span class="pc bpc" id="L73" title="2 of 4 branches missed.">            String tool = payload != null &amp;&amp; payload.containsKey(&quot;tool&quot;) ? payload.get(&quot;tool&quot;) : &quot;demo&quot;;</span>
             Map&lt;String, String&gt; result;
 
-<span class="pc bpc" id="L67" title="3 of 4 branches missed.">            switch (tool) {</span>
+<span class="pc bpc" id="L76" title="3 of 4 branches missed.">            switch (tool) {</span>
                 case &quot;jira&quot;:
                     try {
-<span class="fc" id="L70">                        TicketResponseDTO dto = ticketService.createTicket(reclamation, tool);</span>
-
-<span class="fc" id="L72">                        result = new HashMap&lt;&gt;();</span>
-<span class="fc" id="L73">                        result.put(&quot;ticketId&quot;, dto.getTicketId());</span>
-<span class="fc" id="L74">                        result.put(&quot;ticketUrl&quot;, dto.getTicketUrl());</span>
-<span class="fc" id="L75">                        result.put(&quot;toolName&quot;, dto.getToolName());</span>
-
-<span class="nc" id="L77">                    } catch (Exception e) {</span>
-<span class="nc" id="L78">                        result = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L79">                        result.put(&quot;error&quot;, &quot;Erreur Jira: &quot; + e.getMessage());</span>
-<span class="fc" id="L80">                    }</span>
-<span class="nc" id="L81">                    break;</span>
+<span class="fc" id="L79">                        TicketResponseDTO dto = ticketService.createTicket(reclamation, tool);</span>
+<span class="fc" id="L80">                        result = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L81">                        result.put(TICKET_ID, dto.getTicketId());</span>
+<span class="fc" id="L82">                        result.put(TICKET_URL, dto.getTicketUrl());</span>
+<span class="fc" id="L83">                        result.put(TOOL_NAME, dto.getToolName());</span>
+<span class="nc" id="L84">                    } catch (Exception e) {</span>
+<span class="nc" id="L85">                        logger.error(&quot;Erreur Jira: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L86">                        result = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L87">                        result.put(ERROR, &quot;Erreur Jira: &quot; + e.getMessage());</span>
+<span class="fc" id="L88">                    }</span>
+<span class="nc" id="L89">                    break;</span>
                 case &quot;linear&quot;:
-<span class="nc" id="L83">                    result = createLinearTicket(reclamation);</span>
-<span class="nc" id="L84">                    break;</span>
+<span class="nc" id="L91">                    result = createLinearTicket(reclamation);</span>
+<span class="nc" id="L92">                    break;</span>
                 case &quot;clickup&quot;:
-<span class="nc" id="L86">                    result = createClickupTicket(reclamation);</span>
-<span class="nc" id="L87">                    break;</span>
+<span class="nc" id="L94">                    result = createClickupTicket(reclamation);</span>
+<span class="nc" id="L95">                    break;</span>
                 default:
-<span class="nc" id="L89">                    result = createDemoTicket(reclamation);</span>
+<span class="nc" id="L97">                    result = createDemoTicket(reclamation);</span>
                     break;
             }
 
-<span class="pc bpc" id="L93" title="1 of 2 branches missed.">            if (result.containsKey(&quot;error&quot;)) {</span>
-<span class="nc" id="L94">                return ResponseEntity.status(500).body(result);</span>
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">            if (result.containsKey(ERROR)) {</span>
+<span class="nc" id="L102">                return ResponseEntity.status(500).body(result);</span>
             }
 
-<span class="fc" id="L97">            reclamation.setExternalTicketId(result.get(&quot;ticketId&quot;));</span>
-<span class="fc" id="L98">            reclamation.setExternalTicketUrl(result.get(&quot;ticketUrl&quot;));</span>
-<span class="fc" id="L99">            reclamation.setExternalTool(result.get(&quot;toolName&quot;));</span>
-<span class="fc" id="L100">            reclamationRepository.save(reclamation);</span>
+<span class="fc" id="L105">            reclamation.setExternalTicketId(result.get(TICKET_ID));</span>
+<span class="fc" id="L106">            reclamation.setExternalTicketUrl(result.get(TICKET_URL));</span>
+<span class="fc" id="L107">            reclamation.setExternalTool(result.get(TOOL_NAME));</span>
+<span class="fc" id="L108">            reclamationRepository.save(reclamation);</span>
 
-<span class="fc" id="L102">            return ResponseEntity.ok(Map.of(</span>
-<span class="fc" id="L103">                    &quot;ticketId&quot;, result.get(&quot;ticketId&quot;),</span>
-<span class="fc" id="L104">                    &quot;ticketUrl&quot;, result.get(&quot;ticketUrl&quot;),</span>
-<span class="fc" id="L105">                    &quot;toolName&quot;, result.get(&quot;toolName&quot;),</span>
-<span class="fc" id="L106">                    &quot;alreadyExists&quot;, false</span>
+<span class="fc" id="L110">            return ResponseEntity.ok(Map.of(</span>
+<span class="fc" id="L111">                    TICKET_ID, result.get(TICKET_ID),</span>
+<span class="fc" id="L112">                    TICKET_URL, result.get(TICKET_URL),</span>
+<span class="fc" id="L113">                    TOOL_NAME, result.get(TOOL_NAME),</span>
+<span class="fc" id="L114">                    ALREADY_EXISTS, false</span>
             ));
 
-<span class="nc" id="L109">        } catch (Exception e) {</span>
-<span class="nc" id="L110">            Map&lt;String, String&gt; error = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L111">            error.put(&quot;error&quot;, e.getMessage());</span>
-<span class="nc" id="L112">            return ResponseEntity.status(500).body(error);</span>
+<span class="nc" id="L117">        } catch (Exception e) {</span>
+<span class="nc" id="L118">            logger.error(&quot;Erreur création ticket: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L119">            Map&lt;String, String&gt; error = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L120">            error.put(ERROR, e.getMessage());</span>
+<span class="nc" id="L121">            return ResponseEntity.status(500).body(error);</span>
         }
     }
-    @GetMapping(&quot;/reclamations/{id}/ticket&quot;)
-    public ResponseEntity&lt;?&gt; getTicketInfo(@PathVariable Long id) {
-        try {
-<span class="nc" id="L118">            Reclamation rec = reclamationRepository.findById(id)</span>
-<span class="nc" id="L119">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Réclamation non trouvée&quot;));</span>
 
-<span class="nc bnc" id="L121" title="All 4 branches missed.">            if (rec.getExternalTicketUrl() != null &amp;&amp; !rec.getExternalTicketUrl().isEmpty()) {</span>
-<span class="nc" id="L122">                return ResponseEntity.ok(Map.of(</span>
-<span class="nc" id="L123">                        &quot;exists&quot;, true,</span>
-<span class="nc" id="L124">                        &quot;ticketId&quot;, rec.getExternalTicketId(),</span>
-<span class="nc" id="L125">                        &quot;ticketUrl&quot;, rec.getExternalTicketUrl(),</span>
-<span class="nc" id="L126">                        &quot;toolName&quot;, rec.getExternalTool()</span>
+    @GetMapping(&quot;/reclamations/{id}/ticket&quot;)
+    public ResponseEntity&lt;Object&gt; getTicketInfo(@PathVariable Long id) {
+        try {
+<span class="nc" id="L128">            Reclamation rec = reclamationRepository.findById(id)</span>
+<span class="nc" id="L129">                    .orElseThrow(() -&gt; new RuntimeException(RECLAMATION_NOT_FOUND));</span>
+
+<span class="nc bnc" id="L131" title="All 4 branches missed.">            if (rec.getExternalTicketUrl() != null &amp;&amp; !rec.getExternalTicketUrl().isEmpty()) {</span>
+<span class="nc" id="L132">                return ResponseEntity.ok(Map.of(</span>
+<span class="nc" id="L133">                        EXISTS, true,</span>
+<span class="nc" id="L134">                        TICKET_ID, rec.getExternalTicketId(),</span>
+<span class="nc" id="L135">                        TICKET_URL, rec.getExternalTicketUrl(),</span>
+<span class="nc" id="L136">                        TOOL_NAME, rec.getExternalTool()</span>
                 ));
             }
-<span class="nc" id="L129">            return ResponseEntity.ok(Map.of(&quot;exists&quot;, false));</span>
-<span class="nc" id="L130">        } catch (Exception e) {</span>
-<span class="nc" id="L131">            return ResponseEntity.ok(Map.of(&quot;exists&quot;, false));</span>
+<span class="nc" id="L139">            return ResponseEntity.ok(Map.of(EXISTS, false));</span>
+<span class="nc" id="L140">        } catch (Exception e) {</span>
+<span class="nc" id="L141">            logger.error(&quot;Erreur récupération ticket: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L142">            return ResponseEntity.ok(Map.of(EXISTS, false));</span>
         }
     }
 
-    // Mode démo - pas besoin d'API externe
+    @PostMapping(&quot;/reclamations/{id}/create-ticket-v2&quot;)
+    public ResponseEntity&lt;Object&gt; createTicketV2(
+            @PathVariable Long id,
+            @RequestBody Map&lt;String, String&gt; body) {
+        try {
+<span class="nc" id="L151">            String tool = body.get(&quot;tool&quot;);</span>
+<span class="nc" id="L152">            Reclamation rec = reclamationRepository.findById(id)</span>
+<span class="nc" id="L153">                    .orElseThrow(() -&gt; new RuntimeException(RECLAMATION_NOT_FOUND));</span>
+
+<span class="nc" id="L155">            TicketResponseDTO dto = ticketService.createTicket(rec, tool);</span>
+
+<span class="nc" id="L157">            return ResponseEntity.ok(Map.of(</span>
+<span class="nc" id="L158">                    TICKET_ID, dto.getTicketId(),</span>
+<span class="nc" id="L159">                    TICKET_URL, dto.getTicketUrl(),</span>
+<span class="nc" id="L160">                    TOOL_NAME, dto.getToolName(),</span>
+<span class="nc" id="L161">                    ALREADY_EXISTS, false</span>
+            ));
+<span class="nc" id="L163">        } catch (Exception e) {</span>
+<span class="nc" id="L164">            logger.error(&quot;Erreur création ticket v2: {}&quot;, e.getMessage(), e);</span>
+<span class="nc" id="L165">            return ResponseEntity.status(500).body(Map.of(ERROR, e.getMessage()));</span>
+        }
+    }
+
     private Map&lt;String, String&gt; createDemoTicket(Reclamation rec) {
-<span class="nc" id="L137">        String demoId = &quot;DEMO-&quot; + rec.getId();</span>
-<span class="nc" id="L138">        String demoUrl = &quot;https://demo-linear.app/issue/&quot; + demoId;</span>
-
-<span class="nc" id="L140">        Map&lt;String, String&gt; result = new HashMap&lt;&gt;();</span>
-<span class="nc" id="L141">        result.put(&quot;ticketId&quot;, demoId);</span>
-<span class="nc" id="L142">        result.put(&quot;ticketUrl&quot;, demoUrl);</span>
-<span class="nc" id="L143">        result.put(&quot;toolName&quot;, &quot;Démo&quot;);</span>
-<span class="nc" id="L144">        return result;</span>
-    }
-
-    private Map&lt;String, String&gt; createJiraTicket(Reclamation rec) {
-<span class="nc" id="L148">        Map&lt;String, String&gt; result = new HashMap&lt;&gt;();</span>
-
-        // Vérifier que Jira est configuré
-<span class="nc bnc" id="L151" title="All 4 branches missed.">        if (jiraUrl == null || jiraUrl.isEmpty()) {</span>
-<span class="nc" id="L152">            result.put(&quot;error&quot;, &quot;Jira non configuré. Vérifiez jira.url dans application.properties&quot;);</span>
-<span class="nc" id="L153">            return result;</span>
-        }
-
-        // Ici votre code Jira existant
-<span class="nc" id="L157">        String ticketId = &quot;JIRA-&quot; + rec.getId();</span>
-<span class="nc" id="L158">        String ticketUrl = jiraUrl + &quot;/browse/&quot; + ticketId;</span>
-
-<span class="nc" id="L160">        result.put(&quot;ticketId&quot;, ticketId);</span>
-<span class="nc" id="L161">        result.put(&quot;ticketUrl&quot;, ticketUrl);</span>
-<span class="nc" id="L162">        result.put(&quot;toolName&quot;, &quot;Jira&quot;);</span>
-<span class="nc" id="L163">        return result;</span>
+<span class="nc" id="L170">        String demoId = &quot;DEMO-&quot; + rec.getId();</span>
+<span class="nc" id="L171">        Map&lt;String, String&gt; result = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L172">        result.put(TICKET_ID, demoId);</span>
+<span class="nc" id="L173">        result.put(TICKET_URL, &quot;https://demo-linear.app/issue/&quot; + demoId);</span>
+<span class="nc" id="L174">        result.put(TOOL_NAME, &quot;Démo&quot;);</span>
+<span class="nc" id="L175">        return result;</span>
     }
 
     private Map&lt;String, String&gt; createLinearTicket(Reclamation rec) {
-<span class="nc" id="L167">        Map&lt;String, String&gt; result = new HashMap&lt;&gt;();</span>
-
-<span class="nc bnc" id="L169" title="All 4 branches missed.">        if (linearApiKey == null || linearApiKey.isEmpty()) {</span>
-<span class="nc" id="L170">            result.put(&quot;error&quot;, &quot;Linear non configuré. Vérifiez linear.api.key dans application.properties&quot;);</span>
-<span class="nc" id="L171">            return result;</span>
+<span class="nc" id="L179">        Map&lt;String, String&gt; result = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L180" title="All 4 branches missed.">        if (linearApiKey == null || linearApiKey.isEmpty()) {</span>
+<span class="nc" id="L181">            result.put(ERROR, &quot;Linear non configuré&quot;);</span>
+<span class="nc" id="L182">            return result;</span>
         }
-
-<span class="nc" id="L174">        String ticketId = &quot;LIN-&quot; + rec.getId();</span>
-<span class="nc" id="L175">        String ticketUrl = &quot;https://linear.app/issue/&quot; + ticketId;</span>
-
-<span class="nc" id="L177">        result.put(&quot;ticketId&quot;, ticketId);</span>
-<span class="nc" id="L178">        result.put(&quot;ticketUrl&quot;, ticketUrl);</span>
-<span class="nc" id="L179">        result.put(&quot;toolName&quot;, &quot;Linear&quot;);</span>
-<span class="nc" id="L180">        return result;</span>
+<span class="nc" id="L184">        result.put(TICKET_ID, &quot;LIN-&quot; + rec.getId());</span>
+<span class="nc" id="L185">        result.put(TICKET_URL, &quot;https://linear.app/issue/LIN-&quot; + rec.getId());</span>
+<span class="nc" id="L186">        result.put(TOOL_NAME, &quot;Linear&quot;);</span>
+<span class="nc" id="L187">        return result;</span>
     }
 
     private Map&lt;String, String&gt; createClickupTicket(Reclamation rec) {
-<span class="nc" id="L184">        Map&lt;String, String&gt; result = new HashMap&lt;&gt;();</span>
-
-<span class="nc bnc" id="L186" title="All 4 branches missed.">        if (clickupApiKey == null || clickupApiKey.isEmpty()) {</span>
-<span class="nc" id="L187">            result.put(&quot;error&quot;, &quot;ClickUp non configuré. Vérifiez clickup.api.key dans application.properties&quot;);</span>
-<span class="nc" id="L188">            return result;</span>
+<span class="nc" id="L191">        Map&lt;String, String&gt; result = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L192" title="All 4 branches missed.">        if (clickupApiKey == null || clickupApiKey.isEmpty()) {</span>
+<span class="nc" id="L193">            result.put(ERROR, &quot;ClickUp non configuré&quot;);</span>
+<span class="nc" id="L194">            return result;</span>
         }
-
-<span class="nc" id="L191">        String ticketId = &quot;CUP-&quot; + rec.getId();</span>
-<span class="nc" id="L192">        String ticketUrl = &quot;https://app.clickup.com/task/&quot; + ticketId;</span>
-
-<span class="nc" id="L194">        result.put(&quot;ticketId&quot;, ticketId);</span>
-<span class="nc" id="L195">        result.put(&quot;ticketUrl&quot;, ticketUrl);</span>
-<span class="nc" id="L196">        result.put(&quot;toolName&quot;, &quot;ClickUp&quot;);</span>
-<span class="nc" id="L197">        return result;</span>
+<span class="nc" id="L196">        result.put(TICKET_ID, &quot;CUP-&quot; + rec.getId());</span>
+<span class="nc" id="L197">        result.put(TICKET_URL, &quot;https://app.clickup.com/task/CUP-&quot; + rec.getId());</span>
+<span class="nc" id="L198">        result.put(TOOL_NAME, &quot;ClickUp&quot;);</span>
+<span class="nc" id="L199">        return result;</span>
     }
-    @PostMapping(&quot;/reclamations/{id}/create-ticket-v2&quot;)
-    public ResponseEntity&lt;?&gt; createTicketV2(
-            @PathVariable Long id,
-            @RequestBody Map&lt;String, String&gt; body
-    ) {
-        try {
-<span class="nc" id="L205">            String tool = body.get(&quot;tool&quot;);</span>
-
-<span class="nc" id="L207">            Reclamation rec = reclamationRepository.findById(id)</span>
-<span class="nc" id="L208">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Réclamation non trouvée&quot;));</span>
-
-<span class="nc" id="L210">            TicketResponseDTO dto = ticketService.createTicket(rec, tool);</span>
-
-<span class="nc" id="L212">            return ResponseEntity.ok(Map.of(</span>
-<span class="nc" id="L213">                    &quot;ticketId&quot;, dto.getTicketId(),</span>
-<span class="nc" id="L214">                    &quot;ticketUrl&quot;, dto.getTicketUrl(),</span>
-<span class="nc" id="L215">                    &quot;toolName&quot;, dto.getToolName(),</span>
-<span class="nc" id="L216">                    &quot;alreadyExists&quot;, false</span>
-            ));
-
-<span class="nc" id="L219">        } catch (Exception e) {</span>
-<span class="nc" id="L220">            return ResponseEntity.status(500).body(Map.of(</span>
-<span class="nc" id="L221">                    &quot;error&quot;, e.getMessage()</span>
-            ));
-        }
-    }
-
-
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

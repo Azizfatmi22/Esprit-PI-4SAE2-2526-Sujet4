@@ -1,4 +1,10 @@
 C:\Users\inesj\Downloads\khedmapi\Reclamation-service\src\test\java\tn\esprit\microservice\reclamation\controllers\AdminTicketControllerTest.java
 C:\Users\inesj\Downloads\khedmapi\Reclamation-service\src\test\java\tn\esprit\microservice\reclamation\MsReclamationApplicationTests.java
+C:\Users\inesj\Downloads\khedmapi\Reclamation-service\src\test\java\tn\esprit\microservice\reclamation\services\impl\AutoCategorizationServiceTest.java
+C:\Users\inesj\Downloads\khedmapi\Reclamation-service\src\test\java\tn\esprit\microservice\reclamation\services\impl\ExtractionServiceTest.java
+C:\Users\inesj\Downloads\khedmapi\Reclamation-service\src\test\java\tn\esprit\microservice\reclamation\services\impl\GravityCalculationServiceTest.java
+C:\Users\inesj\Downloads\khedmapi\Reclamation-service\src\test\java\tn\esprit\microservice\reclamation\services\impl\JiraTicketServiceTest.java
+C:\Users\inesj\Downloads\khedmapi\Reclamation-service\src\test\java\tn\esprit\microservice\reclamation\services\impl\ModerationServiceTest.java
 C:\Users\inesj\Downloads\khedmapi\Reclamation-service\src\test\java\tn\esprit\microservice\reclamation\services\impl\ReclamationResponseServiceImplTest.java
 C:\Users\inesj\Downloads\khedmapi\Reclamation-service\src\test\java\tn\esprit\microservice\reclamation\services\impl\ReclamationServiceImplTest.java
+C:\Users\inesj\Downloads\khedmapi\Reclamation-service\src\test\java\tn\esprit\microservice\reclamation\services\impl\SlaServiceTest.java

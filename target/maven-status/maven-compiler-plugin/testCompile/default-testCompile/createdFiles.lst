@@ -1,4 +1,10 @@
+tn\esprit\microservice\reclamation\services\impl\ExtractionServiceTest.class
 tn\esprit\microservice\reclamation\controllers\AdminTicketControllerTest.class
+tn\esprit\microservice\reclamation\services\impl\AutoCategorizationServiceTest.class
+tn\esprit\microservice\reclamation\services\impl\SlaServiceTest.class
+tn\esprit\microservice\reclamation\services\impl\JiraTicketServiceTest.class
+tn\esprit\microservice\reclamation\services\impl\ReclamationServiceImplTest.class
+tn\esprit\microservice\reclamation\services\impl\GravityCalculationServiceTest.class
 tn\esprit\microservice\reclamation\services\impl\ReclamationResponseServiceImplTest.class
 tn\esprit\microservice\reclamation\MsReclamationApplicationTests.class
-tn\esprit\microservice\reclamation\services\impl\ReclamationServiceImplTest.class
+tn\esprit\microservice\reclamation\services\impl\ModerationServiceTest.class

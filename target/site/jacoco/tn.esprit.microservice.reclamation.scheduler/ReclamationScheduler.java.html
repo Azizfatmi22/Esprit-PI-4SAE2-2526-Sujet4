@@ -22,20 +22,20 @@ public class ReclamationScheduler {
     public void checkSlaBreaches() {
 <span class="fc" id="L23">        System.out.println(&quot;🔍 Vérification SLA...&quot;);</span>
 
-<span class="nc" id="L25">        reclamationRepository.findAll().forEach(r -&gt; {</span>
+<span class="fc" id="L25">        reclamationRepository.findAll().forEach(r -&gt; {</span>
 <span class="nc bnc" id="L26" title="All 2 branches missed.">            if (slaService.isSlaBreached(r)) {</span>
 <span class="nc" id="L27">                slaService.createAlertIfNotExists(r);</span>
 <span class="nc" id="L28">                System.out.println(&quot;🚨 SLA dépassé: réclamation #&quot; + r.getId());</span>
             }
 <span class="nc" id="L30">        });</span>
-<span class="nc" id="L31">    }</span>
+<span class="fc" id="L31">    }</span>
 
     // ── Toutes les 5 minutes : gestion auto des statuts ───────────────────────
     @Scheduled(fixedRate = 300000)
     public void autoManageReclamations() {
 <span class="fc" id="L36">        LocalDateTime tenMinutesAgo = LocalDateTime.now().minusMinutes(10);</span>
 
-<span class="nc" id="L38">        reclamationRepository.findAll().forEach(r -&gt; {</span>
+<span class="fc" id="L38">        reclamationRepository.findAll().forEach(r -&gt; {</span>
 
             // IN_PROGRESS sans activité → RESOLVED
 <span class="nc bnc" id="L41" title="All 2 branches missed.">            if (r.getStatus() == ReclamationStatus.IN_PROGRESS) {</span>
@@ -65,6 +65,6 @@ public class ReclamationScheduler {
                 }
             }
 <span class="nc" id="L67">        });</span>
-<span class="nc" id="L68">    }</span>
+<span class="fc" id="L68">    }</span>
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

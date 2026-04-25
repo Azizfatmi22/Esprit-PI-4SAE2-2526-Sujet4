@@ -11,41 +11,41 @@ import tn.esprit.microservice.reclamation.services.interfaces.IGravityCalculatio
     @Override
     public GravityResult calculateGravity(Reclamation reclamation) {
 
-<span class="nc" id="L14">        int score = 0;</span>
-<span class="nc" id="L15">        String text = (reclamation.getSubject() + &quot; &quot; + reclamation.getDescription()).toLowerCase();</span>
+<span class="fc" id="L14">        int score = 0;</span>
+<span class="fc" id="L15">        String text = (reclamation.getSubject() + &quot; &quot; + reclamation.getDescription()).toLowerCase();</span>
 
-<span class="nc bnc" id="L17" title="All 4 branches missed.">        if (text.contains(&quot;bloque&quot;) || text.contains(&quot;bloqué&quot;)) score += 4;</span>
+<span class="pc bpc" id="L17" title="2 of 4 branches missed.">        if (text.contains(&quot;bloque&quot;) || text.contains(&quot;bloqué&quot;)) score += 4;</span>
 
-<span class="nc bnc" id="L19" title="All 2 branches missed.">        if (reclamation.getType() == ReclamationType.PAYMENT &amp;&amp;</span>
-<span class="nc bnc" id="L20" title="All 4 branches missed.">                reclamation.getAmount() != null &amp;&amp; reclamation.getAmount() &gt; 100) {</span>
-<span class="nc" id="L21">            score += 4;</span>
+<span class="fc bfc" id="L19" title="All 2 branches covered.">        if (reclamation.getType() == ReclamationType.PAYMENT &amp;&amp;</span>
+<span class="pc bpc" id="L20" title="2 of 4 branches missed.">                reclamation.getAmount() != null &amp;&amp; reclamation.getAmount() &gt; 100) {</span>
+<span class="fc" id="L21">            score += 4;</span>
         }
 
-<span class="nc bnc" id="L24" title="All 2 branches missed.">        if (reclamation.getType() == ReclamationType.ACCESS &amp;&amp;</span>
-<span class="nc bnc" id="L25" title="All 2 branches missed.">                text.contains(&quot;total&quot;)) {</span>
+<span class="fc bfc" id="L24" title="All 2 branches covered.">        if (reclamation.getType() == ReclamationType.ACCESS &amp;&amp;</span>
+<span class="pc bpc" id="L25" title="1 of 2 branches missed.">                text.contains(&quot;total&quot;)) {</span>
 <span class="nc" id="L26">            score += 4;</span>
         }
 
-<span class="nc bnc" id="L29" title="All 4 branches missed.">        if (text.contains(&quot;urgent&quot;) || text.contains(&quot;important&quot;)) score += 3;</span>
+<span class="fc bfc" id="L29" title="All 4 branches covered.">        if (text.contains(&quot;urgent&quot;) || text.contains(&quot;important&quot;)) score += 3;</span>
 
-<span class="nc bnc" id="L31" title="All 4 branches missed.">        if (reclamation.getPriority() != null &amp;&amp; reclamation.getPriority() == 1) score += 3;</span>
+<span class="pc bpc" id="L31" title="1 of 4 branches missed.">        if (reclamation.getPriority() != null &amp;&amp; reclamation.getPriority() == 1) score += 3;</span>
 
-<span class="nc bnc" id="L33" title="All 2 branches missed.">        if (reclamation.getType() == ReclamationType.TECHNICAL) score += 2;</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        if (reclamation.getType() == ReclamationType.TECHNICAL) score += 2;</span>
 
         // ✅ FIX ICI
         IGravityCalculationService.GravityLevel level;
 
-<span class="nc bnc" id="L38" title="All 2 branches missed.">        if (score &gt;= 7) {</span>
-<span class="nc" id="L39">            level = IGravityCalculationService.GravityLevel.CRITICAL;</span>
-<span class="nc bnc" id="L40" title="All 2 branches missed.">        } else if (score &gt;= 5) {</span>
-<span class="nc" id="L41">            level = IGravityCalculationService.GravityLevel.HIGH;</span>
-<span class="nc bnc" id="L42" title="All 2 branches missed.">        } else if (score &gt;= 3) {</span>
-<span class="nc" id="L43">            level = IGravityCalculationService.GravityLevel.MEDIUM;</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (score &gt;= 7) {</span>
+<span class="fc" id="L39">            level = IGravityCalculationService.GravityLevel.CRITICAL;</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        } else if (score &gt;= 5) {</span>
+<span class="fc" id="L41">            level = IGravityCalculationService.GravityLevel.HIGH;</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        } else if (score &gt;= 3) {</span>
+<span class="fc" id="L43">            level = IGravityCalculationService.GravityLevel.MEDIUM;</span>
         } else {
-<span class="nc" id="L45">            level = IGravityCalculationService.GravityLevel.LOW;</span>
+<span class="fc" id="L45">            level = IGravityCalculationService.GravityLevel.LOW;</span>
         }
 
-<span class="nc" id="L48">        return new GravityResult(score, level);</span>
+<span class="fc" id="L48">        return new GravityResult(score, level);</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

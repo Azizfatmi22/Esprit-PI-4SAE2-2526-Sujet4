@@ -15,16 +15,16 @@ import java.util.Map;
     );
 
     public int getSlaMinutes(int priority) {
-<span class="nc" id="L18">        return slaMinutes.getOrDefault(priority, 12);</span>
+<span class="fc" id="L18">        return slaMinutes.getOrDefault(priority, 12);</span>
     }
 
     public String getPriorityLabel(int priority) {
-<span class="nc bnc" id="L22" title="All 4 branches missed.">        return switch (priority) {</span>
-<span class="nc" id="L23">            case 1 -&gt; &quot;HAUTE&quot;;</span>
+<span class="pc bpc" id="L22" title="3 of 4 branches missed.">        return switch (priority) {</span>
+<span class="fc" id="L23">            case 1 -&gt; &quot;HAUTE&quot;;</span>
 <span class="nc" id="L24">            case 2 -&gt; &quot;MOYENNE&quot;;</span>
 <span class="nc" id="L25">            case 3 -&gt; &quot;BASSE&quot;;</span>
 <span class="nc" id="L26">            default -&gt; &quot;INCONNUE&quot;;</span>
         };
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

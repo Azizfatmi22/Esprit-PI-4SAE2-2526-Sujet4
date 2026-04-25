@@ -46,24 +46,24 @@ public class JiraTicketService implements TicketService {
 
 <span class="nc" id="L47">        Map&lt;String, Object&gt; payload = buildJiraPayload(reclamation);</span>
 <span class="nc" id="L48">        HttpHeaders headers = buildJiraHeaders();</span>
-
-<span class="nc" id="L50">        String url = jiraUrl + &quot;/rest/api/3/issue&quot;;</span>
-
-<span class="nc" id="L52">        HttpEntity&lt;Map&lt;String, Object&gt;&gt; entity = new HttpEntity&lt;&gt;(payload, headers);</span>
+<span class="nc" id="L49">        String url = jiraUrl + &quot;/rest/api/3/issue&quot;;</span>
+<span class="nc" id="L50">        HttpEntity&lt;Map&lt;String, Object&gt;&gt; entity = new HttpEntity&lt;&gt;(payload, headers);</span>
 
         try {
-<span class="nc" id="L55">            ResponseEntity&lt;Map&gt; response = restTemplate.exchange(</span>
-                    url,
-                    HttpMethod.POST,
-                    entity,
-                    Map.class
+<span class="nc" id="L53">            ResponseEntity&lt;Map&gt; response = restTemplate.exchange(</span>
+                    url, HttpMethod.POST, entity, Map.class
             );
 
-<span class="nc bnc" id="L62" title="All 4 branches missed.">            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {</span>
-<span class="nc" id="L63">                throw new RuntimeException(&quot;Jira API failed: &quot; + response.getStatusCode());</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">            if (!response.getStatusCode().is2xxSuccessful()) {</span>
+<span class="nc" id="L58">                throw new RuntimeException(&quot;Jira API failed: &quot; + response.getStatusCode());</span>
             }
 
-<span class="nc" id="L66">            Map responseBody = response.getBody();</span>
+<span class="nc" id="L61">            Map responseBody = response.getBody();</span>
+
+            // ✅ Vérification explicite du null
+<span class="nc bnc" id="L64" title="All 2 branches missed.">            if (responseBody == null) {</span>
+<span class="nc" id="L65">                throw new RuntimeException(&quot;Jira response body is null&quot;);</span>
+            }
 
 <span class="nc bnc" id="L68" title="All 2 branches missed.">            if (!responseBody.containsKey(&quot;key&quot;)) {</span>
 <span class="nc" id="L69">                throw new RuntimeException(&quot;Jira response invalid: &quot; + responseBody);</span>
@@ -92,49 +92,49 @@ public class JiraTicketService implements TicketService {
 
     private Map&lt;String, Object&gt; buildJiraPayload(Reclamation rec) {
 
-<span class="nc" id="L95">        return Map.of(</span>
-<span class="nc" id="L96">                &quot;fields&quot;, Map.of(</span>
-<span class="nc" id="L97">                        &quot;project&quot;, Map.of(&quot;key&quot;, projectKey),</span>
+<span class="fc" id="L95">        return Map.of(</span>
+<span class="fc" id="L96">                &quot;fields&quot;, Map.of(</span>
+<span class="fc" id="L97">                        &quot;project&quot;, Map.of(&quot;key&quot;, projectKey),</span>
 
-<span class="nc" id="L99">                        &quot;summary&quot;, &quot;[Réclamation #&quot; + rec.getId() + &quot;] &quot; + truncate(rec.getSubject(), 200),</span>
+<span class="fc" id="L99">                        &quot;summary&quot;, &quot;[Réclamation #&quot; + rec.getId() + &quot;] &quot; + truncate(rec.getSubject(), 200),</span>
 
-<span class="nc" id="L101">                        &quot;description&quot;, Map.of(</span>
+<span class="fc" id="L101">                        &quot;description&quot;, Map.of(</span>
                                 &quot;type&quot;, &quot;doc&quot;,
-<span class="nc" id="L103">                                &quot;version&quot;, 1,</span>
-<span class="nc" id="L104">                                &quot;content&quot;, List.of(</span>
-<span class="nc" id="L105">                                        Map.of(</span>
+<span class="fc" id="L103">                                &quot;version&quot;, 1,</span>
+<span class="fc" id="L104">                                &quot;content&quot;, List.of(</span>
+<span class="fc" id="L105">                                        Map.of(</span>
                                                 &quot;type&quot;, &quot;paragraph&quot;,
-<span class="nc" id="L107">                                                &quot;content&quot;, List.of(</span>
-<span class="nc" id="L108">                                                        Map.of(</span>
+<span class="fc" id="L107">                                                &quot;content&quot;, List.of(</span>
+<span class="fc" id="L108">                                                        Map.of(</span>
                                                                 &quot;type&quot;, &quot;text&quot;,
-<span class="nc" id="L110">                                                                &quot;text&quot;, buildPlainDescription(rec)</span>
+<span class="fc" id="L110">                                                                &quot;text&quot;, buildPlainDescription(rec)</span>
                                                         )
                                                 )
                                         )
                                 )
                         ),
 
-<span class="nc" id="L117">                        &quot;issuetype&quot;, Map.of(&quot;name&quot;, issueType),</span>
+<span class="fc" id="L117">                        &quot;issuetype&quot;, Map.of(&quot;name&quot;, issueType),</span>
 
-<span class="nc" id="L119">                        &quot;priority&quot;, Map.of(&quot;name&quot;, mapPriority(rec.getPriority())),</span>
+<span class="fc" id="L119">                        &quot;priority&quot;, Map.of(&quot;name&quot;, mapPriority(rec.getPriority())),</span>
 
-<span class="nc" id="L121">                        &quot;labels&quot;, List.of(&quot;reclamation&quot;, &quot;support&quot;)</span>
+<span class="fc" id="L121">                        &quot;labels&quot;, List.of(&quot;reclamation&quot;, &quot;support&quot;)</span>
                 )
         );
     }
     private String buildPlainDescription(Reclamation rec) {
-<span class="nc" id="L126">        return String.format(</span>
+<span class="fc" id="L126">        return String.format(</span>
                 &quot;Réclamation #%d | Apprenant: %s | Type: %s | Priorité: %s\n\n&quot; +
                         //                          ↑ %s au lieu de %d
                         &quot;Sujet: %s\n\n&quot; +
                         &quot;Description: %s\n\n&quot; +
                         &quot;Créé automatiquement depuis Formini Support.&quot;,
-<span class="nc" id="L132">                rec.getId(),</span>
-<span class="nc" id="L133">                rec.getLearnerId(),   // ← String UUID maintenant</span>
-<span class="nc bnc" id="L134" title="All 2 branches missed.">                rec.getType() != null ? rec.getType().toString() : &quot;Non spécifié&quot;,</span>
-<span class="nc" id="L135">                mapPriorityLabel(rec.getPriority()),</span>
-<span class="nc bnc" id="L136" title="All 2 branches missed.">                rec.getSubject() != null ? rec.getSubject() : &quot;&quot;,</span>
-<span class="nc bnc" id="L137" title="All 2 branches missed.">                rec.getDescription() != null ? rec.getDescription() : &quot;&quot;</span>
+<span class="fc" id="L132">                rec.getId(),</span>
+<span class="fc" id="L133">                rec.getLearnerId(),   // ← String UUID maintenant</span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">                rec.getType() != null ? rec.getType().toString() : &quot;Non spécifié&quot;,</span>
+<span class="fc" id="L135">                mapPriorityLabel(rec.getPriority()),</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">                rec.getSubject() != null ? rec.getSubject() : &quot;&quot;,</span>
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">                rec.getDescription() != null ? rec.getDescription() : &quot;&quot;</span>
         );
     }
 
@@ -166,50 +166,50 @@ public class JiraTicketService implements TicketService {
         );
     }
     private String buildAdditionalInfo(Reclamation rec) {
-<span class="nc" id="L169">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L169">        StringBuilder sb = new StringBuilder();</span>
 
-<span class="nc bnc" id="L171" title="All 2 branches missed.">        if (rec.getCourseId() != null) {</span>
-<span class="nc" id="L172">            sb.append(&quot;* Cours concerné:* #&quot;).append(rec.getCourseId()).append(&quot;\n&quot;);</span>
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">        if (rec.getCourseId() != null) {</span>
+<span class="fc" id="L172">            sb.append(&quot;* Cours concerné:* #&quot;).append(rec.getCourseId()).append(&quot;\n&quot;);</span>
         }
-<span class="nc bnc" id="L174" title="All 2 branches missed.">        if (rec.getErrorCode() != null) {</span>
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">        if (rec.getErrorCode() != null) {</span>
 <span class="nc" id="L175">            sb.append(&quot;* Code erreur:* &quot;).append(rec.getErrorCode()).append(&quot;\n&quot;);</span>
         }
-<span class="nc bnc" id="L177" title="All 2 branches missed.">        if (rec.getTransactionId() != null) {</span>
-<span class="nc" id="L178">            sb.append(&quot;* Transaction:* &quot;).append(rec.getTransactionId()).append(&quot;\n&quot;);</span>
+<span class="pc bpc" id="L177" title="1 of 2 branches missed.">        if (rec.getTransactionId() != null) {</span>
+<span class="fc" id="L178">            sb.append(&quot;* Transaction:* &quot;).append(rec.getTransactionId()).append(&quot;\n&quot;);</span>
         }
-<span class="nc bnc" id="L180" title="All 2 branches missed.">        if (rec.getAmount() != null) {</span>
-<span class="nc" id="L181">            sb.append(&quot;* Montant:* &quot;).append(rec.getAmount()).append(&quot; DT\n&quot;);</span>
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">        if (rec.getAmount() != null) {</span>
+<span class="fc" id="L181">            sb.append(&quot;* Montant:* &quot;).append(rec.getAmount()).append(&quot; DT\n&quot;);</span>
         }
-<span class="nc bnc" id="L183" title="All 2 branches missed.">        if (rec.getAttachmentUrl() != null) {</span>
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">        if (rec.getAttachmentUrl() != null) {</span>
 <span class="nc" id="L184">            sb.append(&quot;* Pièce jointe:* &quot;).append(rec.getAttachmentUrl()).append(&quot;\n&quot;);</span>
         }
 
-<span class="nc bnc" id="L187" title="All 2 branches missed.">        return sb.length() &gt; 0 ? sb.toString() : &quot;Aucune information supplémentaire&quot;;</span>
+<span class="pc bpc" id="L187" title="1 of 2 branches missed.">        return sb.length() &gt; 0 ? sb.toString() : &quot;Aucune information supplémentaire&quot;;</span>
     }
 
     private String mapPriority(Integer priority) {
-<span class="nc bnc" id="L191" title="All 2 branches missed.">        if (priority == null) return &quot;Medium&quot;;</span>
-<span class="nc bnc" id="L192" title="All 4 branches missed.">        return switch (priority) {</span>
-<span class="nc" id="L193">            case 1 -&gt; &quot;Highest&quot;;</span>
-<span class="nc" id="L194">            case 2 -&gt; &quot;High&quot;;</span>
-<span class="nc" id="L195">            case 3 -&gt; &quot;Medium&quot;;</span>
-<span class="nc" id="L196">            default -&gt; &quot;Low&quot;;</span>
+<span class="fc bfc" id="L191" title="All 2 branches covered.">        if (priority == null) return &quot;Medium&quot;;</span>
+<span class="fc bfc" id="L192" title="All 4 branches covered.">        return switch (priority) {</span>
+<span class="fc" id="L193">            case 1 -&gt; &quot;Highest&quot;;</span>
+<span class="fc" id="L194">            case 2 -&gt; &quot;High&quot;;</span>
+<span class="fc" id="L195">            case 3 -&gt; &quot;Medium&quot;;</span>
+<span class="fc" id="L196">            default -&gt; &quot;Low&quot;;</span>
         };
     }
 
     private String mapPriorityLabel(Integer priority) {
-<span class="nc bnc" id="L201" title="All 2 branches missed.">        if (priority == null) return &quot;Moyenne&quot;;</span>
-<span class="nc bnc" id="L202" title="All 4 branches missed.">        return switch (priority) {</span>
-<span class="nc" id="L203">            case 1 -&gt; &quot;Haute 🔴&quot;;</span>
-<span class="nc" id="L204">            case 2 -&gt; &quot;Moyenne 🟡&quot;;</span>
-<span class="nc" id="L205">            case 3 -&gt; &quot;Basse 🟢&quot;;</span>
-<span class="nc" id="L206">            default -&gt; &quot;Non définie&quot;;</span>
+<span class="fc bfc" id="L201" title="All 2 branches covered.">        if (priority == null) return &quot;Moyenne&quot;;</span>
+<span class="fc bfc" id="L202" title="All 4 branches covered.">        return switch (priority) {</span>
+<span class="fc" id="L203">            case 1 -&gt; &quot;Haute 🔴&quot;;</span>
+<span class="fc" id="L204">            case 2 -&gt; &quot;Moyenne 🟡&quot;;</span>
+<span class="fc" id="L205">            case 3 -&gt; &quot;Basse 🟢&quot;;</span>
+<span class="fc" id="L206">            default -&gt; &quot;Non définie&quot;;</span>
         };
     }
 
     private String truncate(String text, int maxLength) {
-<span class="nc bnc" id="L211" title="All 2 branches missed.">        if (text == null) return &quot;&quot;;</span>
-<span class="nc bnc" id="L212" title="All 2 branches missed.">        return text.length() &lt;= maxLength ? text : text.substring(0, maxLength - 3) + &quot;...&quot;;</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">        if (text == null) return &quot;&quot;;</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">        return text.length() &lt;= maxLength ? text : text.substring(0, maxLength - 3) + &quot;...&quot;;</span>
     }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
