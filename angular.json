@@ -37,7 +37,6 @@
                 "glob": "**/*",
                 "input": "public"
               }
-              
             ],
             "styles": [
               "src/styles.scss",
@@ -45,9 +44,9 @@
             ],
             "scripts": [],
             "allowedCommonJsDependencies": [
-      "stompjs",
-      "sockjs-client"
-    ],
+              "stompjs",
+              "sockjs-client"
+            ],
             "server": "src/main.server.ts",
             "prerender": true,
             "ssr": {
@@ -114,11 +113,23 @@
             "scripts": [],
             "karmaConfig": "karma.conf.js"
           }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "src/**/*.ts",
+              "src/**/*.html"
+            ]
+          }
         }
       }
     }
   },
   "cli": {
-    "analytics": "65b8f5ce-bd5f-448f-91a2-b2c80adb6ddb"
+    "analytics": "65b8f5ce-bd5f-448f-91a2-b2c80adb6ddb",
+    "schematicCollections": [
+      "angular-eslint"
+    ]
   }
 }
