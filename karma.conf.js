@@ -1,6 +1,9 @@
+<<<<<<< HEAD
 // Karma configuration file, see link for more information
 // https://karma-runner.github.io/1.0/config/configuration-file.html
 
+=======
+>>>>>>> a2c577a (test unitaire reclamation et enrollment)
 module.exports = function (config) {
   config.set({
     basePath: '',
@@ -10,11 +13,15 @@ module.exports = function (config) {
       require('karma-chrome-launcher'),
       require('karma-jasmine-html-reporter'),
       require('karma-coverage'),
+<<<<<<< HEAD
       require('karma-junit-reporter'),
+=======
+>>>>>>> a2c577a (test unitaire reclamation et enrollment)
       require('@angular-devkit/build-angular/plugins/karma')
     ],
     client: {
       jasmine: {},
+<<<<<<< HEAD
     },
     jasmineHtmlReporter: {
       suppressAll: true
@@ -56,3 +63,12 @@ module.exports = function (config) {
     restartOnFileChange: true
   });
 };
+=======
+      clearContext: false
+    },
+    reporters: ['progress', 'kjhtml'],
+    browsers: ['Chrome'],
+    restartOnFileChange: true
+  });
+};
+>>>>>>> a2c577a (test unitaire reclamation et enrollment)

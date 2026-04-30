@@ -37,6 +37,10 @@
                 "glob": "**/*",
                 "input": "public"
               }
+<<<<<<< HEAD
+=======
+              
+>>>>>>> a2c577a (test unitaire reclamation et enrollment)
             ],
             "styles": [
               "src/styles.scss",
@@ -44,9 +48,15 @@
             ],
             "scripts": [],
             "allowedCommonJsDependencies": [
+<<<<<<< HEAD
               "stompjs",
               "sockjs-client"
             ],
+=======
+      "stompjs",
+      "sockjs-client"
+    ],
+>>>>>>> a2c577a (test unitaire reclamation et enrollment)
             "server": "src/main.server.ts",
             "prerender": true,
             "ssr": {
@@ -93,6 +103,7 @@
           "builder": "@angular-devkit/build-angular:extract-i18n"
         },
         "test": {
+<<<<<<< HEAD
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
             "polyfills": [
@@ -123,13 +134,50 @@
             ]
           }
         }
+=======
+  "builder": "@angular-devkit/build-angular:karma",
+  "options": {
+    "polyfills": [
+      "zone.js",
+      "zone.js/testing"
+    ],
+    "tsConfig": "tsconfig.spec.json",
+    "inlineStyleLanguage": "scss",
+    "assets": [
+      { "glob": "**/*", "input": "public" }
+    ],
+    "styles": ["src/styles.scss"],
+    "scripts": [
+      "src/global-fix.js"
+    ],
+    "karmaConfig": "karma.conf.js",
+    "include": [
+      "src/app/front-office/reclamation/reclamation.component/reclamation.component.spec.ts",
+      "src/app/back-office/admin-reclamations/admin-reclamations.component.spec.ts",
+      "src/app/front-office/cart/cart.component.spec.ts",
+      "src/app/front-office/payment/payment.component.spec.ts",
+      "src/app/front-office/payment-success/payment-success.component.spec.ts",
+      "src/app/front-office/RefundLearner/refund-learner/refund-learner.component.spec.ts",
+      "src/app/front-office/installment/installment-payment/installment-payment.component.spec.ts",
+      "src/app/front-office/installment/installment-success/installment-success.component.spec.ts",
+      "src/app/back-office/admin-enrollments/admin-enrollments/admin-enrollments.component.spec.ts",
+      "src/app/back-office/admin-installments/admin-installments/admin-installments.component.spec.ts"
+
+    ]
+  }
+}
+>>>>>>> a2c577a (test unitaire reclamation et enrollment)
       }
     }
   },
   "cli": {
+<<<<<<< HEAD
     "analytics": "65b8f5ce-bd5f-448f-91a2-b2c80adb6ddb",
     "schematicCollections": [
       "angular-eslint"
     ]
+=======
+    "analytics": "65b8f5ce-bd5f-448f-91a2-b2c80adb6ddb"
+>>>>>>> a2c577a (test unitaire reclamation et enrollment)
   }
 }

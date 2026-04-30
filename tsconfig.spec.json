@@ -1,9 +1,13 @@
+<<<<<<< HEAD
 /* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
 /* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+=======
+>>>>>>> a2c577a (test unitaire reclamation et enrollment)
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
+<<<<<<< HEAD
     "types": [
       "jasmine"
     ]
@@ -13,3 +17,17 @@
     "src/**/*.d.ts"
   ]
 }
+=======
+    "types": ["jasmine"]
+  },
+  "include": [
+    "src/**/*.spec.ts",
+    "src/**/*.d.ts",
+    "src/test.ts"
+  ],
+  "files": [
+    "src/test.ts",
+    "src/app/front-office/reclamation/reclamation.component/reclamation.component.spec.ts"
+  ]
+}
+>>>>>>> a2c577a (test unitaire reclamation et enrollment)
