@@ -16,6 +16,7 @@ import java.util.UUID;
 
 @Service
 public class FlouciServiceImpl implements IFlouciService {
+    private static final Random RANDOM = new Random();
 
     @Autowired
     private FlouciTransactionRepository flouciRepo;
@@ -29,7 +30,7 @@ public class FlouciServiceImpl implements IFlouciService {
                                              String phoneNumber,
                                              Double amount) {
         // Générer OTP à 6 chiffres
-        String otp = String.format("%06d", new Random().nextInt(999999));
+        String otp = String.format("%06d", RANDOM.nextInt(999999));
 
         // Générer référence unique
         String ref = "FLC-" + Year.now().getValue() + "-"
@@ -90,7 +91,7 @@ public class FlouciServiceImpl implements IFlouciService {
                 .orElseThrow(() -> new RuntimeException("Transaction introuvable : " + transactionRef));
 
         // Générer nouveau code
-        String newOtp = String.format("%06d", new Random().nextInt(999999));
+        String newOtp = String.format("%06d", RANDOM.nextInt(999999));
         transaction.setOtpCode(newOtp);
         transaction.setOtpExpiry(LocalDateTime.now().plusMinutes(2));
         transaction.setStatus(FlouciStatus.PENDING_OTP);
