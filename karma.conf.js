@@ -1,9 +1,6 @@
-<<<<<<< HEAD
-// Karma configuration file, see link for more information
-// https://karma-runner.github.io/1.0/config/configuration-file.html
+// Karma configuration file
+// https://karma-runner.github.io/latest/config/configuration-file.html
 
-=======
->>>>>>> a2c577a (test unitaire reclamation et enrollment)
 module.exports = function (config) {
   config.set({
     basePath: '',
@@ -13,19 +10,19 @@ module.exports = function (config) {
       require('karma-chrome-launcher'),
       require('karma-jasmine-html-reporter'),
       require('karma-coverage'),
-<<<<<<< HEAD
       require('karma-junit-reporter'),
-=======
->>>>>>> a2c577a (test unitaire reclamation et enrollment)
       require('@angular-devkit/build-angular/plugins/karma')
     ],
+
     client: {
       jasmine: {},
-<<<<<<< HEAD
+      clearContext: false
     },
+
     jasmineHtmlReporter: {
       suppressAll: true
     },
+
     coverageReporter: {
       dir: require('path').join(__dirname, './coverage/formini-app'),
       subdir: '.',
@@ -35,18 +32,15 @@ module.exports = function (config) {
         { type: 'lcovonly', file: 'lcov.info' }
       ]
     },
-    junitReporter: {
-      outputDir:          'reports/junit',
-      outputFile:         'test-results.xml',
-      suite:              '',
-      useBrowserName:     false,
-      nameFormatter:      undefined,
-      classNameFormatter: undefined,
-      properties:         {}
-    },
-    reporters: ['progress', 'kjhtml', 'junit', 'coverage'],
 
-    // ── Custom launcher: ChromeHeadless with --no-sandbox for Docker/CI ──
+    junitReporter: {
+      outputDir: 'reports/junit',
+      outputFile: 'test-results.xml',
+      useBrowserName: false
+    },
+
+    reporters: ['progress', 'kjhtml', 'coverage', 'junit'],
+
     customLaunchers: {
       ChromeHeadlessCI: {
         base: 'ChromeHeadless',
@@ -63,12 +57,3 @@ module.exports = function (config) {
     restartOnFileChange: true
   });
 };
-=======
-      clearContext: false
-    },
-    reporters: ['progress', 'kjhtml'],
-    browsers: ['Chrome'],
-    restartOnFileChange: true
-  });
-};
->>>>>>> a2c577a (test unitaire reclamation et enrollment)

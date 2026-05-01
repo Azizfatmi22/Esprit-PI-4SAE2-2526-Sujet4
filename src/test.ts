@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { TestBed } from '@angular/core/testing';
@@ -13,7 +12,6 @@ beforeEach(() => {
     ]
   });
 });
-=======
 import 'zone.js';
 import 'zone.js/testing';
 
@@ -27,4 +25,4 @@ getTestBed().initTestEnvironment(
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting(),
 );
->>>>>>> a2c577a (test unitaire reclamation et enrollment)
+

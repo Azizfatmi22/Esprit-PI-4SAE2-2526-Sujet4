@@ -7,11 +7,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-<<<<<<< HEAD
     "e2e": "ng e2e",
     "lint": "ng lint",
-=======
->>>>>>> a2c577a (test unitaire reclamation et enrollment)
     "serve:ssr:formini-app": "node dist/formini-app/server/server.mjs"
   },
   "private": true,
@@ -56,26 +53,15 @@
     "@types/node": "^18.18.0",
     "@types/qrcode": "^1.5.5",
     "@types/sockjs-client": "^1.5.4",
-<<<<<<< HEAD
     "angular-eslint": "21.0.1",
     "eslint": "^9.39.1",
-=======
->>>>>>> a2c577a (test unitaire reclamation et enrollment)
     "jasmine-core": "~5.2.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
-<<<<<<< HEAD
     "karma-junit-reporter": "^2.0.1",
-    "typescript": "~5.5.2",
-    "typescript-eslint": "8.46.4"
+    "typescript": "~5.5.2"
   }
 }
-=======
-    "typescript": "~5.5.2",
-    "webpack": "^5.106.2"
-  }
-}
->>>>>>> a2c577a (test unitaire reclamation et enrollment)
