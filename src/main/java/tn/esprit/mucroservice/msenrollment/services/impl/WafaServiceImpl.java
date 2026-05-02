@@ -15,6 +15,7 @@ public class WafaServiceImpl implements IWafaService {
 
     @Autowired
     private WafaAccountRepository wafaRepo;
+    private static final Random RANDOM = new Random();
 
     @Override
     public Double getBalance(String phoneNumber) {
@@ -66,7 +67,7 @@ public class WafaServiceImpl implements IWafaService {
             WafaAccount newAccount = new WafaAccount();
             newAccount.setPhoneNumber(phoneNumber);
             newAccount.setLearnerId(learnerId);
-            newAccount.setBalance(100.0 + new Random().nextInt(900));
+            newAccount.setBalance(100.0 + RANDOM.nextInt(900));
             return wafaRepo.save(newAccount);
         });
     }
