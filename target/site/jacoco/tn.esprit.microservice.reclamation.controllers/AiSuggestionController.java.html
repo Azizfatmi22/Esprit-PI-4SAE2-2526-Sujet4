@@ -34,27 +34,27 @@ import java.util.stream.Collectors;
     @PostMapping(&quot;/suggest/{reclamationId}&quot;)
     public ResponseEntity&lt;?&gt; suggestResponse(@PathVariable Long reclamationId) {
         try {
-<span class="nc" id="L37">            Reclamation current = reclamationService.getReclamationById(reclamationId);</span>
+<span class="fc" id="L37">            Reclamation current = reclamationService.getReclamationById(reclamationId);</span>
 
             // Essayer Gemini d'abord
             try {
-<span class="nc" id="L41">                List&lt;Reclamation&gt; resolved = reclamationService</span>
-<span class="nc" id="L42">                        .getReclamationsByStatus(ReclamationStatus.RESOLVED)</span>
-<span class="nc" id="L43">                        .stream()</span>
-<span class="nc bnc" id="L44" title="All 2 branches missed.">                        .filter(r -&gt; r.getType() == current.getType())</span>
-<span class="nc" id="L45">                        .limit(5)</span>
-<span class="nc" id="L46">                        .collect(Collectors.toList());</span>
+<span class="fc" id="L41">                List&lt;Reclamation&gt; resolved = reclamationService</span>
+<span class="fc" id="L42">                        .getReclamationsByStatus(ReclamationStatus.RESOLVED)</span>
+<span class="fc" id="L43">                        .stream()</span>
+<span class="pc bnc" id="L44" title="All 2 branches missed.">                        .filter(r -&gt; r.getType() == current.getType())</span>
+<span class="fc" id="L45">                        .limit(5)</span>
+<span class="fc" id="L46">                        .collect(Collectors.toList());</span>
 
-<span class="nc" id="L48">                String geminiUrl = &quot;https://generativelanguage.googleapis.com/v1beta/models/&quot;</span>
+<span class="fc" id="L48">                String geminiUrl = &quot;https://generativelanguage.googleapis.com/v1beta/models/&quot;</span>
                         + &quot;gemini-1.5-flash:generateContent?key=&quot; + apiKey;
 
-<span class="nc" id="L51">                Map&lt;String, Object&gt; body = Map.of(</span>
-<span class="nc" id="L52">                        &quot;contents&quot;, List.of(Map.of(&quot;parts&quot;, List.of(Map.of(&quot;text&quot;,</span>
-<span class="nc" id="L53">                                buildPrompt(current, buildContext(resolved))))))</span>
+<span class="fc" id="L51">                Map&lt;String, Object&gt; body = Map.of(</span>
+<span class="fc" id="L52">                        &quot;contents&quot;, List.of(Map.of(&quot;parts&quot;, List.of(Map.of(&quot;text&quot;,</span>
+<span class="fc" id="L53">                                buildPrompt(current, buildContext(resolved))))))</span>
                 );
 
-<span class="nc" id="L56">                HttpHeaders headers = new HttpHeaders();</span>
-<span class="nc" id="L57">                headers.setContentType(MediaType.APPLICATION_JSON);</span>
+<span class="fc" id="L56">                HttpHeaders headers = new HttpHeaders();</span>
+<span class="fc" id="L57">                headers.setContentType(MediaType.APPLICATION_JSON);</span>
 
 <span class="nc" id="L59">                ResponseEntity&lt;Map&gt; response = restTemplate.exchange(</span>
                         geminiUrl, HttpMethod.POST,
@@ -66,24 +66,24 @@ import java.util.stream.Collectors;
 <span class="nc" id="L66">                List&lt;String&gt; suggestions = parseSuggestions(raw);</span>
 <span class="nc" id="L67">                return ResponseEntity.ok(Map.of(&quot;suggestions&quot;, suggestions));</span>
 
-<span class="nc" id="L69">            } catch (Exception geminiError) {</span>
+<span class="fc" id="L69">            } catch (Exception geminiError) {</span>
                 // Gemini indisponible → fallback local silencieux
-<span class="nc" id="L71">                System.out.println(&quot;⚠️ Gemini indisponible, fallback local: &quot; + geminiError.getMessage());</span>
-<span class="nc" id="L72">                return ResponseEntity.ok(Map.of(&quot;suggestions&quot;, generateLocalSuggestions(current)));</span>
+<span class="fc" id="L71">                System.out.println(&quot;⚠️ Gemini indisponible, fallback local: &quot; + geminiError.getMessage());</span>
+<span class="fc" id="L72">                return ResponseEntity.ok(Map.of(&quot;suggestions&quot;, generateLocalSuggestions(current)));</span>
             }
 
-<span class="nc" id="L75">        } catch (Exception e) {</span>
-<span class="nc" id="L76">            return ResponseEntity.status(500).body(Map.of(&quot;error&quot;, e.getMessage()));</span>
+<span class="fc" id="L75">        } catch (Exception e) {</span>
+<span class="fc" id="L76">            return ResponseEntity.status(500).body(Map.of(&quot;error&quot;, e.getMessage()));</span>
         }
     }
     // ── Construire le contexte depuis les réclamations résolues ───────────────
     private List&lt;String&gt; generateLocalSuggestions(Reclamation rec) {
-<span class="nc bnc" id="L81" title="All 2 branches missed.">        String type   = rec.getType() != null ? rec.getType().toString() : &quot;OTHER&quot;;</span>
-<span class="nc bnc" id="L82" title="All 2 branches missed.">        String amount = rec.getAmount() != null ? rec.getAmount() + &quot; DT&quot; : &quot;ce montant&quot;;</span>
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">        String type   = rec.getType() != null ? rec.getType().toString() : &quot;OTHER&quot;;</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        String amount = rec.getAmount() != null ? rec.getAmount() + &quot; DT&quot; : &quot;ce montant&quot;;</span>
 
-<span class="nc" id="L84">        java.util.Map&lt;String, List&lt;String&gt;&gt; templates = new java.util.HashMap&lt;&gt;();</span>
+<span class="fc" id="L84">        java.util.Map&lt;String, List&lt;String&gt;&gt; templates = new java.util.HashMap&lt;&gt;();</span>
 
-<span class="nc" id="L86">        templates.put(&quot;PAYMENT&quot;, List.of(</span>
+<span class="fc" id="L86">        templates.put(&quot;PAYMENT&quot;, List.of(</span>
                 &quot;Bonjour, nous avons bien reçu votre réclamation concernant le prélèvement de &quot;
                         + amount + &quot;. Notre équipe financière vérifie votre transaction et vous remboursera sous 3 à 5 jours ouvrables.&quot;,
                 &quot;Merci pour votre signalement. Un avoir a été initié pour le montant de &quot;
@@ -92,41 +92,41 @@ import java.util.stream.Collectors;
                         + amount + &quot; sera crédité sur votre compte. Vous recevrez une confirmation par email.&quot;
         ));
 
-<span class="nc" id="L95">        templates.put(&quot;TECHNICAL&quot;, List.of(</span>
+<span class="fc" id="L95">        templates.put(&quot;TECHNICAL&quot;, List.of(</span>
                 &quot;Bonjour, nous avons bien reçu votre signalement technique. Notre équipe analyse le problème et reviendra vers vous sous 24h.&quot;,
                 &quot;Merci pour votre rapport. Pouvez-vous vider le cache de votre navigateur et réessayer ? Si le problème persiste, nous escaladons le ticket.&quot;,
                 &quot;Nous avons identifié le problème technique signalé. Un correctif sera déployé sous 48h. Nous vous notifierons dès sa mise en ligne.&quot;
         ));
 
-<span class="nc" id="L101">        templates.put(&quot;CONTENT&quot;, List.of(</span>
+<span class="fc" id="L101">        templates.put(&quot;CONTENT&quot;, List.of(</span>
                 &quot;Bonjour, merci de nous avoir signalé ce problème de contenu. Nous vérifions le cours concerné et corrigerons l'erreur sous 24h.&quot;,
                 &quot;Nous avons transmis votre signalement à l'équipe pédagogique. Le contenu sera mis à jour très prochainement.&quot;,
                 &quot;Le problème sur ce module a été identifié et sera corrigé dans la prochaine mise à jour du cours.&quot;
         ));
 
-<span class="nc" id="L107">        templates.put(&quot;ACCESS&quot;, List.of(</span>
+<span class="fc" id="L107">        templates.put(&quot;ACCESS&quot;, List.of(</span>
                 &quot;Bonjour, nous avons réinitialisé vos droits d'accès. Veuillez vous déconnecter et vous reconnecter pour accéder au cours.&quot;,
                 &quot;Votre accès a été vérifié et restauré manuellement. Si le problème persiste, effacez les cookies de votre navigateur.&quot;,
                 &quot;Nous avons détecté une anomalie sur vos droits d'accès et l'avons corrigée. Accès au cours rétabli.&quot;
         ));
 
-<span class="nc" id="L113">        templates.put(&quot;CERTIFICATE&quot;, List.of(</span>
+<span class="fc" id="L113">        templates.put(&quot;CERTIFICATE&quot;, List.of(</span>
                 &quot;Bonjour, nous vérifions l'état de votre certificat. Il sera disponible dans votre espace personnel sous 24h.&quot;,
                 &quot;Votre certificat de complétion a été régénéré manuellement et est maintenant disponible dans votre espace apprenant.&quot;,
                 &quot;Nous avons constaté un délai dans l'émission de votre certificat. Il sera disponible demain matin avec confirmation par email.&quot;
         ));
 
-<span class="nc" id="L119">        templates.put(&quot;OTHER&quot;, List.of(</span>
+<span class="fc" id="L119">        templates.put(&quot;OTHER&quot;, List.of(</span>
                 &quot;Bonjour, nous avons bien reçu votre réclamation et la traitons en priorité. Notre équipe vous contactera sous 24h.&quot;,
                 &quot;Merci de nous avoir contactés. Pouvez-vous nous donner plus de détails afin que nous puissions vous aider efficacement ?&quot;,
                 &quot;Votre demande a été transmise au service concerné. Nous reviendrons vers vous avec une réponse complète sous 48h.&quot;
         ));
 
-<span class="nc" id="L125">        return templates.getOrDefault(type, templates.get(&quot;OTHER&quot;));</span>
+<span class="fc" id="L125">        return templates.getOrDefault(type, templates.get(&quot;OTHER&quot;));</span>
     }
     // Ajoutez cette méthode après generateLocalSuggestions()
     private String buildContext(List&lt;Reclamation&gt; resolved) {
-<span class="nc bnc" id="L129" title="All 2 branches missed.">        if (resolved.isEmpty()) return &quot;Aucune réclamation similaire résolue.&quot;;</span>
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">        if (resolved.isEmpty()) return &quot;Aucune réclamation similaire résolue.&quot;;</span>
 
 <span class="nc" id="L131">        StringBuilder sb = new StringBuilder();</span>
 <span class="nc bnc" id="L132" title="All 2 branches missed.">        for (int i = 0; i &lt; resolved.size(); i++) {</span>
@@ -143,7 +143,7 @@ import java.util.stream.Collectors;
 
     // ── Construire le prompt envoyé à Gemini ──────────────────────────────────
     private String buildPrompt(Reclamation current, String context) {
-<span class="nc" id="L146">        return String.format(&quot;&quot;&quot;</span>
+<span class="fc" id="L146">        return String.format(&quot;&quot;&quot;</span>
             Tu es un assistant support pour une plateforme e-learning tunisienne.
 
             Réclamation actuelle (type: %s, priorité: %d):
@@ -160,10 +160,10 @@ import java.util.stream.Collectors;
             sans balises markdown, sans backticks:
             {&quot;suggestions&quot;:[&quot;réponse 1&quot;,&quot;réponse 2&quot;,&quot;réponse 3&quot;]}
             &quot;&quot;&quot;,
-<span class="nc bnc" id="L163" title="All 2 branches missed.">                current.getType() != null ? current.getType().toString() : &quot;OTHER&quot;,</span>
-<span class="nc bnc" id="L164" title="All 2 branches missed.">                current.getPriority() != null ? current.getPriority() : 3,</span>
-<span class="nc bnc" id="L165" title="All 2 branches missed.">                current.getSubject() != null ? current.getSubject() : &quot;&quot;,</span>
-<span class="nc bnc" id="L166" title="All 2 branches missed.">                current.getDescription() != null ? current.getDescription() : &quot;&quot;,</span>
+<span class="pc bpc" id="L163" title="1 of 2 branches missed.">                current.getType() != null ? current.getType().toString() : &quot;OTHER&quot;,</span>
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">                current.getPriority() != null ? current.getPriority() : 3,</span>
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">                current.getSubject() != null ? current.getSubject() : &quot;&quot;,</span>
+<span class="pc bpc" id="L166" title="1 of 2 branches missed.">                current.getDescription() != null ? current.getDescription() : &quot;&quot;,</span>
                 context
         );
     }

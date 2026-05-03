@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: tn.esprit.microservice.reclamation.controllers.AiSuggestionControllerTest
+-------------------------------------------------------------------------------
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.904 s -- in tn.esprit.microservice.reclamation.controllers.AiSuggestionControllerTest

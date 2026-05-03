@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="tn.esprit.microservice.reclamation.controllers.AdminTicketControllerTest" time="2.068" tests="1" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="tn.esprit.microservice.reclamation.controllers.AiSuggestionControllerTest" time="1.904" tests="2" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="24"/>
     <property name="sun.cpu.isalist" value="amd64"/>
@@ -60,11 +60,9 @@
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="java.class.version" value="68.0"/>
   </properties>
-  <testcase name="testCreateTicket_success" classname="tn.esprit.microservice.reclamation.controllers.AdminTicketControllerTest" time="1.953">
-    <system-err><![CDATA[WARNING: A Java agent has been loaded dynamically (C:\Users\inesj\.m2\repository\net\bytebuddy\byte-buddy-agent\1.14.19\byte-buddy-agent-1.14.19.jar)
-WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
-WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
-WARNING: Dynamic loading of agents will be disallowed by default in a future release
-]]></system-err>
+  <testcase name="testSuggestResponse_ReclamationNotFound" classname="tn.esprit.microservice.reclamation.controllers.AiSuggestionControllerTest" time="0.774"/>
+  <testcase name="testSuggestResponse_LocalFallback" classname="tn.esprit.microservice.reclamation.controllers.AiSuggestionControllerTest" time="1.122">
+    <system-out><![CDATA[⚠️ Gemini indisponible, fallback local: 400 Bad Request: "{<EOL>  "error": {<EOL>    "code": 400,<EOL>    "message": "API key not valid. Please pass a valid API key.",<EOL>    "status": "INVALID_ARGUMENT",<EOL>    "details": [<EOL>      {<EOL>        "@type": "type.googleapis.com/google.rpc.ErrorInfo",<EOL>        "reason": "API_KEY_INVALID",<EOL>        "domain": "googleapis.com",<EOL>        "metadata": {<EOL>          "service": "generativelanguage.googleapis.com"<EOL>        }<EOL>      },<EOL>      {<EOL>        "@type": "type.googleapis.com/google.rpc.LocalizedMessage",<EOL>        "locale": "en-US",<EOL>        "message": "API key not valid. Please pass a valid API key."<EOL>      }<EOL>    ]<EOL>  }<EOL>}<EOL>"
+]]></system-out>
   </testcase>
 </testsuite>
