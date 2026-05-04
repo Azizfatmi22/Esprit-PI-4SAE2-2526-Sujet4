@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enrollment-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: enrollment-service
+  template:
+    metadata:
+      labels:
+        app: enrollment-service
+    spec:
+      containers:
+      - name: enrollment-service
+        image: inesjlasi/enrollment:1.0.0
+        ports:
+        - containerPort: 8089
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:mysql://mysql-db:3306/formini_enrollment_db
+        - name: SPRING_DATASOURCE_USERNAME
+          value: root
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: root
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: enrollment-service
+spec:
+  selector:
+    app: enrollment-service
+  ports:
+  - port: 8089
+    targetPort: 8089
+  type: NodePort
