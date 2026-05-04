@@ -240,6 +240,11 @@
       </div>
 
       <div *ngIf="!loading && filteredReclamations.length > 0">
+        <p class="table-description">
+          Cette table affiche la liste des réclamations soumises par les apprenants.
+          Vous pouvez trier, filtrer et rechercher des réclamations, ainsi que consulter les détails,
+          faire avancer le statut ou supprimer une réclamation directement depuis cette interface.
+        </p>
         <table class="dt">
           <thead>
             <tr>
@@ -427,7 +432,10 @@
               (click)="doTranslate()"
               [disabled]="isTranslating">
         <div class="ring ring--xs" *ngIf="isTranslating"
-             style="border-top-color:#15803d;border-color:rgba(21,128,61,.3)"></div>
+             style="border-top-color:#15803d;
+       border-right-color:rgba(21,128,61,.3);
+       border-bottom-color:rgba(21,128,61,.3);
+       border-left-color:rgba(21,128,61,.3);"></div>
         <span *ngIf="!isTranslating && !isTranslated">🌐 Translate</span>
         <span *ngIf="!isTranslating && isTranslated && showTranslation">👁 Hide</span>
         <span *ngIf="!isTranslating && isTranslated && !showTranslation">👁 Show</span>

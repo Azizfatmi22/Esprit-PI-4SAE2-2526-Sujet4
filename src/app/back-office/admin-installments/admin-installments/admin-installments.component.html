@@ -234,6 +234,12 @@
     </div>
 
     <div *ngIf="!loading && filteredPlans.length > 0" class="table-wrapper">
+      <p class="table-description">
+  Cette table affiche l’ensemble des plans de paiement échelonné créés par les apprenants.
+  Elle permet de suivre le nombre d’échéances, les montants, la progression des paiements
+  ainsi que le statut de chaque plan (actif, complété ou en défaut).
+  Des actions sont disponibles pour consulter les détails, télécharger le PDF ou supprimer un plan.
+</p>
       <table class="data-table">
         <thead>
           <tr>
@@ -347,6 +353,11 @@
     </div>
 
     <div *ngIf="!loadingInvoices && invoicesInstallment.length > 0" class="table-wrapper">
+      <p class="table-description">
+  Cette table affiche toutes les factures associées aux paiements échelonnés.
+  Elle permet de suivre les montants, les statuts de paiement, les cours achetés
+  ainsi que d'accéder aux détails ou aux versions PDF des factures.
+</p>
       <table class="data-table">
         <thead>
           <tr>
@@ -523,6 +534,11 @@
     </div>
 
     <div *ngIf="!loadingBakchich && bakchichPending.length > 0" class="table-wrapper">
+      <p class="table-description">
+  Cette table liste les paiements Bakchich en attente de confirmation.
+  Vous pouvez vérifier les informations du paiement, voir les dates d'expiration
+  et confirmer ou annuler les transactions manuellement.
+</p>
       <table class="data-table">
         <thead>
           <tr>
@@ -626,6 +642,11 @@
 
     <div class="table-container" *ngIf="!loadingRefunds && filteredInstallmentRefunds.length > 0">
       <div class="table-wrapper">
+        <p class="table-description">
+  Cette table regroupe les demandes de remboursement des plans échelonnés.
+  Elle permet de consulter les détails des demandes, leurs statuts (en attente, approuvé, rejeté)
+  et de prendre une décision en approuvant ou rejetant chaque demande.
+</p>
         <table class="data-table">
           <thead>
             <tr>

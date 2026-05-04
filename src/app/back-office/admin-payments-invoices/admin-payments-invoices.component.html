@@ -229,6 +229,10 @@
     </div>
 
     <div *ngIf="!loadingPayments && filteredPayments.length > 0" class="table-wrapper">
+      <p class="table-description">
+        Cette table affiche l’ensemble des paiements effectués par les apprenants.
+        Elle permet de suivre les montants, les méthodes de paiement, les statuts et les dates.
+      </p>
       <table class="data-table">
         <thead>
           <tr>
@@ -312,6 +316,11 @@
     </div>
 
     <div *ngIf="!loadingInvoices && filteredInvoices.length > 0" class="table-wrapper">
+      <p class="table-description">
+        Cette table affiche l’ensemble des factures générées par les paiements directs et échelonnés.
+        Elle permet de suivre les montants, les statuts de paiement, les cours achetés
+        ainsi que d'accéder aux détails ou aux versions PDF des factures.
+      </p>
       <table class="data-table">
         <thead>
           <tr>
@@ -410,6 +419,10 @@
     </div>
 
     <div *ngIf="!loadingBakchich && bakchichPending.length > 0" class="table-wrapper">
+      <p class="table-description">
+        Cette table affiche les paiements effectués via la méthode "Bakchich" qui sont en attente de confirmation.
+        Vous pouvez confirmer ou annuler chaque paiement directement depuis cette interface.
+      </p>
       <table class="data-table">
         <thead>
           <tr>
@@ -499,6 +512,11 @@
   </div>
 
   <div class="table-container" *ngIf="!loadingRefunds && filteredRefunds.length > 0">
+    <p class="table-description">
+      Cette table affiche les demandes de remboursement effectuées par les apprenants.
+      Vous pouvez voir les détails de chaque demande, approuver ou rejeter les demandes en attente,
+      et consulter les raisons de rejet ou les numéros d'avoir pour les demandes traitées.
+    </p>
     <div class="table-wrapper">
       <table class="data-table">
         <thead>

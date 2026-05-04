@@ -149,7 +149,13 @@ $r3: 3px; $r6: 6px; $r10: 10px; $r14: 14px; $r20: 20px;
   border: 3px solid $slate-200; border-top-color: $indigo-600;
   border-radius: 50%; animation: spin .6s linear infinite;
   &--sm  { width: 22px; height: 22px; border-width: 2px; }
-  &--xs  { width: 14px; height: 14px; border-width: 2px; border-top-color: #fff; border-color: rgba(255,255,255,.3); }
+  &--xs  { 
+  width: 14px; 
+  height: 14px; 
+  border-width: 2px; 
+  border-color: rgba(255,255,255,.3);
+  border-top-color: #fff; 
+}
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 

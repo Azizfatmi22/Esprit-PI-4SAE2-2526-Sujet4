@@ -51,57 +51,51 @@
 
         <!-- Cours -->
         <div class="invoice-section">
-          <h4>Détails de la commande</h4>
+          <h4>Détails de la commande</h4>  
           <table class="courses-table">
-            <thead>
-              <tr>
-                <th>Cours</th>
-                <th class="text-right">Prix</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let course of invoice.purchasedCourses">
-                <td>{{ course }}</td>
-                <td class="text-right">
-                  <tbody>
-  <tr *ngFor="let course of invoice.purchasedCourses">
-    <td>{{ course }}</td>
-    <td class="text-right">
-      <!-- ✅ Utiliser originalAmount pour le prix unitaire réel -->
-      {{ ((invoice.originalAmount || invoice.totalAmount) / invoice.purchasedCourses.length) | number:'1.2-2' }} TND
-    </td>
-  </tr>
-</tbody>
-                </td>
-              </tr>
-            </tbody>
-            <tfoot>
-  <!-- Sous-total = prix original -->
-  <tr class="subtotal-row" *ngIf="invoice.couponCode">
-    <td>Sous-total</td>
-    <td class="text-right">{{ invoice.originalAmount | number:'1.2-2' }} TND</td>
-  </tr>
+  <thead>
+    <tr>
+      <th>Cours</th>
+      <th class="text-right">Prix</th>
+    </tr>
+  </thead>
 
-  <!-- Réduction -->
-  <tr class="discount-row" *ngIf="invoice.couponCode">
-    <td>
-      <span class="coupon-badge">🎟️ {{ invoice.couponCode }}</span>
-      <span class="coupon-desc">Code promo appliqué</span>
-    </td>
-    <td class="text-right discount-amount">
-      -{{ invoice.discountAmount | number:'1.2-2' }} TND
-    </td>
-  </tr>
+  <tbody>
+    <tr *ngFor="let course of invoice.purchasedCourses">
+      <td>{{ course }}</td>
+      <td class="text-right">
+        {{ ((invoice.originalAmount || invoice.totalAmount) / invoice.purchasedCourses.length) | number:'1.2-2' }} TND
+      </td>
+    </tr>
+  </tbody>
 
-  <!-- Total final après réduction -->
-  <tr class="total-row">
-    <td><strong>Total payé</strong></td>
-    <td class="text-right">
-      <strong class="amount">{{ invoice.totalAmount | number:'1.2-2' }} TND</strong>
-    </td>
-  </tr>
-</tfoot>
-          </table>
+  <tfoot>
+    <!-- Sous-total -->
+    <tr class="subtotal-row" *ngIf="invoice.couponCode">
+      <td>Sous-total</td>
+      <td class="text-right">{{ invoice.originalAmount | number:'1.2-2' }} TND</td>
+    </tr>
+
+    <!-- Réduction -->
+    <tr class="discount-row" *ngIf="invoice.couponCode">
+      <td>
+        <span class="coupon-badge">🎟️ {{ invoice.couponCode }}</span>
+        <span class="coupon-desc">Code promo appliqué</span>
+      </td>
+      <td class="text-right discount-amount">
+        -{{ invoice.discountAmount | number:'1.2-2' }} TND
+      </td>
+    </tr>
+
+    <!-- Total -->
+    <tr class="total-row">
+      <td><strong>Total payé</strong></td>
+      <td class="text-right">
+        <strong class="amount">{{ invoice.totalAmount | number:'1.2-2' }} TND</strong>
+      </td>
+    </tr>
+  </tfoot>
+</table>
         </div>
 
       </div>
