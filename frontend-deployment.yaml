@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: formini-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: formini-frontend
+  template:
+    metadata:
+      labels:
+        app: formini-frontend
+    spec:
+      containers:
+      - name: formini-frontend
+        image: inesjlasi/formini-front:1.0.0
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: formini-frontend
+spec:
+  selector:
+    app: formini-frontend
+  ports:
+  - port: 4300
+    targetPort: 80
+  type: NodePort
