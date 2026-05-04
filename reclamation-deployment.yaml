@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reclamation-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reclamation-service
+  template:
+    metadata:
+      labels:
+        app: reclamation-service
+    spec:
+      containers:
+      - name: reclamation-service
+        image: inesjlasi/reclamation:1.0.0
+        ports:
+        - containerPort: 8093
+        env:
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:mysql://mysql-db:3306/formini_reclamation_db
+        - name: SPRING_DATASOURCE_USERNAME
+          value: root
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: root
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reclamation-service
+spec:
+  selector:
+    app: reclamation-service
+  ports:
+  - port: 8093
+    targetPort: 8093
+  type: NodePort

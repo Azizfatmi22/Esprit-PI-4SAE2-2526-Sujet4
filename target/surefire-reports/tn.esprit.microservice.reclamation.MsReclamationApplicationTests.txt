@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: tn.esprit.microservice.reclamation.MsReclamationApplicationTests
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 12.88 s -- in tn.esprit.microservice.reclamation.MsReclamationApplicationTests
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 16.35 s -- in tn.esprit.microservice.reclamation.MsReclamationApplicationTests
