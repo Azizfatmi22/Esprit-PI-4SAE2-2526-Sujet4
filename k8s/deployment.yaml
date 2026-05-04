@@ -11,22 +11,21 @@ spec:
     metadata:
       labels:
         app: certification
-      # --- ADD THESE ANNOTATIONS ---
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/path: "/actuator/prometheus"
         prometheus.io/port: "8090"
-      # -----------------------------
     spec:
       containers:
         - name: certification
-          image: certification-service:latest
-          imagePullPolicy: Never
+          image: omaraguil/certification-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8090
           env:
             - name: SPRING_DATASOURCE_URL
-              value: jdbc:mysql://host.docker.internal:3306/formini_db
+              # Utilisation du nom correct de la base
+              value: jdbc:mysql://host.docker.internal:3306/formini_certification_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
             - name: SPRING_DATASOURCE_USERNAME
               value: root
             - name: SPRING_DATASOURCE_PASSWORD
