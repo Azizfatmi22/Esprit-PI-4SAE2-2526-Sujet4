@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
       - name: forum-service
-        image: forum-service:latest
-        imagePullPolicy: IfNotPresent
+        image: azizfatmi/forum-service:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         env:

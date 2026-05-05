@@ -11,6 +11,7 @@ pipeline {
         SONAR_TOKEN = 'sqa_ded110eee1c638fafe316ac69e08e9b045887e3f'
         DB_USER = 'root'
         DB_PASS = 'root'
+        DOCKER_HUB_USER = 'azizfatmi' // Remplacez par votre username Docker Hub
     }
 
     stages {
@@ -48,8 +49,14 @@ pipeline {
                     -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
                 """
                 
-                // 4. Docker & K8s
-                sh 'docker build -t forum-service .'
+                // 4. Docker Build & Push
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh "docker build -t ${DOCKER_HUB_USER}/forum-service:latest ."
+                    sh "docker push ${DOCKER_HUB_USER}/forum-service:latest"
+                }
+
+                // 5. Kubernetes Deploy
                 sh 'kubectl apply -f k8s/deployment.yaml'
                 sh 'kubectl rollout restart deployment/forum-service || true'
             }
