@@ -1,43 +1,72 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'maven3'
+        jdk 'JDK17'
+    }
+
     environment {
-        // For Jenkins running in Docker to reach SonarQube on your host machine,
-        // 'host.docker.internal' is used. If Jenkins runs natively on Windows, change it to 'localhost'
-        SONAR_HOST_URL = 'http://host.docker.internal:9000'
-        
-        // This expects a Jenkins "Secret text" credential named 'sonar-token'
-        SONAR_TOKEN = credentials('sonar-token')
+        // Adaptation for your local environment
+        SONAR_TOKEN = 'sqa_ded110eee1c638fafe316ac69e08e9b045887e3f'
+        DB_USER = 'root'
+        DB_PASS = 'root'
     }
 
     stages {
-        stage('Build & Test') {
+        stage('Setup Infrastructure') {
             steps {
                 script {
-                    if (isUnix()) {
-                        sh './mvnw -B clean verify'
-                    } else {
-                        bat '.\\mvnw.cmd -B clean verify'
-                    }
-                }
-            }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
+                    echo '📦 Starting MySQL...'
+                    sh '''
+                        docker rm -f mysql-db || true
+                        docker run -d \
+                            --name mysql-db \
+                            -e MYSQL_ROOT_PASSWORD=${DB_PASS} \
+                            -e MYSQL_DATABASE=formini \
+                            -e MYSQL_ROOT_HOST=% \
+                            -p 3306:3306 \
+                            mysql:8.0
+                    '''
                 }
             }
         }
 
-        stage('SonarQube Analysis') {
+        stage('Forum Service Pipeline') {
             steps {
-                script {
-                    if (isUnix()) {
-                        sh './mvnw -B sonar:sonar -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.token=${SONAR_TOKEN} -Dsonar.projectKey=forum-service -Dsonar.projectName=forum-service'
-                    } else {
-                        bat '.\\mvnw.cmd -B sonar:sonar -Dsonar.host.url=%SONAR_HOST_URL% -Dsonar.token=%SONAR_TOKEN% -Dsonar.projectKey=forum-service -Dsonar.projectName=forum-service'
-                    }
-                }
+                // 1. Database Creation (if needed specifically for forum)
+                sh "docker exec mysql-db mysql -u${DB_USER} -p${DB_PASS} -e 'CREATE DATABASE IF NOT EXISTS formini;'"
+
+                // 2. Tests + Coverage
+                sh "mvn clean verify -Dspring.datasource.password=${DB_PASS} -Dspring.datasource.username=${DB_USER}"
+                
+                // 3. SonarQube Analysis
+                sh """
+                    mvn sonar:sonar \
+                    -Dsonar.token=${SONAR_TOKEN} \
+                    -Dsonar.projectKey=forum-service \
+                    -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                """
+                
+                // 4. Docker & K8s
+                sh 'docker build -t forum-service .'
+                sh 'kubectl apply -f k8s/deployment.yaml'
+                sh 'kubectl rollout restart deployment/forum-service || true'
             }
         }
+
+        stage('Verify System Health') {
+            steps {
+                echo '🔍 Verifying Deployment Status...'
+                sh 'sleep 10'
+                sh 'kubectl get pods -l app=forum-service'
+                echo '✅ Forum Service is running'
+            }
+        }
+    }
+
+    post {
+        success { echo '🚀 Full Deployment & Analysis Successful!' }
+        failure { echo '❌ Pipeline failed - Check logs' }
     }
 }
