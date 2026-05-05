@@ -1,10 +1,8 @@
 pipeline {
     agent any
 
-    tools {
-        maven 'maven3'
-        jdk 'JDK17'
-    }
+    // Removed tools block because we are using Jenkins image with JDK 17
+    // and the project uses the Maven Wrapper (mvnw)
 
     environment {
         // Adaptation for your local environment
@@ -38,12 +36,12 @@ pipeline {
                 // 1. Database Creation (if needed specifically for forum)
                 sh "docker exec mysql-db mysql -u${DB_USER} -p${DB_PASS} -e 'CREATE DATABASE IF NOT EXISTS formini;'"
 
-                // 2. Tests + Coverage
-                sh "mvn clean verify -Dspring.datasource.password=${DB_PASS} -Dspring.datasource.username=${DB_USER}"
+                // 2. Tests + Coverage using Maven Wrapper
+                sh "./mvnw clean verify -Dspring.datasource.password=${DB_PASS} -Dspring.datasource.username=${DB_USER}"
                 
-                // 3. SonarQube Analysis
+                // 3. SonarQube Analysis using Maven Wrapper
                 sh """
-                    mvn sonar:sonar \
+                    ./mvnw sonar:sonar \
                     -Dsonar.token=${SONAR_TOKEN} \
                     -Dsonar.projectKey=forum-service \
                     -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
