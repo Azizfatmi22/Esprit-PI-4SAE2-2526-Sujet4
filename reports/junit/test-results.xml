@@ -1,121 +1,194 @@
 <?xml version="1.0"?>
-<testsuite name="Chrome Headless 147.0.0.0 (Windows 10)" package="" timestamp="2026-05-05T20:33:50" id="0" hostname="DESKTOP-D93PMIR" tests="59" errors="0" failures="0" time="0.727">
+<testsuite name="Chrome Headless 147.0.0.0 (Windows 10)" package="" timestamp="2026-05-05T20:46:27" id="0" hostname="DESKTOP-D93PMIR" tests="160" errors="0" failures="0" time="0.719">
   <properties>
     <property name="browser.fullName" value="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/147.0.0.0 Safari/537.36"/>
   </properties>
-  <testcase name="ForumService addComment() should POST a new comment" time="0.038" classname="ForumService"/>
-  <testcase name="ForumService getComments() should GET comments for a post" time="0.002" classname="ForumService"/>
-  <testcase name="ForumService getLeaderboard() should GET leaderboard with limit param" time="0.002" classname="ForumService"/>
-  <testcase name="ForumService createForum() should POST a new post" time="0.003" classname="ForumService"/>
-  <testcase name="ForumService deleteForum() should DELETE a post" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService updateForum() should PUT updated post data" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService getForumById() should GET a single post by id" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService updatePostStatus() should PUT status with query param" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService getReactionCounts() should GET reaction counts for a post" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService markBestAnswer() should PUT to mark a comment as best answer" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService getForums() should GET all posts without filters" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService reactToPost() should POST a reaction" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService getUserReputation() should GET user reputation profile" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService getPendingPosts() should GET pending posts" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService should be created" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService getForums() should include category param when provided" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService getForums() should include userId param when provided" time="0" classname="ForumService"/>
-  <testcase name="ForumListComponent should initialize with loading=true then false after load" time="0.204" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent formatLevel() should capitalize level string" time="0.005" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent formatEventDate() should return month and day" time="0.259" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent should create" time="0.004" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent deleteForum() should reload forums after confirmation" time="0.005" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent formatLevel() should return Beginner for undefined" time="0.004" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent formatDate() should return days ago for older dates" time="0.007" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent createForum() should navigate to forum create page" time="0.006" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent loadForums() should set loading=false on error" time="0.01" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent displayedForums should filter to current user posts when showMyPosts is true" time="0.005" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent setPostFilter() should update showMyPosts and reload forums" time="0.005" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent viewForum() should navigate to forum detail page" time="0.006" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent should load forums on init" time="0.004" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent displayedForums should return all posts when showMyPosts is false" time="0.004" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent getAuthorName() should return fallback &quot;User {id}&quot; for unknown userId" time="0.003" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent formatDate() should return minutes ago for recent dates" time="0.003" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent onCategoryChange() should update selectedCategory and reload forums" time="0.003" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent getAuthorName() should return mapped name for known userId" time="0.005" classname="ForumListComponent"/>
-  <testcase name="EventService updateEvent() should PUT updated event data" time="0.002" classname="EventService"/>
-  <testcase name="EventService deleteEvent() should send DELETE request" time="0.001" classname="EventService"/>
-  <testcase name="EventService getEventById() should return a single event by id via GET" time="0.001" classname="EventService"/>
-  <testcase name="EventService createEvent() should POST and return created event" time="0.001" classname="EventService"/>
-  <testcase name="EventService getEvents() should handle empty array response" time="0.001" classname="EventService"/>
-  <testcase name="EventService should be created" time="0.001" classname="EventService"/>
-  <testcase name="EventService getEvents() should return a list of events via GET" time="0.001" classname="EventService"/>
-  <testcase name="EventsListComponent deleteEvent() should NOT call service when confirm is rejected" time="0.043" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent deleteEvent() should reload events after successful deletion" time="0.01" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent formatFullDate() should return a full date string" time="0.011" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent formatDate() should return month and day strings" time="0.005" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent should create" time="0.006" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent should set loading=false on error" time="0.005" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent should load events on init" time="0.006" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent topEvents should exclude CANCELLED and FINISHED events" time="0.005" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent viewEvent() should navigate to event details" time="0.005" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent createEvent() should navigate to create page" time="0.005" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent topEvents should return at most 3 events sorted by attendees descending" time="0.005" classname="EventsListComponent"/>
-  <testcase name="ParticipationService should be created" time="0.001" classname="ParticipationService"/>
-  <testcase name="ParticipationService getParticipants() should return empty array on error fallback" time="0.009" classname="ParticipationService"/>
-  <testcase name="ParticipationService removeParticipant() should send DELETE request" time="0.001" classname="ParticipationService"/>
-  <testcase name="ParticipationService confirm() should GET with token query param" time="0.001" classname="ParticipationService"/>
-  <testcase name="ParticipationService getParticipants() should GET participants for an event" time="0.001" classname="ParticipationService"/>
-  <testcase name="ParticipationService addParticipant() should POST a new participant to an event" time="0.001" classname="ParticipationService"/>
+  <testcase name="AdminReclamationsComponent should delete reclamation" time="0.153" classname="AdminReclamationsComponent"/>
+  <testcase name="AdminReclamationsComponent should filter by status" time="0.005" classname="AdminReclamationsComponent"/>
+  <testcase name="AdminReclamationsComponent should update status" time="0.004" classname="AdminReclamationsComponent"/>
+  <testcase name="AdminReclamationsComponent should toggle gravity sort" time="0.004" classname="AdminReclamationsComponent"/>
+  <testcase name="AdminReclamationsComponent should reset filters" time="0.004" classname="AdminReclamationsComponent"/>
+  <testcase name="AdminReclamationsComponent should create" time="0.025" classname="AdminReclamationsComponent"/>
+  <testcase name="AdminReclamationsComponent should load data on init" time="0.008" classname="AdminReclamationsComponent"/>
+  <testcase name="AdminReclamationsComponent should open detail" time="0.004" classname="AdminReclamationsComponent"/>
+  <testcase name="AdminReclamationsComponent should show notification" time="0.004" classname="AdminReclamationsComponent"/>
+  <testcase name="AdminReclamationsComponent should send response" time="0.003" classname="AdminReclamationsComponent"/>
+  <testcase name="AdminInstallmentsComponent devrait charger les plans" time="0.06" classname="AdminInstallmentsComponent"/>
+  <testcase name="AdminInstallmentsComponent devrait supprimer plan" time="0.004" classname="AdminInstallmentsComponent"/>
+  <testcase name="AdminInstallmentsComponent devrait charger refunds" time="0.002" classname="AdminInstallmentsComponent"/>
+  <testcase name="AdminInstallmentsComponent devrait filtrer plans" time="0.003" classname="AdminInstallmentsComponent"/>
+  <testcase name="AdminInstallmentsComponent devrait calculer stats" time="0.003" classname="AdminInstallmentsComponent"/>
+  <testcase name="AdminInstallmentsComponent devrait approuver refund" time="0.002" classname="AdminInstallmentsComponent"/>
+  <testcase name="AdminInstallmentsComponent devrait formater date" time="0.002" classname="AdminInstallmentsComponent"/>
+  <testcase name="ReclamationComponent Navigation devrait aller à la FAQ" time="0.082" classname="ReclamationComponent Navigation"/>
+  <testcase name="ReclamationComponent Navigation devrait retourner à la liste" time="0.003" classname="ReclamationComponent Navigation"/>
+  <testcase name="ReclamationComponent Navigation devrait aller au formulaire" time="0.002" classname="ReclamationComponent Navigation"/>
+  <testcase name="ReclamationComponent Navigation devrait ouvrir le détail d'une réclamation" time="0.002" classname="ReclamationComponent Navigation"/>
+  <testcase name="ReclamationComponent Filtres et Recherche devrait filtrer par statut PENDING" time="0.002" classname="ReclamationComponent Filtres et Recherche"/>
+  <testcase name="ReclamationComponent Filtres et Recherche devrait filtrer par recherche textuelle" time="0.002" classname="ReclamationComponent Filtres et Recherche"/>
+  <testcase name="ReclamationComponent Filtres et Recherche devrait retourner 0 résultats pour une recherche sans correspondance" time="0.002" classname="ReclamationComponent Filtres et Recherche"/>
+  <testcase name="ReclamationComponent Filtres et Recherche devrait afficher toutes les réclamations avec le filtre ALL" time="0.002" classname="ReclamationComponent Filtres et Recherche"/>
+  <testcase name="ReclamationComponent Filtres et Recherche devrait compter correctement les réclamations par filtre" time="0.002" classname="ReclamationComponent Filtres et Recherche"/>
+  <testcase name="ReclamationComponent Statistiques devrait calculer les statistiques correctement" time="0.002" classname="ReclamationComponent Statistiques"/>
+  <testcase name="ReclamationComponent FAQ devrait toggle un item FAQ" time="0.009" classname="ReclamationComponent FAQ"/>
+  <testcase name="ReclamationComponent FAQ devrait filtrer la FAQ par recherche" time="0.005" classname="ReclamationComponent FAQ"/>
+  <testcase name="ReclamationComponent FAQ devrait retourner tous les items si recherche vide" time="0.006" classname="ReclamationComponent FAQ"/>
+  <testcase name="ReclamationComponent FAQ devrait construire les items FAQ" time="0.005" classname="ReclamationComponent FAQ"/>
+  <testcase name="ReclamationComponent Initialisation devrait retourner null si aucun utilisateur connecté" time="0.002" classname="ReclamationComponent Initialisation"/>
+  <testcase name="ReclamationComponent Initialisation devrait avoir learnerId égal à l'id de l'utilisateur" time="0.001" classname="ReclamationComponent Initialisation"/>
+  <testcase name="ReclamationComponent Initialisation devrait créer le composant" time="0.002" classname="ReclamationComponent Initialisation"/>
+  <testcase name="ReclamationComponent Initialisation devrait récupérer l'utilisateur courant au ngOnInit" time="0.006" classname="ReclamationComponent Initialisation"/>
+  <testcase name="ReclamationComponent Initialisation devrait charger les réclamations au ngOnInit" time="0.005" classname="ReclamationComponent Initialisation"/>
+  <testcase name="ReclamationComponent Réactions aux messages devrait supprimer une réaction" time="0.002" classname="ReclamationComponent Réactions aux messages"/>
+  <testcase name="ReclamationComponent Réactions aux messages devrait ajouter une réaction 👍" time="0.002" classname="ReclamationComponent Réactions aux messages"/>
+  <testcase name="ReclamationComponent Détection automatique de type devrait afficher une suggestion si l'IA en retourne une" time="0.001" classname="ReclamationComponent Détection automatique de type"/>
+  <testcase name="ReclamationComponent Détection automatique de type ne devrait pas afficher de suggestion si le type est déjà sélectionné" time="0.001" classname="ReclamationComponent Détection automatique de type"/>
+  <testcase name="ReclamationComponent Détection automatique de type devrait appliquer la suggestion" time="0.002" classname="ReclamationComponent Détection automatique de type"/>
+  <testcase name="ReclamationComponent Détection automatique de type devrait ignorer la suggestion" time="0.002" classname="ReclamationComponent Détection automatique de type"/>
+  <testcase name="ReclamationComponent Onboarding devrait sauter l'onboarding" time="0.001" classname="ReclamationComponent Onboarding"/>
+  <testcase name="ReclamationComponent Onboarding devrait reculer à l'étape précédente" time="0.002" classname="ReclamationComponent Onboarding"/>
+  <testcase name="ReclamationComponent Onboarding devrait finir l'onboarding à la dernière étape" time="0.002" classname="ReclamationComponent Onboarding"/>
+  <testcase name="ReclamationComponent Onboarding devrait avancer à l'étape suivante" time="0.002" classname="ReclamationComponent Onboarding"/>
+  <testcase name="ReclamationComponent Helpers et Formatage devrait retourner - pour une date undefined" time="0.002" classname="ReclamationComponent Helpers et Formatage"/>
+  <testcase name="ReclamationComponent Helpers et Formatage devrait retourner la config de statut RESOLVED" time="0.001" classname="ReclamationComponent Helpers et Formatage"/>
+  <testcase name="ReclamationComponent Helpers et Formatage devrait retourner la config de type TECHNICAL" time="0.001" classname="ReclamationComponent Helpers et Formatage"/>
+  <testcase name="ReclamationComponent Helpers et Formatage devrait retourner la config de statut PENDING" time="0.002" classname="ReclamationComponent Helpers et Formatage"/>
+  <testcase name="ReclamationComponent Helpers et Formatage devrait retourner la date du jour au format ISO" time="0.002" classname="ReclamationComponent Helpers et Formatage"/>
+  <testcase name="ReclamationComponent Helpers et Formatage devrait formater une date correctement" time="0.002" classname="ReclamationComponent Helpers et Formatage"/>
+  <testcase name="ReclamationComponent Helpers et Formatage devrait cacher une card après double toggle" time="0.001" classname="ReclamationComponent Helpers et Formatage"/>
+  <testcase name="ReclamationComponent Helpers et Formatage devrait afficher une notification" time="0.002" classname="ReclamationComponent Helpers et Formatage"/>
+  <testcase name="ReclamationComponent Helpers et Formatage devrait retourner la config de priorité basse" time="0.001" classname="ReclamationComponent Helpers et Formatage"/>
+  <testcase name="ReclamationComponent Helpers et Formatage devrait retourner la config de type PAYMENT" time="0.001" classname="ReclamationComponent Helpers et Formatage"/>
+  <testcase name="ReclamationComponent Helpers et Formatage devrait retourner la config de priorité haute" time="0.002" classname="ReclamationComponent Helpers et Formatage"/>
+  <testcase name="ReclamationComponent Helpers et Formatage devrait afficher une card après toggle" time="0.001" classname="ReclamationComponent Helpers et Formatage"/>
+  <testcase name="ReclamationComponent Citations devrait citer un message admin" time="0.001" classname="ReclamationComponent Citations"/>
+  <testcase name="ReclamationComponent Citations devrait annuler une citation" time="0.002" classname="ReclamationComponent Citations"/>
+  <testcase name="ReclamationComponent Formulaire de Réclamation devrait invalider le formulaire si la description est vide" time="0.001" classname="ReclamationComponent Formulaire de Réclamation"/>
+  <testcase name="ReclamationComponent Formulaire de Réclamation devrait réinitialiser le formulaire" time="0.001" classname="ReclamationComponent Formulaire de Réclamation"/>
+  <testcase name="ReclamationComponent Formulaire de Réclamation ne devrait pas soumettre si le formulaire est invalide" time="0.002" classname="ReclamationComponent Formulaire de Réclamation"/>
+  <testcase name="ReclamationComponent Formulaire de Réclamation devrait afficher les champs spécifiques selon le type TECHNICAL" time="0.002" classname="ReclamationComponent Formulaire de Réclamation"/>
+  <testcase name="ReclamationComponent Formulaire de Réclamation devrait valider le formulaire si sujet et description sont remplis" time="0.001" classname="ReclamationComponent Formulaire de Réclamation"/>
+  <testcase name="ReclamationComponent Formulaire de Réclamation devrait invalider le formulaire si le sujet est vide" time="0.001" classname="ReclamationComponent Formulaire de Réclamation"/>
+  <testcase name="ReclamationComponent Formulaire de Réclamation devrait calculer la progression du formulaire" time="0.001" classname="ReclamationComponent Formulaire de Réclamation"/>
+  <testcase name="ReclamationComponent Formulaire de Réclamation devrait afficher les champs PAYMENT pour le type PAYMENT" time="0.002" classname="ReclamationComponent Formulaire de Réclamation"/>
+  <testcase name="ReclamationComponent Formulaire de Réclamation devrait soumettre une réclamation valide" time="0.002" classname="ReclamationComponent Formulaire de Réclamation"/>
+  <testcase name="ReclamationComponent Suppression de Réclamation devrait supprimer une réclamation" time="0.002" classname="ReclamationComponent Suppression de Réclamation"/>
+  <testcase name="ReclamationComponent Suppression de Réclamation ne devrait pas supprimer si l'utilisateur annule" time="0.002" classname="ReclamationComponent Suppression de Réclamation"/>
+  <testcase name="ReclamationComponent Réponses et Messages devrait gérer le texte de réponse de l'apprenant" time="0.002" classname="ReclamationComponent Réponses et Messages"/>
+  <testcase name="ReclamationComponent Réponses et Messages devrait soumettre une réponse avec citation" time="0.003" classname="ReclamationComponent Réponses et Messages"/>
+  <testcase name="ReclamationComponent Réponses et Messages devrait permettre de répondre si statut IN_PROGRESS" time="0.002" classname="ReclamationComponent Réponses et Messages"/>
+  <testcase name="ReclamationComponent Réponses et Messages ne devrait pas permettre de répondre si statut RESOLVED" time="0.001" classname="ReclamationComponent Réponses et Messages"/>
+  <testcase name="ReclamationComponent Réponses et Messages devrait identifier un message de l'apprenant par senderType LEARNER" time="0.001" classname="ReclamationComponent Réponses et Messages"/>
+  <testcase name="ReclamationComponent Réponses et Messages devrait permettre de répondre si statut PENDING" time="0.002" classname="ReclamationComponent Réponses et Messages"/>
+  <testcase name="ReclamationComponent Réponses et Messages devrait identifier un message admin par senderType ADMIN" time="0.001" classname="ReclamationComponent Réponses et Messages"/>
+  <testcase name="ReclamationComponent Satisfaction ne devrait pas nécessiter d'évaluation si déjà noté" time="0.002" classname="ReclamationComponent Satisfaction"/>
+  <testcase name="ReclamationComponent Satisfaction devrait retourner le bon label pour chaque score" time="0.001" classname="ReclamationComponent Satisfaction"/>
+  <testcase name="ReclamationComponent Satisfaction ne devrait pas soumettre si score = 0" time="0.001" classname="ReclamationComponent Satisfaction"/>
+  <testcase name="ReclamationComponent Satisfaction devrait soumettre la satisfaction" time="0.007" classname="ReclamationComponent Satisfaction"/>
+  <testcase name="ReclamationComponent Satisfaction devrait mettre à jour le score de satisfaction" time="0.002" classname="ReclamationComponent Satisfaction"/>
+  <testcase name="ReclamationComponent Satisfaction ne devrait pas nécessiter d'évaluation si statut PENDING" time="0.001" classname="ReclamationComponent Satisfaction"/>
+  <testcase name="ReclamationComponent Satisfaction devrait nécessiter une évaluation pour une réclamation résolue sans score" time="0.001" classname="ReclamationComponent Satisfaction"/>
+  <testcase name="ReclamationComponent Satisfaction devrait initialiser un brouillon de satisfaction" time="0.001" classname="ReclamationComponent Satisfaction"/>
+  <testcase name="RefundLearnerComponent devrait détecter deadline expirée" time="0.014" classname="RefundLearnerComponent"/>
+  <testcase name="RefundLearnerComponent devrait détecter refund existant" time="0.002" classname="RefundLearnerComponent"/>
+  <testcase name="RefundLearnerComponent devrait revenir success page" time="0.002" classname="RefundLearnerComponent"/>
+  <testcase name="RefundLearnerComponent devrait retourner deadline" time="0.001" classname="RefundLearnerComponent"/>
+  <testcase name="RefundLearnerComponent devrait créer le composant" time="0.001" classname="RefundLearnerComponent"/>
+  <testcase name="RefundLearnerComponent devrait envoyer demande refund" time="0.002" classname="RefundLearnerComponent"/>
+  <testcase name="RefundLearnerComponent devrait charger user + invoices + refunds" time="0.002" classname="RefundLearnerComponent"/>
+  <testcase name="RefundLearnerComponent ne doit rien envoyer si raison vide" time="0.002" classname="RefundLearnerComponent"/>
+  <testcase name="RefundLearnerComponent devrait ouvrir modal refund" time="0.001" classname="RefundLearnerComponent"/>
+  <testcase name="RefundLearnerComponent devrait fermer modal" time="0.002" classname="RefundLearnerComponent"/>
+  <testcase name="RefundLearnerComponent devrait charger refunds" time="0.001" classname="RefundLearnerComponent"/>
+  <testcase name="RefundLearnerComponent devrait compter refunds pending" time="0.001" classname="RefundLearnerComponent"/>
+  <testcase name="RefundLearnerComponent devrait charger factures sans erreur" time="0.001" classname="RefundLearnerComponent"/>
+  <testcase name="InstallmentPaymentComponent devrait créer le composant" time="0.015" classname="InstallmentPaymentComponent"/>
+  <testcase name="InstallmentPaymentComponent devrait initier Flouci" time="0.002" classname="InstallmentPaymentComponent"/>
+  <testcase name="InstallmentPaymentComponent devrait renvoyer OTP" time="0.002" classname="InstallmentPaymentComponent"/>
+  <testcase name="InstallmentPaymentComponent devrait charger le panier" time="0.002" classname="InstallmentPaymentComponent"/>
+  <testcase name="InstallmentPaymentComponent devrait confirmer paiement Wafa" time="0.002" classname="InstallmentPaymentComponent"/>
+  <testcase name="InstallmentPaymentComponent devrait vérifier OTP puis créer plan" time="0.002" classname="InstallmentPaymentComponent"/>
+  <testcase name="InstallmentPaymentComponent devrait vérifier solde Wafa" time="0.002" classname="InstallmentPaymentComponent"/>
+  <testcase name="InstallmentPaymentComponent devrait bloquer si téléphone vide" time="0.002" classname="InstallmentPaymentComponent"/>
+  <testcase name="InstallmentPaymentComponent devrait générer code Bakchich" time="0.002" classname="InstallmentPaymentComponent"/>
+  <testcase name="InstallmentPaymentComponent devrait revenir page payment" time="0.002" classname="InstallmentPaymentComponent"/>
+  <testcase name="InstallmentPaymentComponent format timer correct" time="0.001" classname="InstallmentPaymentComponent"/>
+  <testcase name="PaymentSuccessComponent devrait charger facture via learner" time="0.016" classname="PaymentSuccessComponent"/>
+  <testcase name="PaymentSuccessComponent devrait gérer absence user/email" time="0.001" classname="PaymentSuccessComponent"/>
+  <testcase name="PaymentSuccessComponent devrait créer le composant" time="0.002" classname="PaymentSuccessComponent"/>
+  <testcase name="PaymentSuccessComponent devrait naviguer vers courses" time="0.001" classname="PaymentSuccessComponent"/>
+  <testcase name="PaymentSuccessComponent devrait envoyer email facture" time="0.001" classname="PaymentSuccessComponent"/>
+  <testcase name="PaymentSuccessComponent devrait charger user" time="0.002" classname="PaymentSuccessComponent"/>
+  <testcase name="PaymentSuccessComponent devrait rejouer email" time="0.001" classname="PaymentSuccessComponent"/>
+  <testcase name="PaymentSuccessComponent devrait charger facture par invoiceNumber" time="0.001" classname="PaymentSuccessComponent"/>
+  <testcase name="PaymentComponent final amount avec coupon" time="0.016" classname="PaymentComponent"/>
+  <testcase name="PaymentComponent installment" time="0.002" classname="PaymentComponent"/>
+  <testcase name="PaymentComponent devrait retirer coupon" time="0.002" classname="PaymentComponent"/>
+  <testcase name="PaymentComponent valid phone" time="0.002" classname="PaymentComponent"/>
+  <testcase name="PaymentComponent devrait générer code Bakchich" time="0.001" classname="PaymentComponent"/>
+  <testcase name="PaymentComponent go back" time="0.001" classname="PaymentComponent"/>
+  <testcase name="PaymentComponent devrait créer le composant" time="0.001" classname="PaymentComponent"/>
+  <testcase name="PaymentComponent devrait charger user et panier" time="0.001" classname="PaymentComponent"/>
+  <testcase name="PaymentComponent timer format" time="0.001" classname="PaymentComponent"/>
+  <testcase name="PaymentComponent devrait appliquer coupon" time="0.002" classname="PaymentComponent"/>
+  <testcase name="PaymentComponent devrait renvoyer OTP" time="0.001" classname="PaymentComponent"/>
+  <testcase name="PaymentComponent devrait vérifier OTP" time="0.002" classname="PaymentComponent"/>
+  <testcase name="PaymentComponent devrait initier Flouci OTP" time="0.001" classname="PaymentComponent"/>
+  <testcase name="PaymentComponent devrait payer Wafa si solde suffisant" time="0.002" classname="PaymentComponent"/>
+  <testcase name="PaymentComponent devrait vérifier solde Wafa" time="0.001" classname="PaymentComponent"/>
+  <testcase name="InstallmentSuccessComponent should create" time="0.007" classname="InstallmentSuccessComponent"/>
+  <testcase name="CartComponent devrait gérer une erreur de chargement panier" time="0.015" classname="CartComponent"/>
+  <testcase name="CartComponent devrait retourner le nombre d’items" time="0.002" classname="CartComponent"/>
+  <testcase name="CartComponent devrait détecter panier vide" time="0.001" classname="CartComponent"/>
+  <testcase name="CartComponent devrait vider le panier" time="0.001" classname="CartComponent"/>
+  <testcase name="CartComponent devrait retourner le total" time="0.001" classname="CartComponent"/>
+  <testcase name="CartComponent devrait créer le composant" time="0.002" classname="CartComponent"/>
+  <testcase name="CartComponent devrait supprimer un item du panier" time="0.002" classname="CartComponent"/>
+  <testcase name="CartComponent devrait récupérer l’utilisateur au ngOnInit" time="0.002" classname="CartComponent"/>
+  <testcase name="CartComponent devrait retourner une couleur selon le niveau" time="0.001" classname="CartComponent"/>
+  <testcase name="CartComponent devrait charger le panier" time="0.001" classname="CartComponent"/>
+  <testcase name="CartComponent ne doit pas supprimer si cancel" time="0.001" classname="CartComponent"/>
+  <testcase name="CartComponent devrait naviguer vers paiement" time="0.001" classname="CartComponent"/>
+  <testcase name="CartComponent devrait charger les items avec détails" time="0.001" classname="CartComponent"/>
+  <testcase name="CartComponent devrait continuer shopping" time="0.001" classname="CartComponent"/>
+  <testcase name="CartComponent devrait voir un cours" time="0.002" classname="CartComponent"/>
+  <testcase name="AdminEnrollmentsComponent devrait retourner couleur status" time="0.017" classname="AdminEnrollmentsComponent"/>
+  <testcase name="AdminEnrollmentsComponent devrait calculer moyenne progress" time="0.001" classname="AdminEnrollmentsComponent"/>
+  <testcase name="AdminEnrollmentsComponent devrait calculer total" time="0.001" classname="AdminEnrollmentsComponent"/>
+  <testcase name="AdminEnrollmentsComponent devrait update status" time="0.003" classname="AdminEnrollmentsComponent"/>
+  <testcase name="AdminEnrollmentsComponent devrait créer composant" time="0.002" classname="AdminEnrollmentsComponent"/>
+  <testcase name="AdminEnrollmentsComponent devrait filtrer par status" time="0.002" classname="AdminEnrollmentsComponent"/>
+  <testcase name="AdminEnrollmentsComponent devrait compter par progress" time="0.002" classname="AdminEnrollmentsComponent"/>
+  <testcase name="AdminEnrollmentsComponent devrait cancel enrollment" time="0.002" classname="AdminEnrollmentsComponent"/>
+  <testcase name="AdminEnrollmentsComponent devrait calculer active" time="0.002" classname="AdminEnrollmentsComponent"/>
+  <testcase name="AdminEnrollmentsComponent devrait calculer completed" time="0.002" classname="AdminEnrollmentsComponent"/>
+  <testcase name="AdminEnrollmentsComponent devrait charger les enrollments" time="0.002" classname="AdminEnrollmentsComponent"/>
   <system-out>
-    <![CDATA[Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) ERROR: 'Error loading forums:', Error: fail
-Error: fail
-    at errorFactory (http://localhost:9881/_karma_webpack_/webpack:/src/app/front-office/forum/forum-list/forum-list.component.spec.ts:180:64)
-    at Observable._subscribe (http://localhost:9881/_karma_webpack_/webpack:/node_modules/rxjs/dist/esm/internal/observable/throwError.js:5:51)
-    at Observable._trySubscribe (http://localhost:9881/_karma_webpack_/webpack:/node_modules/rxjs/dist/esm/internal/Observable.js:37:25)
-    at cb (http://localhost:9881/_karma_webpack_/webpack:/node_modules/rxjs/dist/esm/internal/Observable.js:31:30)
-    at errorContext (http://localhost:9881/_karma_webpack_/webpack:/node_modules/rxjs/dist/esm/internal/util/errorContext.js:19:9)
-    at Observable.subscribe (http://localhost:9881/_karma_webpack_/webpack:/node_modules/rxjs/dist/esm/internal/Observable.js:22:21)
-    at ForumListComponent.loadForums (http://localhost:9881/_karma_webpack_/webpack:/src/app/front-office/forum/forum-list/forum-list.component.ts:210:69)
-    at apply (http://localhost:9881/_karma_webpack_/webpack:/src/app/front-office/forum/forum-list/forum-list.component.ts:93:18)
-    at _ZoneDelegate.invoke (http://localhost:9881/_karma_webpack_/webpack:/node_modules/zone.js/fesm2015/zone.js:369:28)
-    at ProxyZoneSpec.onInvoke (http://localhost:9881/_karma_webpack_/webpack:/node_modules/zone.js/fesm2015/zone-testing.js:2081:39)
-,Chrome Headless 147.0.0.0 (Windows 10) ERROR: 'Error loading user posts count:', Error: fail
-Error: fail
-    at errorFactory (http://localhost:9881/_karma_webpack_/webpack:/src/app/front-office/forum/forum-list/forum-list.component.spec.ts:180:64)
-    at Observable._subscribe (http://localhost:9881/_karma_webpack_/webpack:/node_modules/rxjs/dist/esm/internal/observable/throwError.js:5:51)
-    at Observable._trySubscribe (http://localhost:9881/_karma_webpack_/webpack:/node_modules/rxjs/dist/esm/internal/Observable.js:37:25)
-    at cb (http://localhost:9881/_karma_webpack_/webpack:/node_modules/rxjs/dist/esm/internal/Observable.js:31:30)
-    at errorContext (http://localhost:9881/_karma_webpack_/webpack:/node_modules/rxjs/dist/esm/internal/util/errorContext.js:19:9)
-    at Observable.subscribe (http://localhost:9881/_karma_webpack_/webpack:/node_modules/rxjs/dist/esm/internal/Observable.js:22:21)
-    at ForumListComponent.loadUserPostsCount (http://localhost:9881/_karma_webpack_/webpack:/src/app/front-office/forum/forum-list/forum-list.component.ts:194:57)
-    at apply (http://localhost:9881/_karma_webpack_/webpack:/src/app/front-office/forum/forum-list/forum-list.component.ts:97:18)
-    at _ZoneDelegate.invoke (http://localhost:9881/_karma_webpack_/webpack:/node_modules/zone.js/fesm2015/zone.js:369:28)
-    at ProxyZoneSpec.onInvoke (http://localhost:9881/_karma_webpack_/webpack:/node_modules/zone.js/fesm2015/zone-testing.js:2081:39)
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) ERROR: 'Error loading events:', Error: Network error
-Error: Network error
-    at errorFactory (http://localhost:9881/_karma_webpack_/webpack:/src/app/front-office/events/events-list/events-list.component.spec.ts:108:64)
-    at Observable._subscribe (http://localhost:9881/_karma_webpack_/webpack:/node_modules/rxjs/dist/esm/internal/observable/throwError.js:5:51)
-    at Observable._trySubscribe (http://localhost:9881/_karma_webpack_/webpack:/node_modules/rxjs/dist/esm/internal/Observable.js:37:25)
-    at cb (http://localhost:9881/_karma_webpack_/webpack:/node_modules/rxjs/dist/esm/internal/Observable.js:31:30)
-    at errorContext (http://localhost:9881/_karma_webpack_/webpack:/node_modules/rxjs/dist/esm/internal/util/errorContext.js:19:9)
-    at Observable.subscribe (http://localhost:9881/_karma_webpack_/webpack:/node_modules/rxjs/dist/esm/internal/Observable.js:22:21)
-    at EventsListComponent.loadEvents (http://localhost:9881/_karma_webpack_/webpack:/src/app/front-office/events/events-list/events-list.component.ts:26:39)
-    at UserContext.apply (http://localhost:9881/_karma_webpack_/webpack:/src/app/front-office/events/events-list/events-list.component.spec.ts:111:15)
-    at _ZoneDelegate.invoke (http://localhost:9881/_karma_webpack_/webpack:/node_modules/zone.js/fesm2015/zone.js:369:28)
-    at ProxyZoneSpec.onInvoke (http://localhost:9881/_karma_webpack_/webpack:/node_modules/zone.js/fesm2015/zone-testing.js:2081:39)
+    <![CDATA[Chrome Headless 147.0.0.0 (Windows 10) LOG: '🟢 loadReclamations appelée'
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: '🟢 Réclamations reçues:', 1
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: '🟢 loadReclamations appelée'
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: '🟢 Réclamations reçues:', 1
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Plans chargés:', [Object{planId: 1, learnerId: 1001, totalAmount: 100, amountWithFees: 120, feePercentage: 20, numberOfInstallments: 2, installmentAmount: 60, status: 'ACTIVE', createdAt: '2026-05-05T20:46:27.433Z', installments: [..., ...]}, Object{planId: 2, learnerId: 1002, totalAmount: 200, amountWithFees: 240, feePercentage: 20, numberOfInstallments: 2, installmentAmount: 120, status: 'COMPLETED', createdAt: '2026-05-05T20:46:27.433Z', installments: []}]
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: '[WS] Pas encore connecté pour rec#1'
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: '🟢 autoDetectType appelé'
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Sujet:', 'Mon paiement a échoué hier'
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Description:', 'La transaction a été refusée'
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: '🟢 Réponse reçue:', Object{hasSuggestion: true, suggestedType: 'PAYMENT', suggestedLabel: 'Problème de paiement', confidence: 80, matchedKeywords: ['paiement', 'remboursement']}
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: '🟢 Suggestion à afficher:', 'Problème de paiement'
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: '🟢 autoDetectType appelé'
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Sujet:', ''
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Description:', ''
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: '🔴 Pas de texte à analyser'
+,Chrome Headless 147.0.0.0 (Windows 10) ALERT: '✅ Demande envoyée ! Vous recevrez une réponse sous 48h.'
+,Chrome Headless 147.0.0.0 (Windows 10) ALERT: 'Nouveau code envoyé !'
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Plan créé, planId:', 1
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Facture INV-001 envoyée à ines@test.com'
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Facture INV-001 envoyée à ines@test.com'
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Facture INV-001 envoyée à ines@test.com'
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Facture INV-001 envoyée à ines@test.com'
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Facture INV-001 envoyée à ines@test.com'
+,Chrome Headless 147.0.0.0 (Windows 10) ALERT: 'Nouveau code envoyé !'
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Cours retiré du panier avec succès'
 
 ]]>
   </system-out>
