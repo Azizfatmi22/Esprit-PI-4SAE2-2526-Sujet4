@@ -5,6 +5,7 @@ pipeline {
     // and the project uses the Maven Wrapper (mvnw)
 
     environment {
+        REPO_URL = 'git@github.com:Azizfatmi22/PIDEV4EME.git'
         // Adaptation for your local environment
         SONAR_TOKEN = 'sqa_ded110eee1c638fafe316ac69e08e9b045887e3f'
         DB_USER = 'root'
@@ -33,7 +34,10 @@ pipeline {
 
         stage('Forum Service Pipeline') {
             steps {
-                // 1. Database Creation (if needed specifically for forum)
+                dir('ms-forum') {
+                    checkout([$class: 'GitSCM', branches: [[name: '*/forum-service-devops']], userRemoteConfigs: [[url: "${REPO_URL}"]]])
+
+                    // 1. Database Creation (if needed specifically for forum)
                 sh "docker exec mysql-db mysql -u${DB_USER} -p${DB_PASS} -e 'CREATE DATABASE IF NOT EXISTS formini;'"
 
                 // 2. Tests + Coverage using Maven Wrapper
@@ -57,6 +61,7 @@ pipeline {
                 // 5. Kubernetes Deploy
                 sh 'kubectl apply -f k8s/deployment.yaml'
                 sh 'kubectl rollout restart deployment/forum-service || true'
+                }
             }
         }
 
