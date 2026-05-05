@@ -1,0 +1,367 @@
+<div class="payment-container">
+  <div class="payment-header">
+    <button class="btn-back" (click)="goBack()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Retour au panier
+    </button>
+    <h1>Paiement</h1>
+  </div>
+
+  <div class="payment-content">
+    <div class="payment-methods">
+      <h2>Sélectionner une méthode de paiement</h2>
+
+      <div class="method-options">
+
+        <!-- Flouci -->
+        <div class="method-card tunisian"
+             [class.selected]="selectedMethod === 'FLOUCI'"
+             (click)="selectPaymentMethod('FLOUCI')">
+          <div class="method-icon flouci">💜</div>
+          <div class="method-info">
+            <h3>Flouci</h3>
+            <p>Paiement mobile via Flouci</p>
+          </div>
+          <div class="method-radio">
+            <input type="radio" [checked]="selectedMethod === 'FLOUCI'" readonly>
+          </div>
+        </div>
+
+        <!-- Wafa Cash -->
+        <div class="method-card tunisian"
+             [class.selected]="selectedMethod === 'WAFA_CASH'"
+             (click)="selectPaymentMethod('WAFA_CASH')">
+          <div class="method-icon wafa">💚</div>
+          <div class="method-info">
+            <h3>Wafa Cash</h3>
+            <p>Portefeuille électronique Wafa Bank</p>
+          </div>
+          <div class="method-radio">
+            <input type="radio" [checked]="selectedMethod === 'WAFA_CASH'" readonly>
+          </div>
+        </div>
+
+        <!-- Bakchich -->
+        <div class="method-card tunisian"
+             [class.selected]="selectedMethod === 'BAKCHICH'"
+             (click)="selectPaymentMethod('BAKCHICH')">
+          <div class="method-icon bakchich">💙</div>
+          <div class="method-info">
+            <h3>Bakchich</h3>
+            <p>Solution de paiement tunisienne</p>
+          </div>
+          <div class="method-radio">
+            <input type="radio" [checked]="selectedMethod === 'BAKCHICH'" readonly>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===== FORMULAIRE TÉLÉPHONE ===== -->
+      <div class="tunisian-payment-form"
+           *ngIf="selectedMethod === 'FLOUCI' ||
+                  selectedMethod === 'WAFA_CASH' ||
+                  selectedMethod === 'BAKCHICH'">
+
+        <h3>Informations de paiement</h3>
+
+        <div class="form-group">
+          <label>Numéro de téléphone</label>
+          <input
+            type="tel"
+            [(ngModel)]="tunisianPaymentForm.phoneNumber"
+            placeholder="9X XXX XXX"
+            maxlength="10"
+            pattern="[0-9]*"
+            (input)="onPhoneNumberChange()">
+          <small class="form-hint">
+            Entrez votre numéro de téléphone mobile (9 chiffres)
+          </small>
+        </div>
+
+        <!-- ===== BLOC WAFA CASH — solde ===== -->
+        <div *ngIf="selectedMethod === 'WAFA_CASH'">
+          <div class="wafa-checking" *ngIf="wafaChecking">
+            ⏳ Vérification du solde en cours...
+          </div>
+          <div class="wafa-balance-card"
+               *ngIf="wafaBalance !== null && !wafaChecking">
+            <div class="balance-row">
+              <span class="balance-label">💚 Solde Wafa Cash</span>
+              <span class="balance-amount"
+                    [class.sufficient]="wafaBalance >= totalAmount"
+                    [class.insufficient]="wafaBalance < totalAmount">
+                {{ wafaBalance | currency:'TND':'symbol':'1.2-2' }}
+              </span>
+            </div>
+            <div class="balance-status sufficient-msg"
+                 *ngIf="wafaBalance >= totalAmount">
+              ✅ Solde suffisant pour ce paiement
+            </div>
+            <div class="balance-status insufficient-msg"
+                 *ngIf="wafaBalance < totalAmount">
+              ❌ Solde insuffisant — il manque
+              {{ (totalAmount - wafaBalance) | currency:'TND':'symbol':'1.2-2' }}
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== INFO BOX ===== -->
+        <div class="payment-info-box">
+          <div class="info-icon">ℹ️</div>
+          <div class="info-content">
+            <p><strong>Comment ça marche ?</strong></p>
+            <ul>
+              <li>Entrez votre numéro de téléphone mobile</li>
+              <li *ngIf="selectedMethod === 'FLOUCI'">
+                Vous recevrez un code OTP par SMS à confirmer
+              </li>
+              <li *ngIf="selectedMethod === 'WAFA_CASH'">
+                Votre solde Wafa Cash sera vérifié automatiquement
+              </li>
+              <li *ngIf="selectedMethod === 'BAKCHICH'">
+                Un code de paiement sera généré à présenter en agence
+              </li>
+              <li>Confirmez le paiement</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+<!-- ===== RÉSUMÉ ===== -->
+<div class="payment-summary">
+  <div class="summary-card">
+
+    <h3>🧾 Résumé de commande</h3>
+
+    <!-- Sous-total -->
+    <div class="summary-row">
+      <span class="row-label">Sous-total</span>
+      <span class="row-value" [class.striked]="couponResult?.valid">
+        {{ totalAmount | currency:'TND':'symbol':'1.2-2' }}
+      </span>
+    </div>
+
+    <!-- Réduction coupon -->
+    <div class="summary-row coupon-applied-row" *ngIf="couponResult?.valid">
+      <span class="row-label">
+        <span class="coupon-tag">🎟️ {{ couponResult.couponCode }}</span>
+      </span>
+      <span class="row-value discount-value">
+        -{{ couponResult.discountAmount | number:'1.2-2' }} TND
+      </span>
+    </div>
+
+    <!-- Séparateur total -->
+    <div class="summary-divider"></div>
+
+    <!-- Total final -->
+    <div class="summary-row total-row">
+      <span class="total-label">Total à payer</span>
+      <span class="total-value">
+        {{ finalAmount | currency:'TND':'symbol':'1.2-2' }}
+      </span>
+    </div>
+
+    <!-- Économie réalisée -->
+    <div class="savings-badge" *ngIf="couponResult?.valid">
+      🎉 Vous économisez {{ couponResult.discountAmount | number:'1.2-2' }} TND !
+    </div>
+
+    <!-- ===== SECTION COUPON ===== -->
+    <div class="coupon-section">
+      <div class="coupon-header">
+        <span class="coupon-icon">🎟️</span>
+        <span class="coupon-title">Code Promo</span>
+      </div>
+
+      <!-- Input coupon -->
+      <div class="coupon-input-row" *ngIf="!couponResult?.valid">
+        <input
+          type="text"
+          [(ngModel)]="couponCode"
+          placeholder="Ex: WELCOME20"
+          class="coupon-input"
+          (keyup.enter)="applyCoupon()">
+        <button
+          (click)="applyCoupon()"
+          [disabled]="couponLoading || !couponCode.trim()"
+          class="btn-apply-coupon">
+          <span *ngIf="couponLoading">⏳</span>
+          <span *ngIf="!couponLoading">Appliquer</span>
+        </button>
+      </div>
+
+      <!-- Coupon valide -->
+      <div class="coupon-success" *ngIf="couponResult?.valid">
+        <div class="coupon-success-inner">
+          <div class="coupon-success-left">
+            <span class="check-icon">✅</span>
+            <div>
+              <div class="coupon-success-code">{{ couponResult.couponCode }}</div>
+              <div class="coupon-success-msg">{{ couponResult.message }}</div>
+            </div>
+          </div>
+          <button class="btn-remove-coupon" (click)="removeCoupon()" title="Retirer le coupon">✕</button>
+        </div>
+      </div>
+
+      <!-- Erreur coupon -->
+      <div class="coupon-error" *ngIf="couponResult && !couponResult.valid">
+        <span>❌</span>
+        <span>{{ couponResult.message }}</span>
+      </div>
+    </div>
+    <!-- ===== FIN COUPON ===== -->
+
+    <!-- Infos solde Wafa -->
+    <div class="wafa-summary-info" *ngIf="selectedMethod === 'WAFA_CASH' && wafaBalance !== null">
+      <div class="wafa-summary-row">
+        <span>💚 Solde Wafa Cash</span>
+        <span [class.text-green]="wafaBalance >= finalAmount"
+              [class.text-red]="wafaBalance < finalAmount">
+          {{ wafaBalance | currency:'TND':'symbol':'1.2-2' }}
+        </span>
+      </div>
+      <div class="wafa-summary-row" *ngIf="wafaBalance < finalAmount">
+        <span>Manque</span>
+        <span class="text-red">{{ (finalAmount - wafaBalance) | currency:'TND':'symbol':'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <!-- BOUTON PAYER -->
+    <button class="btn-pay" (click)="processPayment()"
+      [disabled]="processing || wafaChecking || !selectedMethod ||
+                 (selectedMethod === 'WAFA_CASH' && wafaBalance !== null && wafaBalance < finalAmount)">
+      <span *ngIf="!processing && !wafaChecking">
+        💳 Payer {{ finalAmount | currency:'TND':'symbol':'1.2-2' }}
+      </span>
+      <span *ngIf="wafaChecking">⏳ Vérification du solde...</span>
+      <span *ngIf="processing && !wafaChecking">⏳ Traitement en cours...</span>
+    </button>
+
+    <!-- Solde insuffisant -->
+    <div class="insufficient-warning"
+         *ngIf="selectedMethod === 'WAFA_CASH' && wafaBalance !== null && wafaBalance < finalAmount">
+      💚 Rechargez votre compte Wafa Cash avant de payer
+    </div>
+
+    <!-- Séparateur -->
+    <div class="divider"><span>ou</span></div>
+
+    <!-- Payer en plusieurs fois -->
+    <button class="btn-installment" (click)="goToInstallment()" [disabled]="totalAmount <= 0">
+      📅 Payer en 3x ou 6x
+    </button>
+    <p class="installment-info">3x sans frais &nbsp;|&nbsp; 6x avec 5% de frais</p>
+
+    <!-- Sécurité -->
+    <div class="security-info">
+      🔒 Paiement 100% sécurisé
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== OVERLAY OTP FLOUCI ===== -->
+<div class="otp-overlay" *ngIf="showOtpScreen">
+  <div class="otp-card">
+
+    <div class="otp-header">
+      <span class="otp-logo">💜</span>
+      <h2>Vérification Flouci</h2>
+      <p>Code envoyé au <strong>{{ tunisianPaymentForm.phoneNumber }}</strong></p>
+      <div *ngIf="flouciDebugStatus || flouciDebugMessage" style="margin-top:8px;font-size:12px;opacity:.85;text-align:left;">
+        <div><strong>Status:</strong> {{ flouciDebugStatus || 'N/A' }}</div>
+        <div><strong>Message:</strong> {{ flouciDebugMessage || 'N/A' }}</div>
+        <div><strong>Ref:</strong> {{ flouciDebugRef || transactionRef || 'N/A' }}</div>
+      </div>
+    </div>
+
+    <div class="otp-input-wrapper">
+      <input
+        type="text"
+        [(ngModel)]="otpCode"
+        maxlength="6"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        placeholder="_ _ _ _ _ _"
+        class="otp-input"
+        (keyup.enter)="confirmOtp()">
+    </div>
+
+    <div class="otp-timer" [class.expired]="canResend">
+      <span *ngIf="!canResend">⏱ Code valable {{ timerDisplay }}</span>
+      <span *ngIf="canResend">⚠️ Code expiré</span>
+    </div>
+
+    <button class="btn-confirm-otp" (click)="confirmOtp()" [disabled]="processing">
+      <span *ngIf="!processing">✅ Confirmer le paiement</span>
+      <span *ngIf="processing">Vérification...</span>
+    </button>
+
+    <button class="btn-resend" (click)="resendOtp()" [disabled]="!canResend">
+      🔄 Renvoyer le code
+    </button>
+
+    <button class="btn-cancel-otp" (click)="showOtpScreen = false">
+      Annuler
+    </button>
+
+  </div>
+</div>
+
+<!-- ===== OVERLAY BAKCHICH ===== -->
+<div class="bakchich-overlay" *ngIf="showBakchichScreen">
+  <div class="bakchich-card">
+
+    <div class="bakchich-header">
+      <span class="bakchich-logo">💙</span>
+      <h2>Code de paiement Bakchich</h2>
+      <p>Présentez ce code en agence Bakchich</p>
+    </div>
+
+    <!-- Code de paiement -->
+    <div class="bakchich-code-box">
+      <p class="code-label">Votre code</p>
+      <p class="code-value">{{ bakchichCode }}</p>
+    </div>
+
+    <!-- QR Code -->
+    <div class="qr-code-box">
+      <p class="qr-hint" *ngIf="bakchichQrData">{{ bakchichQrData }}</p>
+      <p class="qr-hint">📱 Scannez en agence Bakchich</p>
+    </div>
+
+    <!-- Détails -->
+    <div class="bakchich-details">
+      <div class="detail-row">
+        <span>💰 Montant à payer</span>
+        <strong>{{ bakchichAmount | currency:'TND':'symbol':'1.2-2' }}</strong>
+      </div>
+      <div class="detail-row">
+        <span>⏰ Valable jusqu'à</span>
+        <strong>{{ bakchichExpiresAt | date:'dd/MM/yyyy HH:mm' }}</strong>
+      </div>
+      <div class="detail-row">
+        <span>📱 Téléphone</span>
+        <strong>{{ tunisianPaymentForm.phoneNumber }}</strong>
+      </div>
+    </div>
+
+    <div class="bakchich-warning">
+      ⚠️ Ce code est valable <strong>24 heures</strong> seulement.
+      Un email de confirmation vous sera envoyé après validation en agence.
+    </div>
+
+    <button class="btn-bakchich-close"
+            (click)="showBakchichScreen = false; router.navigate(['/cart'])">
+      ✅ J'ai noté mon code
+    </button>
+
+  </div>
+</div>

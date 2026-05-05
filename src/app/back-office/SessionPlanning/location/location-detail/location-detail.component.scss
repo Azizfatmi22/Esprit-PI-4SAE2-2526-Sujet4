@@ -1,0 +1,103 @@
+.location-detail-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.btn-back,
+.btn-secondary,
+.btn-primary {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.btn-back,
+.btn-secondary {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.btn-primary {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.state {
+  background: #f3f4f6;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.state.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.detail-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.card-top {
+  border-left: 4px solid #2563eb;
+  padding-left: 12px;
+  margin-bottom: 16px;
+}
+
+.type-chip {
+  display: inline-block;
+  background: #f3f4f6;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.rows {
+  display: grid;
+  gap: 10px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.label {
+  color: #6b7280;
+}
+
+.value {
+  color: #111827;
+  word-break: break-word;
+}
+
+.value.link {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+@media (max-width: 640px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}

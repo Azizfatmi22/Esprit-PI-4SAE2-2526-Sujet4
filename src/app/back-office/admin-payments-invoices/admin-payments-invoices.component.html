@@ -1,0 +1,684 @@
+<div class="admin-container">
+  <div class="header">
+    <div class="header-top">
+      <h1>Gestion des Paiements et Factures</h1>
+      <div class="header-actions">
+        <button class="btn-icon" (click)="showFilters = !showFilters" [class.active]="showFilters">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+          </svg>
+          Filtres
+        </button>
+        <button class="btn-icon" (click)="exportToCSV()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          Exporter CSV
+        </button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Total Paiements</span>
+          <span class="stat-value">{{ getTotalPayments() | number:'1.2-2' }} TND</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Total Factures</span>
+          <span class="stat-value">{{ getTotalInvoices() | number:'1.2-2' }} TND</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Nombre de Paiements</span>
+          <span class="stat-value">{{ payments.length }}</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Nombre de Factures</span>
+          <span class="stat-value">{{ invoices.length }}</span>
+        </div>
+      </div>
+      <div class="stat-card" *ngIf="bakchichPending.length > 0">
+        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+          💙
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Bakchich en attente</span>
+          <span class="stat-value" style="color: #ef4444;">{{ bakchichPending.length }}</span>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtres avancés -->
+  <div class="filters-panel" *ngIf="showFilters">
+    <div class="filters-grid">
+      <div class="filter-group">
+        <label>Recherche</label>
+        <input type="text" placeholder="ID, transaction, méthode, statut..."
+               [(ngModel)]="searchTerm" class="filter-input">
+      </div>
+      <div class="filter-group">
+        <label>Statut</label>
+        <select [(ngModel)]="filterStatus" class="filter-select">
+          <option value="all">Tous</option>
+          <option value="success">Success</option>
+          <option value="paid">Paid</option>
+          <option value="pending">Pending</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="failed">Failed</option>
+        </select>
+      </div>
+      <div class="filter-group" *ngIf="selectedTab === 'payments'">
+        <label>Méthode de paiement</label>
+        <select [(ngModel)]="filterMethod" class="filter-select">
+          <option value="all">Toutes</option>
+          <option value="flouci">Flouci</option>
+          <option value="wafa_cash">Wafa Cash</option>
+          <option value="bakchich">Bakchich</option>
+          <option value="carte">Carte</option>
+          <option value="paypal">PayPal</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Date de début</label>
+        <input type="date" [(ngModel)]="dateFrom" class="filter-input">
+      </div>
+      <div class="filter-group">
+        <label>Date de fin</label>
+        <input type="date" [(ngModel)]="dateTo" class="filter-input">
+      </div>
+      <div class="filter-group">
+        <label>Éléments par page</label>
+        <select [(ngModel)]="itemsPerPage" (change)="currentPage = 1" class="filter-select">
+          <option value="10">10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+    </div>
+    <div class="filters-actions">
+      <button class="btn-secondary" (click)="resetFilters()">Réinitialiser</button>
+      <button class="btn-primary" (click)="showFilters = false">Appliquer</button>
+    </div>
+  </div>
+
+  <!-- ===== TABS ===== -->
+  <div class="tabs">
+    <button class="tab-button"
+            [class.active]="selectedTab === 'payments'"
+            (click)="selectedTab = 'payments'; currentPage = 1">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <line x1="12" y1="1" x2="12" y2="23"></line>
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+      </svg>
+      Paiements ({{ payments.length }})
+    </button>
+    <button class="tab-button"
+            [class.active]="selectedTab === 'invoices'"
+            (click)="selectedTab = 'invoices'; currentPage = 1">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+      </svg>
+      💳 Factures (directes + échelonnées) ({{ invoices.length }})
+    </button>
+    <button class="tab-button bakchich-tab"
+            [class.active]="selectedTab === 'bakchich'"
+            (click)="selectedTab = 'bakchich'; loadBakchichPending()">
+      💙 Bakchich en attente
+      <span class="pending-badge" *ngIf="bakchichPending.length > 0">
+        {{ bakchichPending.length }}
+      </span>
+    </button>
+    <button class="tab-button"
+          [class.active]="selectedTab === 'refunds'"
+          (click)="selectedTab = 'refunds'; loadAllRefunds()">
+    💸 Remboursements
+    <span class="pending-badge" *ngIf="pendingRefunds.length > 0">
+      {{ pendingRefunds.length }}
+    </span>
+  </button>
+  </div>
+
+  <div *ngIf="error" class="error-message">{{ error }}</div>
+
+  <!-- ===== STATISTIQUES VISUELLES ===== -->
+  <div class="charts-section" *ngIf="selectedTab === 'payments' && payments.length > 0">
+    <div class="chart-card">
+      <h3>Paiements par méthode</h3>
+      <div class="chart-bars">
+        <div *ngFor="let item of getPaymentsByMethod()" class="chart-bar-item">
+          <div class="chart-bar-label">{{ item.method }}</div>
+          <div class="chart-bar">
+            <div class="chart-bar-fill"
+                 [style.width.%]="(item.count / payments.length) * 100"
+                 [style.background]="getMethodColor(item.method)"></div>
+          </div>
+          <div class="chart-bar-value">{{ item.count }} ({{ formatCurrency(item.total) }})</div>
+        </div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <h3>Paiements par statut</h3>
+      <div class="chart-bars">
+        <div *ngFor="let item of getPaymentsByStatus()" class="chart-bar-item">
+          <div class="chart-bar-label">{{ item.status }}</div>
+          <div class="chart-bar">
+            <div class="chart-bar-fill"
+                 [style.width.%]="(item.count / payments.length) * 100"
+                 [style.background]="getStatusColor(item.status)"></div>
+          </div>
+          <div class="chart-bar-value">{{ item.count }} ({{ formatCurrency(item.total) }})</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ONGLET PAIEMENTS ===== -->
+  <div *ngIf="selectedTab === 'payments'" class="table-container">
+    <div *ngIf="loadingPayments" class="loading">
+      <div class="spinner"></div>
+      Chargement des paiements...
+    </div>
+
+    <div *ngIf="!loadingPayments && filteredPayments.length === 0" class="empty-state">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <p>Aucun paiement trouvé</p>
+      <button class="btn-secondary" (click)="resetFilters()">Réinitialiser les filtres</button>
+    </div>
+
+    <div *ngIf="!loadingPayments && filteredPayments.length > 0" class="table-wrapper">
+      <p class="table-description">
+        Cette table affiche l’ensemble des paiements effectués par les apprenants.
+        Elle permet de suivre les montants, les méthodes de paiement, les statuts et les dates.
+      </p>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th (click)="sort('id')" class="sortable">ID <span class="sort-icon">{{ getSortIcon('id') }}</span></th>
+            <th>Apprenant ID</th>
+            <th (click)="sort('amount')" class="sortable">Montant <span class="sort-icon">{{ getSortIcon('amount') }}</span></th>
+            <th (click)="sort('method')" class="sortable">Méthode <span class="sort-icon">{{ getSortIcon('method') }}</span></th>
+            <th (click)="sort('status')" class="sortable">Statut <span class="sort-icon">{{ getSortIcon('status') }}</span></th>
+            <th>Transaction ID</th>
+            <th (click)="sort('date')" class="sortable">Date <span class="sort-icon">{{ getSortIcon('date') }}</span></th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let payment of paginatedPayments">
+            <td>{{ payment.id }}</td>
+            <td>{{ payment.learnerId }}</td>
+            <td class="amount">{{ formatCurrency(payment.amount) }}</td>
+            <td>
+              <span class="badge method-badge" [class]="'method-' + (payment.method || '').toLowerCase()">
+                {{ payment.method }}
+              </span>
+            </td>
+            <td>
+              <span class="badge status-badge" [class]="'status-' + (payment.status || '').toLowerCase()">
+                {{ payment.status }}
+              </span>
+            </td>
+            <td class="transaction-id">{{ payment.transactionId }}</td>
+            <td>{{ formatDate(payment.paymentDate) }}</td>
+            <td>
+              <button class="btn-action" (click)="viewDetails(payment)" title="Voir détails">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+              <button class="btn-action btn-delete"
+            (click)="deletePayment(payment)"
+            title="Supprimer paiement">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+        <path d="M10 11v6M14 11v6"/>
+        <path d="M9 6V4h6v2"/>
+      </svg>
+    </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="pagination" *ngIf="totalPages > 1">
+        <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">← Précédent</button>
+        <div class="page-numbers">
+          <button *ngFor="let page of [].constructor(totalPages); let i = index"
+                  class="page-number" [class.active]="currentPage === i + 1"
+                  (click)="goToPage(i + 1)">{{ i + 1 }}</button>
+        </div>
+        <button class="page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">Suivant →</button>
+        <span class="page-info">Page {{ currentPage }} sur {{ totalPages }} ({{ filteredPayments.length }} résultats)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ONGLET FACTURES DIRECTES ===== -->
+  <div *ngIf="selectedTab === 'invoices'" class="table-container">
+
+    <div *ngIf="loadingInvoices" class="loading">
+      <div class="spinner"></div>
+      Chargement des factures...
+    </div>
+
+    <div *ngIf="!loadingInvoices && filteredInvoices.length === 0" class="empty-state">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+      </svg>
+      <p>Aucune facture trouvée</p>
+      <button class="btn-secondary" (click)="resetFilters()">Réinitialiser les filtres</button>
+    </div>
+
+    <div *ngIf="!loadingInvoices && filteredInvoices.length > 0" class="table-wrapper">
+      <p class="table-description">
+        Cette table affiche l’ensemble des factures générées par les paiements directs et échelonnés.
+        Elle permet de suivre les montants, les statuts de paiement, les cours achetés
+        ainsi que d'accéder aux détails ou aux versions PDF des factures.
+      </p>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th (click)="sort('id')" class="sortable">Numéro Facture <span class="sort-icon">{{ getSortIcon('id') }}</span></th>
+            <th>Apprenant ID</th>
+            <th (click)="sort('amount')" class="sortable">Montant Total <span class="sort-icon">{{ getSortIcon('amount') }}</span></th>
+            <th>Devise</th>
+            <th (click)="sort('status')" class="sortable">Statut <span class="sort-icon">{{ getSortIcon('status') }}</span></th>
+            <th (click)="sort('date')" class="sortable">Date d'émission <span class="sort-icon">{{ getSortIcon('date') }}</span></th>
+            <th>Cours</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- ✅ variable = invoice, utilisée dans openInvoicePDF et deleteInvoice -->
+          <tr *ngFor="let invoice of paginatedInvoices">
+            <td class="invoice-number">{{ invoice.invoiceNumber }}</td>
+            <td>{{ invoice.learnerId }}</td>
+            <td class="amount">{{ formatCurrency(invoice.totalAmount) }}</td>
+            <td>{{ invoice.currency }}</td>
+            <td>
+              <span class="badge status-badge" [class]="'status-' + (invoice.status || '').toLowerCase()">
+                {{ invoice.status }}
+              </span>
+            </td>
+            <td>{{ formatDate(invoice.issueDate) }}</td>
+            <td>
+              <div class="courses-list">
+                <span *ngFor="let course of invoice.purchasedCourses" class="course-tag">
+                  {{ course }}
+                </span>
+              </div>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <!-- ✅ Ouvrir PDF dans nouvelle fenêtre -->
+                <button class="btn-action btn-pdf"
+                        (click)="openInvoicePDF(invoice)"
+                        title="Voir facture PDF">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="12" y1="18" x2="12" y2="12"/>
+                    <line x1="9" y1="15" x2="15" y2="15"/>
+                  </svg>
+                </button>
+                <!-- ✅ Supprimer facture -->
+                <button class="btn-action btn-delete"
+                        (click)="deleteInvoice(invoice)"
+                        title="Supprimer facture">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                    <path d="M10 11v6M14 11v6"/>
+                    <path d="M9 6V4h6v2"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="pagination" *ngIf="totalPages > 1">
+        <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">← Précédent</button>
+        <div class="page-numbers">
+          <button *ngFor="let page of [].constructor(totalPages); let i = index"
+                  class="page-number" [class.active]="currentPage === i + 1"
+                  (click)="goToPage(i + 1)">{{ i + 1 }}</button>
+        </div>
+        <button class="page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">Suivant →</button>
+        <span class="page-info">Page {{ currentPage }} sur {{ totalPages }} ({{ filteredInvoices.length }} résultats)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ONGLET BAKCHICH ===== -->
+  <div *ngIf="selectedTab === 'bakchich'" class="table-container">
+
+    <div class="bakchich-admin-header">
+      <h2>💙 Paiements Bakchich en attente de confirmation</h2>
+      <button class="btn-icon" (click)="loadBakchichPending()">🔄 Actualiser</button>
+    </div>
+
+    <div *ngIf="loadingBakchich" class="loading">
+      <div class="spinner"></div>
+      Chargement...
+    </div>
+
+    <div *ngIf="!loadingBakchich && bakchichPending.length === 0" class="empty-state">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      <p>✅ Aucun paiement en attente</p>
+    </div>
+
+    <div *ngIf="!loadingBakchich && bakchichPending.length > 0" class="table-wrapper">
+      <p class="table-description">
+        Cette table affiche les paiements effectués via la méthode "Bakchich" qui sont en attente de confirmation.
+        Vous pouvez confirmer ou annuler chaque paiement directement depuis cette interface.
+      </p>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Learner ID</th>
+            <th>Téléphone</th>
+            <th>Montant</th>
+            <th>Cours</th>
+            <th>Créé le</th>
+            <th>Expire le</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- ✅ variable = p, utilisée dans confirmBakchich et cancelBakchich -->
+          <tr *ngFor="let p of bakchichPending">
+            <td>
+              <span class="badge method-badge method-bakchich">{{ p.paymentCode }}</span>
+            </td>
+            <td>{{ p.learnerId }}</td>
+            <td>{{ p.phoneNumber }}</td>
+            <td class="amount">{{ formatCurrency(p.amount) }}</td>
+            <td>
+              <div class="courses-list">
+                <span class="course-tag">{{ p.courseTitles }}</span>
+              </div>
+            </td>
+            <td>{{ formatDate(p.createdAt) }}</td>
+            <td [class.expiring-soon]="isExpiringSoon(p.expiresAt)">
+              {{ formatDate(p.expiresAt) }}
+              <span *ngIf="isExpiringSoon(p.expiresAt)" class="expiring-label">⚠️ Bientôt expiré</span>
+            </td>
+            <td>
+              <!-- ✅ actions Bakchich avec variable p -->
+              <div class="action-buttons">
+                <button class="btn-confirm-bakchich"
+                        (click)="confirmBakchich(p.id)"
+                        [disabled]="confirming === p.id">
+                  <span *ngIf="confirming !== p.id">✅ Confirmer</span>
+                  <span *ngIf="confirming === p.id">⏳ ...</span>
+                </button>
+                <button class="btn-cancel-bakchich"
+                        (click)="cancelBakchich(p.id)"
+                        [disabled]="confirming === p.id">
+                  ❌ Annuler
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <!-- ===== ONGLET REMBOURSEMENTS ===== -->
+<div *ngIf="selectedTab === 'refunds'">
+
+  <!-- Stats -->
+  <div class="refund-stats-row">
+    <div class="stat-card pending" style="cursor:pointer" (click)="setRefundFilter('PENDING')">
+      <div class="stat-number">{{ pendingRefunds.length }}</div>
+      <div class="stat-label">⏳ En attente</div>
+    </div>
+    <div class="stat-card approved" style="cursor:pointer" (click)="setRefundFilter('PROCESSED')">
+      <div class="stat-number">{{ approvedCount }}</div>
+      <div class="stat-label">✅ Approuvés</div>
+    </div>
+    <div class="stat-card rejected" style="cursor:pointer" (click)="setRefundFilter('REJECTED')">
+      <div class="stat-number">{{ rejectedCount }}</div>
+      <div class="stat-label">❌ Rejetés</div>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <div class="filter-tabs" style="margin: 16px 0;">
+    <button class="filter-tab" [class.active]="refundFilterStatus==='ALL'"      (click)="setRefundFilter('ALL')">Tous <span class="count">{{ allRefunds.length }}</span></button>
+    <button class="filter-tab" [class.active]="refundFilterStatus==='PENDING'"  (click)="setRefundFilter('PENDING')">⏳ En attente <span class="count pending-count">{{ pendingRefunds.length }}</span></button>
+    <button class="filter-tab" [class.active]="refundFilterStatus==='PROCESSED'"(click)="setRefundFilter('PROCESSED')">✅ Approuvés <span class="count">{{ approvedCount }}</span></button>
+    <button class="filter-tab" [class.active]="refundFilterStatus==='REJECTED'" (click)="setRefundFilter('REJECTED')">❌ Rejetés <span class="count">{{ rejectedCount }}</span></button>
+  </div>
+
+  <div *ngIf="loadingRefunds" class="loading">
+    <div class="spinner"></div> Chargement...
+  </div>
+
+  <div *ngIf="!loadingRefunds && filteredRefunds.length === 0" class="empty-state">
+    <p>Aucune demande dans cette catégorie</p>
+  </div>
+
+  <div class="table-container" *ngIf="!loadingRefunds && filteredRefunds.length > 0">
+    <p class="table-description">
+      Cette table affiche les demandes de remboursement effectuées par les apprenants.
+      Vous pouvez voir les détails de chaque demande, approuver ou rejeter les demandes en attente,
+      et consulter les raisons de rejet ou les numéros d'avoir pour les demandes traitées.
+    </p>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Apprenant</th>
+            <th>Facture</th>
+            <th>Montant</th>
+            <th>Raison</th>
+            <th>Date demande</th>
+            <th>Statut</th>
+            <th>Actions / Info</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let refund of filteredRefunds" [class]="'row-' + refund.status.toLowerCase()">
+            <td><strong>#{{ refund.learnerId }}</strong></td>
+            <td><span class="invoice-number">#{{ refund.invoiceId }}</span></td>
+            <td class="amount">{{ formatCurrency(refund.refundAmount) }}</td>
+            <td style="max-width:200px; font-size:12px; color:#64748b">
+              {{ refund.reason | slice:0:60 }}{{ refund.reason.length > 60 ? '...' : '' }}
+            </td>
+            <td>{{ formatDate(refund.requestDate) }}</td>
+            <td>
+              <span class="badge status-badge"
+                [class]="refund.status==='PENDING' ? 'status-pending' :
+                         refund.status==='PROCESSED' ? 'status-paid' : 'status-cancelled'">
+                <span *ngIf="refund.status==='PENDING'">⏳ En attente</span>
+                <span *ngIf="refund.status==='PROCESSED'">✅ Approuvé</span>
+                <span *ngIf="refund.status==='REJECTED'">❌ Rejeté</span>
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons" *ngIf="refund.status==='PENDING'">
+                <button class="btn-confirm-bakchich" (click)="openApproveModal(refund)">✅ Approuver</button>
+                <button class="btn-cancel-bakchich"  (click)="openRejectModal(refund)">❌ Rejeter</button>
+              </div>
+              <div *ngIf="refund.status==='PROCESSED'" style="font-size:12px; color:#16a34a">
+                📄 {{ refund.creditNoteNumber }}<br>
+                <small>par {{ refund.processedBy }}</small>
+              </div>
+              <div *ngIf="refund.status==='REJECTED'" style="font-size:12px; color:#dc2626">
+                {{ refund.rejectionReason | slice:0:40 }}<br>
+                <small>par {{ refund.processedBy }}</small>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- MODAL APPROBATION -->
+<div class="modal-overlay" *ngIf="showApproveModal" (click)="closeRefundModals()">
+  <div class="refund-modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header approve">
+      <h2>✅ Approuver le remboursement</h2>
+      <button class="modal-close" (click)="closeRefundModals()">✕</button>
+    </div>
+    <div class="modal-body" *ngIf="selectedRefund">
+      <div class="refund-summary">
+        <div class="summary-row"><span>Apprenant</span><strong>#{{ selectedRefund.learnerId }}</strong></div>
+        <div class="summary-row"><span>Facture</span><strong>#{{ selectedRefund.invoiceId }}</strong></div>
+        <div class="summary-row"><span>Montant</span><strong class="amount-green">{{ formatCurrency(selectedRefund.refundAmount) }}</strong></div>
+        <div class="summary-row"><span>Raison</span><strong>{{ selectedRefund.reason }}</strong></div>
+      </div>
+      <div class="approve-warning">
+        ⚠️ Cette action va :
+        <ul>
+          <li>Rembourser <strong>{{ formatCurrency(selectedRefund.refundAmount) }}</strong></li>
+          <li>Révoquer l'accès aux cours achetés</li>
+          <li>Générer un avoir (crédit note)</li>
+          <li>Mettre la facture en statut REFUNDED</li>
+        </ul>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="closeRefundModals()">Annuler</button>
+      <button class="btn-confirm-approve" (click)="confirmApprove()" [disabled]="processing">
+        <span *ngIf="processing">⏳ Traitement...</span>
+        <span *ngIf="!processing">✅ Confirmer</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL REJET -->
+<div class="modal-overlay" *ngIf="showRejectModal" (click)="closeRefundModals()">
+  <div class="refund-modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header reject">
+      <h2>❌ Rejeter la demande</h2>
+      <button class="modal-close" (click)="closeRefundModals()">✕</button>
+    </div>
+    <div class="modal-body" *ngIf="selectedRefund">
+      <div class="refund-summary">
+        <div class="summary-row"><span>Apprenant</span><strong>#{{ selectedRefund.learnerId }}</strong></div>
+        <div class="summary-row"><span>Montant</span><strong class="amount-red">{{ formatCurrency(selectedRefund.refundAmount) }}</strong></div>
+      </div>
+      <div class="form-group">
+        <label>Motif du rejet <span class="required">*</span></label>
+        <textarea [(ngModel)]="rejectionReason"
+                  placeholder="Expliquez pourquoi la demande est rejetée..."
+                  rows="3" class="reason-input"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="closeRefundModals()">Annuler</button>
+      <button class="btn-confirm-reject" (click)="confirmReject()"
+              [disabled]="!rejectionReason.trim() || processing">
+        <span *ngIf="processing">⏳ Traitement...</span>
+        <span *ngIf="!processing">❌ Confirmer le rejet</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+</div><!-- fin .admin-container -->
+
+<!-- ===== MODAL DÉTAILS PAIEMENT ===== -->
+<div class="modal-overlay" *ngIf="showPaymentModal" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Détails du Paiement #{{ selectedPayment?.id }}</h2>
+      <button class="modal-close" (click)="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" *ngIf="selectedPayment">
+      <div class="detail-row">
+        <span class="detail-label">ID</span>
+        <span class="detail-value">{{ selectedPayment.id }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Apprenant ID</span>
+        <span class="detail-value">{{ selectedPayment.learnerId }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Montant</span>
+        <span class="detail-value amount">{{ formatCurrency(selectedPayment.amount) }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Méthode</span>
+        <span class="badge method-badge" [class]="'method-' + (selectedPayment.method || '').toLowerCase()">
+          {{ selectedPayment.method }}
+        </span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Statut</span>
+        <span class="badge status-badge" [class]="'status-' + (selectedPayment.status || '').toLowerCase()">
+          {{ selectedPayment.status }}
+        </span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Transaction ID</span>
+        <span class="detail-value" style="font-size:0.8rem; word-break:break-all;">
+          {{ selectedPayment.transactionId }}
+        </span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Date</span>
+        <span class="detail-value">{{ formatDate(selectedPayment.paymentDate) }}</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeModal()">Fermer</button>
+    </div>
+  </div>
+</div>

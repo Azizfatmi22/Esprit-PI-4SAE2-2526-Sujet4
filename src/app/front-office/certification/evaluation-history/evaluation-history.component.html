@@ -1,0 +1,177 @@
+<div class="results-dashboard">
+  <div class="dashboard-header">
+    <div class="header-content">
+      <div class="title-section">
+        <div>
+          <h1>Results History</h1>
+          <p class="subtitle">Track and analyze learner performance</p>
+        </div>
+      </div>
+      <button class="refresh-btn" (click)="loadHistory()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M20 2v6h-6M4 12a8 8 0 0 1 8-8 8 8 0 0 1 8 8M4 22v-6h6" stroke-width="2" />
+          <path d="M4 12a8 8 0 0 0 8 8 8 8 0 0 0 8-8" stroke-width="2" />
+        </svg>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-grid" *ngIf="history.length > 0">
+    <div class="stat-card">
+      <div class="stat-icon">📝</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ totalAttempts }}</div>
+        <div class="stat-label">Total Attempts</div>
+      </div>
+    </div>
+    <div class="stat-card success">
+      <div class="stat-icon">✅</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ successRate }}%</div>
+        <div class="stat-label">Success Rate</div>
+      </div>
+    </div>
+    <div class="stat-card warning">
+      <div class="stat-icon">⚠️</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ suspiciousCount }}</div>
+        <div class="stat-label">Suspicious Activities</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⭐</div>
+      <div class="stat-info">
+        <div class="stat-value">{{ averageScore }}%</div>
+        <div class="stat-label">Average Score</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filters-section" *ngIf="history.length > 0">
+    <div class="search-wrapper">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="11" cy="11" r="8" stroke-width="2" />
+        <path d="M21 21l-4.35-4.35" stroke-width="2" />
+      </svg>
+      <input type="text" placeholder="Search by learner name..." [(ngModel)]="searchTerm" (input)="applyFilters()" class="search-input" />
+    </div>
+
+    <div class="filter-group">
+      <select [(ngModel)]="resultFilter" (change)="applyFilters()" class="filter-select">
+        <option value="all">All Results</option>
+        <option value="passed">Passed Only</option>
+        <option value="failed">Failed Only</option>
+      </select>
+
+      <select [(ngModel)]="vigilanceFilter" (change)="applyFilters()" class="filter-select">
+        <option value="all">All Vigilance Status</option>
+        <option value="CLEAN">Clean Only</option>
+        <option value="SUSPICIOUS">Suspicious Only</option>
+        <option value="BANNED">Banned Only</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-container" *ngIf="filteredHistory.length > 0; else emptyState">
+    <div class="table-responsive">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>Learner</th>
+            <th>Type</th>
+            <th>Score</th>
+            <th>Percentage</th>
+            <th>Result</th>
+            <th>Date & Time</th>
+            <th>Duration</th>
+            <th>Time Spent</th>
+            <th>Vigilance Audit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredHistory" class="result-row">
+            <td class="learner-cell">
+              <div class="learner-info">
+                <div class="learner-avatar">{{ getInitials(item.learnerName) }}</div>
+                <strong>{{ item.learnerName }}</strong>
+              </div>
+            </td>
+            <td>
+              <span class="type-badge" [class.quiz]="item.type === 'Quiz'" [class.exam]="item.type === 'Exam'">
+                {{ item.type }}
+              </span>
+            </td>
+            <td class="score-cell">
+              <span class="score-text">{{ item.scoreObtained }} / {{ item.totalPossiblePoints }}</span>
+            </td>
+            <td>
+              <div class="percentage-wrapper">
+                <div class="percentage-bar">
+                  <div class="percentage-fill" [style.width.%]="item.percentage" [class.high]="item.percentage >= 70" [class.medium]="item.percentage >= 50 && item.percentage < 70" [class.low]="item.percentage < 50"></div>
+                </div>
+                <span class="percentage-value" [class.success]="item.percentage >= 70" [class.warning]="item.percentage >= 50 && item.percentage < 70" [class.danger]="item.percentage < 50">
+                  {{ item.percentage }}%
+                </span>
+              </div>
+            </td>
+            <td>
+              <span class="result-badge" [class.passed]="item.isPassed" [class.failed]="!item.isPassed">
+                {{ item.isPassed ? "Passed" : "Failed" }}
+              </span>
+            </td>
+            <td class="date-cell">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-width="2" />
+                <line x1="16" y1="2" x2="16" y2="6" stroke-width="2" />
+                <line x1="8" y1="2" x2="8" y2="6" stroke-width="2" />
+              </svg>
+              {{ item.receivedAt | date: "dd MMM yyyy, HH:mm" }}
+            </td>
+            <td>
+              <div class="time-display">
+                <span class="clock-icon">⏱️</span>
+                <strong>{{ item.duration }} min</strong>
+              </div>
+            </td>
+            <td>
+              <div class="time-display">
+                <span class="clock-icon">⏱️</span>
+                <strong>{{ formatDuration(item.timeSpentSeconds) }}</strong>
+              </div>
+            </td>
+            <td class="vigilance-cell">
+              <div class="vigilance-container">
+                <div class="vigilance-status" [class]="item.vigilanceStatus.toLowerCase()">
+                  <div class="status-indicator">
+                    <span class="status-icon">{{ getStatusIcon(item.vigilanceStatus) }}</span>
+                    <select [ngModel]="item.vigilanceStatus" (ngModelChange)="updateStatus(item, $event)" class="status-select" [class]="item.vigilanceStatus.toLowerCase()">
+                      <option value="CLEAN">Clean</option>
+                      <option value="SUSPICIOUS">Suspicious</option>
+                      <option value="BANNED">Banned</option>
+                    </select>
+                  </div>
+                  <div class="status-tooltip">{{ getStatusDescription(item.vigilanceStatus) }}</div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <ng-template #emptyState>
+    <div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <h3>No Results Found</h3>
+      <p *ngIf="history.length === 0">No results available yet.</p>
+      <p *ngIf="history.length > 0">No results match your filters.</p>
+    </div>
+  </ng-template>
+
+  <div class="loading-state" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading results...</p>
+  </div>
+</div>

@@ -1,0 +1,93 @@
+<div class="admin-eval-wrapper">
+  <div class="page-header">
+    <div class="header-text">
+      <h1>Dashboard Évaluations</h1>
+      <p>Gérez et surveillez l'ensemble des examens du système.</p>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon purple">📝</div>
+      <div class="stat-content">
+        <span class="stat-label">Total Évaluations</span>
+        <span class="stat-value">{{ stats.totalEvaluations }}</span>
+      </div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-icon blue">📋</div>
+      <div class="stat-content">
+        <span class="stat-label">Quiz QCM</span>
+        <span class="stat-value">{{ stats.totalQuizzes }}</span>
+      </div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-icon green">📄</div>
+      <div class="stat-content">
+        <span class="stat-label">Examens Ouverts</span>
+        <span class="stat-value">{{ stats.totalExams }}</span>
+      </div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-icon orange">📈</div>
+      <div class="stat-content">
+        <span class="stat-label">Taux de Réussite</span>
+        <span class="stat-value">{{ stats.avgSuccessRate }}%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="data-section">
+    <div class="section-header">
+      <h2>Liste des Évaluations</h2>
+      <button class="btn-refresh" (click)="refreshDashboard()">
+        Actualiser
+      </button>
+    </div>
+
+    <div class="table-container" *ngIf="!isLoading; else loading">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>Titre de l'évaluation</th>
+            <th>Type</th>
+            <th>Seuil</th>
+            <th>Date de création</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let eval of evaluations">
+            <td class="title-cell">{{ eval.title }}</td>
+            <td>
+              <span
+                class="type-pill"
+                [class.quiz]="eval.typeAssessment === 'QUIZ'"
+              >
+                {{ eval.typeAssessment }}
+              </span>
+            </td>
+            <td>{{ eval.minSuccessScore }}%</td>
+            <td>{{ eval.createdAt | date: "dd/MM/yyyy" }}</td>
+            <td class="actions">
+              <button class="action-btn view" title="Voir les rapports">
+                📊
+              </button>
+              <button
+                class="action-btn delete"
+                (click)="deleteEvaluation(eval.id)"
+                title="Supprimer"
+              >
+                🗑️
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #loading>
+      <div class="loader-container">Chargement des données...</div>
+    </ng-template>
+  </div>
+</div>

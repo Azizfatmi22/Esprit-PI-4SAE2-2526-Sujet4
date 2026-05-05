@@ -1,0 +1,1133 @@
+.certifications-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #eef2f6 100%);
+  padding: 40px 32px;
+}
+
+/* Header Section */
+.cert-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.animated-title {
+  margin: 0 0 12px 0;
+  font-size: 48px;
+  font-weight: 800;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #0489ef 0%, #04a9ef 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header-subtitle {
+  font-size: 16px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Section Styles */
+.cert-section {
+  margin-bottom: 56px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.section-icon {
+  font-size: 28px;
+}
+
+.section-header h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.section-badge {
+  background: #10b981;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.section-badge.warning {
+  background: #ef4444;
+}
+
+/* Grid Layout */
+.cert-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 28px;
+}
+
+/* Certificate Card */
+.cert-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.cert-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 30px -12px rgba(0, 0, 0, 0.15);
+}
+
+.card-inner {
+  position: relative;
+}
+
+/* Certificate Preview */
+.cert-preview {
+  position: relative;
+  background: #f8fafc;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.preview-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 70.7%; /* A4 Landscape ratio (210/297) */
+  background: white;
+  overflow: hidden;
+}
+
+.scale-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.cert-html-content {
+  width: 297mm;
+  height: 210mm;
+  transform: scale(0.28);
+  transform-origin: top left;
+  pointer-events: none;
+}
+
+/* Hover Overlay */
+.card-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.9) 0%,
+    rgba(118, 75, 162, 0.9) 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+}
+
+.cert-preview:hover .card-overlay {
+  opacity: 1;
+}
+
+.overlay-content {
+  display: flex;
+  gap: 16px;
+  transform: translateY(20px);
+  transition: transform 0.3s ease;
+}
+
+.cert-preview:hover .overlay-content {
+  transform: translateY(0);
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 40px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+  color: #1e293b;
+}
+
+.action-btn:hover {
+  transform: scale(1.05);
+}
+
+.action-btn svg {
+  stroke: currentColor;
+}
+
+.preview-btn:hover {
+  background: #667eea;
+  color: white;
+}
+
+.download-btn:hover {
+  background: #10b981;
+  color: white;
+}
+
+/* Card Footer */
+.cert-footer {
+  padding: 16px 20px;
+  background: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #f1f5f9;
+}
+
+.cert-info {
+  flex: 1;
+}
+
+.cert-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cert-meta {
+  display: flex;
+  gap: 12px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.cert-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.cert-status.success {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  background: #16a34a;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Banned Card */
+.cert-card.banned {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  cursor: default;
+}
+
+.cert-card.banned:hover {
+  transform: translateY(-4px);
+}
+
+.banned-content {
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.banned-icon {
+  margin-bottom: 16px;
+  color: #dc2626;
+}
+
+.banned-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #991b1b;
+  margin: 0 0 12px 0;
+}
+
+.banned-message {
+  font-size: 13px;
+  color: #7f1a1a;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.banned-footer {
+  padding-top: 12px;
+  border-top: 1px solid #fecaca;
+}
+
+.banned-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #991b1b;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.modal-container {
+  background: white;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 1200px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background: white;
+  flex-shrink: 0;
+}
+
+.modal-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modal-title h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.modal-icon {
+  font-size: 24px;
+}
+
+.modal-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: #f1f5f9;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  background: #e2e8f0;
+  transform: rotate(90deg);
+}
+
+.modal-body {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+  background: #f8fafc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 600px;
+}
+
+.certificate-preview-wrapper {
+  background: white;
+  box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  overflow: auto;
+  transition: transform 0.2s ease;
+  transform-origin: center center;
+}
+
+.full-certificate {
+  width: 297mm;
+  height: 210mm;
+  background: white;
+  margin: 0 auto;
+}
+
+/* Styles pour le contenu du certificat dans la modale */
+.full-certificate ::ng-deep .certificate-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: white;
+}
+
+.full-certificate ::ng-deep .certificate-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  border: 4px solid;
+  box-sizing: border-box;
+}
+
+.full-certificate ::ng-deep .inner-border {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  right: 15px;
+  bottom: 15px;
+  border: 1px solid;
+}
+
+.full-certificate ::ng-deep .main-table {
+  width: 100%;
+  height: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.full-certificate ::ng-deep .main-table td {
+  vertical-align: middle;
+  text-align: center;
+  padding: 0;
+}
+
+.full-certificate ::ng-deep .header-container {
+  position: absolute;
+  top: 15mm;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+.full-certificate ::ng-deep .logo-img {
+  height: 70px;
+  width: auto;
+  max-width: 200px;
+  margin-bottom: 8px;
+}
+
+.full-certificate ::ng-deep .badge-text {
+  display: block;
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-top: 5px;
+}
+
+.full-certificate ::ng-deep .center-content {
+  text-align: center;
+}
+
+.full-certificate ::ng-deep .main-title {
+  text-transform: uppercase;
+  font-size: 32px;
+  font-weight: bold;
+  letter-spacing: 4px;
+  color: #1e293b;
+  margin-bottom: 12px;
+}
+
+.full-certificate ::ng-deep .title-divider {
+  width: 80px;
+  height: 3px;
+  margin: 0 auto 20px auto;
+}
+
+.full-certificate ::ng-deep .certify-text {
+  font-size: 18px;
+  color: #64748b;
+  margin-bottom: 15px;
+}
+
+.full-certificate ::ng-deep .learner-name {
+  font-size: 48px;
+  font-weight: bold;
+  color: #0f172a;
+  margin: 20px 0;
+}
+
+.full-certificate ::ng-deep .achievement-text {
+  font-size: 16px;
+  color: #64748b;
+  margin: 15px 0;
+}
+
+.full-certificate ::ng-deep .evaluation-title {
+  font-size: 28px;
+  font-weight: bold;
+  margin: 12px 0;
+}
+
+.full-certificate ::ng-deep .score-container {
+  margin-top: 20px;
+}
+
+.full-certificate ::ng-deep .score-badge {
+  display: inline-block;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 10px 30px;
+  font-weight: bold;
+  font-size: 16px;
+  color: #1e293b;
+  border-radius: 4px;
+}
+
+.full-certificate ::ng-deep .footer-container {
+  position: absolute;
+  bottom: 15mm;
+  left: 0;
+  right: 0;
+}
+
+.full-certificate ::ng-deep .footer-table {
+  width: 80%;
+  margin: 0 auto;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.full-certificate ::ng-deep .footer-table td {
+  width: 50%;
+  text-align: center;
+  vertical-align: bottom;
+  padding: 0 15px;
+}
+
+.full-certificate ::ng-deep .signature-area {
+  text-align: center;
+}
+
+.full-certificate ::ng-deep .signature-image {
+  height: 65px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.full-certificate ::ng-deep .signature-image img {
+  max-height: 65px;
+  max-width: 180px;
+  width: auto;
+  height: auto;
+}
+
+.full-certificate ::ng-deep .signature-line {
+  width: 180px;
+  border-top: 1px solid #cbd5e1;
+  margin: 8px auto 5px;
+  padding-top: 5px;
+}
+
+.full-certificate ::ng-deep .trainer-name {
+  font-size: 13px;
+  font-weight: bold;
+  color: #1e293b;
+}
+
+.full-certificate ::ng-deep .trainer-title {
+  font-size: 9px;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.full-certificate ::ng-deep .qr-area {
+  text-align: center;
+}
+
+.full-certificate ::ng-deep .qr-code {
+  width: 85px;
+  height: 85px;
+  margin: 0 auto;
+}
+
+.full-certificate ::ng-deep .qr-code img {
+  width: 85px;
+  height: 85px;
+  display: block;
+}
+
+.full-certificate ::ng-deep .verification-info {
+  font-size: 8px;
+  color: #94a3b8;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: white;
+  flex-shrink: 0;
+}
+
+.btn-primary,
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 80px 32px;
+  background: white;
+  border-radius: 24px;
+  margin-top: 40px;
+}
+
+.empty-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+}
+
+.empty-state h3 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 12px 0;
+}
+
+.empty-state p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Loading State */
+.loading-state {
+  text-align: center;
+  padding: 80px 32px;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-state p {
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* Keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .modal-body {
+    padding: 16px;
+    min-height: 500px;
+  }
+
+  .full-certificate {
+    width: 100%;
+    height: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .certifications-container {
+    padding: 20px 16px;
+  }
+
+  .animated-title {
+    font-size: 32px;
+  }
+
+  .cert-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .section-header h2 {
+    font-size: 20px;
+  }
+
+  .modal-overlay {
+    padding: 16px;
+  }
+
+  .modal-container {
+    max-height: 95vh;
+  }
+
+  .modal-body {
+    padding: 12px;
+    min-height: 400px;
+  }
+
+  .certificate-preview-wrapper {
+    transform: scale(0.5) !important;
+  }
+
+  .overlay-content {
+    gap: 12px;
+  }
+
+  .action-btn {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cert-footer {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .cert-status {
+    align-self: flex-start;
+  }
+
+  .cert-title {
+    white-space: normal;
+  }
+}
+// gamification
+.header-content-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.gamification-summary {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  padding: 15px 25px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  min-width: 300px;
+  animation: slideInRight 0.8s ease-out;
+
+  .level-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(135deg, #55abf7 0%, #3f8acd 100%);
+    padding: 10px;
+    border-radius: 12px;
+    margin-right: 15px;
+    box-shadow: 0 0 15px rgba(67, 138, 220, 0.584);
+
+    .lvl-label {
+      font-size: 0.6rem;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.8);
+    }
+    .lvl-number {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: white;
+      line-height: 1;
+    }
+  }
+
+  .stats-details {
+    flex-grow: 1;
+
+    .xp-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #55abf7;
+      margin-bottom: 5px;
+
+      .xp-next {
+        font-size: 0.7rem;
+        color: #a1a1aa;
+      }
+    }
+
+    .progress-container {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+
+      .progress-bar-glow {
+        height: 100%;
+        background: linear-gradient(90deg, #63a8f1, #375faa);
+        border-radius: 4px;
+        box-shadow: 0 0 10px rgba(99, 102, 241, 0.6);
+        transition: width 1s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+      }
+    }
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* --- Leaderboard Sidebar Professionnelle --- */
+
+.leaderboard-sidebar {
+  position: fixed;
+  // On cache exactement la largeur du panneau (320px)
+  right: -320px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 320px;
+  height: 85vh;
+  background: rgba(15, 15, 25, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 30px 0 0 30px;
+  z-index: 1000;
+  display: flex;
+
+  /* Animation fluide avec un effet de ressort (bezier) */
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    right: 0; // Glisse vers l'intérieur au survol
+    box-shadow: -20px 0 40px rgba(0, 0, 0, 0.7);
+
+    .sidebar-content {
+      opacity: 1;
+    }
+  }
+
+  // L'onglet vertical qui reste TOUJOURS visible sur le bord
+  .sidebar-trigger {
+    position: absolute;
+    left: -40px; // Collé à l'extérieur gauche du panneau
+    top: 50%;
+    transform: translateY(-50%);
+    background: linear-gradient(135deg, #37aadb, #55abf7);
+    width: 40px;
+    height: 160px;
+    border-radius: 15px 0 0 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: -5px 0 15px rgba(99, 102, 241, 0.3);
+
+    .trigger-icon {
+      font-size: 1.3rem;
+      margin-bottom: 12px;
+    }
+
+    .trigger-text {
+      writing-mode: vertical-rl;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: white;
+      transform: rotate(180deg); // Pour lire de haut en bas proprement
+    }
+  }
+
+  .sidebar-content {
+    flex: 1;
+    padding: 25px;
+    overflow-y: auto;
+    opacity: 0; // Invisible quand fermé pour un rendu propre
+    transition: opacity 0.3s ease;
+
+    /* Scrollbar personnalisée style MacOS/Webkit */
+    &::-webkit-scrollbar {
+      width: 5px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+
+    .sidebar-header {
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+      h3 {
+        color: white;
+        margin: 0;
+        font-size: 1.3rem;
+        font-weight: 700;
+      }
+      p {
+        color: #a1a1aa;
+        font-size: 0.8rem;
+        margin-top: 5px;
+      }
+    }
+  }
+}
+
+/* --- Liste des items dans le Leaderboard --- */
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.07);
+    transform: translateX(-5px);
+  }
+
+  /* Style spécial pour "Moi" (Omar) */
+  &.is-me {
+    border-color: rgba(168, 85, 247, 0.5);
+    background: rgba(168, 85, 247, 0.1);
+    box-shadow: inset 0 0 10px rgba(168, 85, 247, 0.1);
+  }
+
+  .rank {
+    width: 35px;
+    font-weight: 900;
+    font-size: 1rem;
+    color: #6366f1;
+    display: flex;
+    justify-content: center;
+  }
+
+  .user-details {
+    flex: 1;
+    margin-left: 10px;
+
+    .name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #f4f4f5;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 140px;
+    }
+    .level {
+      font-size: 0.7rem;
+      color: #71717a;
+      margin: 0;
+      font-weight: 500;
+    }
+  }
+
+  .xp-score {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #ffffff;
+    background: linear-gradient(135deg, #6365f1, #a855f7);
+    padding: 4px 10px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  }
+}
+
+// badges--------------------------
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.badge-item {
+  background: #ffffff;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.05);
+  }
+}
+
+.badge-icon-container {
+  width: 60px;
+  height: 60px;
+  background: #f8f9fa;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  .badge-img {
+    width: 45px;
+    height: 45px;
+    object-fit: contain;
+  }
+}
+
+.badge-info {
+  .badge-name {
+    margin: 0;
+    font-size: 1rem;
+    color: #2d3436;
+    font-weight: 600;
+  }
+
+  .badge-desc {
+    margin: 4px 0;
+    font-size: 0.85rem;
+    color: #636e72;
+    line-height: 1.2;
+  }
+
+  .badge-date {
+    font-size: 0.75rem;
+    color: #b2bec3;
+    font-weight: 500;
+  }
+}

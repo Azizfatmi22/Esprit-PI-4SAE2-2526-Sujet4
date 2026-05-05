@@ -1,0 +1,943 @@
+<div class="aw">
+
+  <!-- ── Notification ── -->
+  <div class="notif" *ngIf="notification" [class]="'notif--' + notification.type">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path *ngIf="notification.type==='success'" d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline *ngIf="notification.type==='success'" points="22 4 12 14.01 9 11.01"/>
+      <circle *ngIf="notification.type==='error'" cx="12" cy="12" r="10"/><line *ngIf="notification.type==='error'" x1="15" y1="9" x2="9" y2="15"/><line *ngIf="notification.type==='error'" x1="9" y1="9" x2="15" y2="15"/>
+    </svg>
+    {{ notification.msg }}
+  </div>
+  <!-- ── Bandeau SLA ── -->
+<div class="sla-banner" *ngIf="slaAlerts.length > 0" (click)="showSlaPanel=!showSlaPanel">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="12" y1="8" x2="12" y2="12"/>
+    <line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+  <strong>{{ slaAlerts.length }} réclamation{{ slaAlerts.length > 1 ? 's' : '' }} dépass{{ slaAlerts.length > 1 ? 'ent' : 'e' }} le délai SLA</strong>
+  <span class="sla-banner__hint">— Click to view</span>
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+       [style.transform]="showSlaPanel ? 'rotate(180deg)' : ''">
+    <polyline points="6 9 12 15 18 9"/>
+  </svg>
+</div>
+
+<!-- Panel SLA -->
+<div class="sla-panel" *ngIf="showSlaPanel && slaAlerts.length > 0">
+  <div class="sla-panel__title">🚨 Alertes SLA actives</div>
+  <div class="sla-item" *ngFor="let alert of slaAlerts">
+    <div class="sla-item__left">
+      <span class="sla-item__id">#{{ alert.reclamationId }}</span>
+      <span class="sla-item__priority"
+            [class.sla-item__priority--high]="alert.priority === 1"
+            [class.sla-item__priority--medium]="alert.priority === 2"
+            [class.sla-item__priority--low]="alert.priority === 3">
+        {{ alert.priority === 1 ? '🔴 Haute' : alert.priority === 2 ? '🟡 Moyenne' : '🟢 Basse' }}
+      </span>
+      <span class="sla-item__time">
+        ⏱ {{ alert.elapsedMinutes }} min écoulées
+        (SLA : {{ alert.slaMinutes }} min)
+      </span>
+      <span class="sla-item__email" *ngIf="alert.emailSent">📧 Email sent</span>
+    </div>
+    <div class="sla-item__actions">
+      <button class="sla-item__view" (click)="openDetailById(alert.reclamationId)">
+        Voir
+      </button>
+      <button class="sla-item__resolve" (click)="resolveSlaAlert(alert.reclamationId)">
+        ✓ Résoudre
+      </button>
+    </div>
+  </div>
+</div>
+
+  <!-- ══════════════════════════════════════
+       TABLE VIEW
+  ══════════════════════════════════════ -->
+  <ng-container *ngIf="viewMode === 'table'">
+
+    <!-- Top Bar -->
+    <div class="topbar">
+      <div class="topbar__brand">
+        <div class="topbar__icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="topbar__title">Réclamations</h1>
+          <p class="topbar__sub">
+            {{ filteredReclamations.length }} dossier{{ filteredReclamations.length > 1 ? 's' : '' }}
+            <span *ngIf="activeFiltersCount > 0" class="topbar__filter-hint">· {{ activeFiltersCount }} filtre{{ activeFiltersCount > 1 ? 's' : '' }}</span>
+          </p>
+        </div>
+      </div>
+      <div class="topbar__actions">
+        <div class="search-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="currentPage=1"
+                 class="search-input" placeholder="Rechercher...">
+          <button *ngIf="searchTerm" class="search-clear" (click)="searchTerm=''; currentPage=1">×</button>
+        </div>
+        <button class="tb-btn" [class.tb-btn--on]="showFilters" (click)="showFilters=!showFilters">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+          </svg>
+          Filters
+          <span class="tb-badge" *ngIf="activeFiltersCount>0">{{ activeFiltersCount }}</span>
+        </button>
+        <button class="tb-btn" (click)="loadReclamations(); loadStatistics()" title="Actualiser">
+          <!-- Dans topbar__actions, après le bouton Actualiser -->
+<button class="tb-btn" 
+        [class.tb-btn--on]="sortByGravity"
+        (click)="toggleGravitySort()"
+        title="Activer/désactiver le tri par gravité">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+    <polyline points="16 18 22 12 16 6"/>
+  </svg>
+  <span *ngIf="sortByGravity">📊 Sort by gravity</span>
+  <span *ngIf="!sortByGravity">📅 Sort by date</span>
+</button>
+          <!-- Bouton de modération -->
+<button class="tb-btn" 
+        [class.tb-btn--on]="filterModeration !== 'all'"
+        (click)="showModerationPanel = !showModerationPanel">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+  </svg>
+  Moderation
+  <span class="tb-badge" *ngIf="suspectCount > 0">{{ suspectCount }}</span>
+</button>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- KPI Strip -->
+    <div class="kstrip" *ngIf="stats">
+      <div class="kcard kcard--all" (click)="filterStatus='all'; currentPage=1" [class.kcard--sel]="filterStatus==='all'">
+        <div class="kcard__num">{{ stats.total }}</div>
+        <div class="kcard__lbl">Tous</div>
+      </div>
+      <div class="kcard kcard--pending" (click)="filterStatus='PENDING'; currentPage=1" [class.kcard--sel]="filterStatus==='PENDING'">
+        <div class="kcard__ico">⏳</div>
+        <div class="kcard__num">{{ stats.pending }}</div>
+        <div class="kcard__lbl">pending</div>
+      </div>
+      <div class="kcard kcard--progress" (click)="filterStatus='IN_PROGRESS'; currentPage=1" [class.kcard--sel]="filterStatus==='IN_PROGRESS'">
+        <div class="kcard__ico">🔄</div>
+        <div class="kcard__num">{{ stats.inProgress }}</div>
+        <div class="kcard__lbl">in progress</div>
+      </div>
+      <div class="kcard kcard--resolved" (click)="filterStatus='RESOLVED'; currentPage=1" [class.kcard--sel]="filterStatus==='RESOLVED'">
+        <div class="kcard__ico">✅</div>
+        <div class="kcard__num">{{ stats.resolved }}</div>
+        <div class="kcard__lbl">resolved</div>
+      </div>
+      <div class="kcard kcard--closed" (click)="filterStatus='CLOSED'; currentPage=1" [class.kcard--sel]="filterStatus==='CLOSED'">
+        <div class="kcard__ico">🔒</div>
+        <div class="kcard__num">{{ stats.closed }}</div>
+        <div class="kcard__lbl">Closed</div>
+      </div>
+      <div class="kcard kcard--rejected" (click)="filterStatus='REJECTED'; currentPage=1" [class.kcard--sel]="filterStatus==='REJECTED'">
+        <div class="kcard__ico">❌</div>
+        <div class="kcard__num">{{ stats.rejected }}</div>
+        <div class="kcard__lbl">Rejected</div>
+      </div>
+    </div>
+
+    <!-- Filter Panel -->
+    <div class="fpanel" *ngIf="showFilters">
+      <div class="fpanel__grid">
+        <div class="fg">
+          <label>Statut</label>
+          <select [(ngModel)]="filterStatus" (change)="currentPage=1" class="fg__sel">
+            <option value="all">Tous</option>
+            <option *ngFor="let s of statusOptions" [value]="s.value">{{ s.icon }} {{ s.label }}</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Type</label>
+          <select [(ngModel)]="filterType" (change)="currentPage=1" class="fg__sel">
+            <option value="all">Tous</option>
+            <option *ngFor="let t of reclamationTypes" [value]="t.value">{{ t.icon }} {{ t.label }}</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Priorité</label>
+          <select [(ngModel)]="filterPriority" (change)="currentPage=1" class="fg__sel">
+            <option value="all">Toutes</option>
+            <option value="1">🔴 Haute</option>
+            <option value="2">🟡 Moyenne</option>
+            <option value="3">🟢 Basse</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Du</label>
+          <input type="date" [(ngModel)]="dateFrom" (change)="currentPage=1" class="fg__inp">
+        </div>
+        <div class="fg">
+          <label>Au</label>
+          <input type="date" [(ngModel)]="dateTo" (change)="currentPage=1" class="fg__inp">
+        </div>
+        <div class="fg">
+          <label>Par page</label>
+          <select [(ngModel)]="itemsPerPage" (change)="currentPage=1" class="fg__sel">
+            <option value="10">10</option><option value="25">25</option><option value="50">50</option>
+          </select>
+        </div>
+      </div>
+      <div class="fpanel__foot">
+        <button class="lnk-btn" (click)="resetFilters()">Reset all filters</button>
+        <button class="tb-btn tb-btn--primary" (click)="showFilters=false">Close</button>
+        <!-- Panneau de filtrage modération -->
+<div class="moderation-panel" *ngIf="showModerationPanel">
+  <div class="moderation-options">
+    <button class="mod-option" 
+            [class.active]="filterModeration === 'all'"
+            (click)="filterModeration = 'all'; currentPage = 1">
+      📋 Toutes
+    </button>
+    <button class="mod-option mod-option--suspect" 
+            [class.active]="filterModeration === 'suspect'"
+            (click)="filterModeration = 'suspect'; currentPage = 1">
+      🚨 Suspectes ({{ suspectCount }})
+    </button>
+    <button class="mod-option mod-option--clean" 
+            [class.active]="filterModeration === 'clean'"
+            (click)="filterModeration = 'clean'; currentPage = 1">
+      ✅ Approved
+    </button>
+  </div>
+</div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div class="ebar" *ngIf="error">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      {{ error }}
+      <button class="ebar__btn" (click)="loadReclamations()">Retry</button>
+    </div>
+
+    <!-- Table -->
+    <div class="tcard">
+      <div class="tcard__loading" *ngIf="loading">
+        <div class="ring"></div>
+        <span>Loading...</span>
+      </div>
+
+      <div class="tcard__empty" *ngIf="!loading && filteredReclamations.length === 0">
+        <div class="empty-ico">📭</div>
+        <p>No complaints found</p>
+        <button class="lnk-btn" (click)="resetFilters()" *ngIf="activeFiltersCount>0">Reset filters</button>
+      </div>
+
+      <div *ngIf="!loading && filteredReclamations.length > 0">
+        <p class="table-description">
+          Cette table affiche la liste des réclamations soumises par les apprenants.
+          Vous pouvez trier, filtrer et rechercher des réclamations, ainsi que consulter les détails,
+          faire avancer le statut ou supprimer une réclamation directement depuis cette interface.
+        </p>
+        <table class="dt">
+          <thead>
+            <tr>
+              <th class="dt__sort" (click)="sort('id')"># <span class="si si--{{ sortIcon('id') }}"></span></th>
+              <th>Apprenant</th>
+              <th class="dt__sort" (click)="sort('type')">Type <span class="si si--{{ sortIcon('type') }}"></span></th>
+              <th>Sujet</th>
+              <th class="dt__sort" (click)="sort('priority')">Priority <span class="si si--{{ sortIcon('priority') }}"></span></th>
+              <th class="dt__sort" (click)="sort('gravity')">Gravity <span class="si si--{{ sortIcon('gravity') }}"></span></th>
+              <th class="dt__sort" (click)="sort('status')">Status <span class="si si--{{ sortIcon('status') }}"></span></th>
+              <th class="dt__sort" (click)="sort('date')">Date <span class="si si--{{ sortIcon('date') }}"></span></th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let rec of paginatedReclamations"
+                class="dt__row dt__row--{{ getStatusConfig(rec.status).css }}"
+                (click)="openDetail(rec)">
+              <td class="dt__id">#{{ rec.id }}</td>
+              <td>
+                <div class="av av--{{ +rec.learnerId % 5 }}">{{ currentUser?.fullName }}</div>
+              </td>
+              <td>
+                <span class="tpill"
+                      [style.background]="getTypeConfig(rec.type).color + '18'"
+                      [style.color]="getTypeConfig(rec.type).color">
+                  {{ getTypeConfig(rec.type).icon }} {{ getTypeConfig(rec.type).label }}
+                </span>
+              </td>
+              <td class="dt__subj" [title]="rec.subject">{{ rec.subject }}</td>
+              <td>
+                <span class="ppill ppill--{{ getPriorityConfig(rec.priority).css }}">
+                  {{ getPriorityConfig(rec.priority).icon }} {{ getPriorityConfig(rec.priority).label }}
+                </span>
+              </td>
+              <td>
+  <div class="gravity-badge" 
+       [style.background]="getGravityConfig(rec.gravityLevel).bg"
+       [style.color]="getGravityConfig(rec.gravityLevel).color">
+    <span class="gravity-icon">{{ getGravityConfig(rec.gravityLevel).icon }}</span>
+    {{ getGravityConfig(rec.gravityLevel).label }}
+  </div>
+</td>
+
+              <td>
+                <div class="spill spill--{{ getStatusConfig(rec.status).css }}">
+                  <span class="spill__dot"></span>
+                  {{ getStatusConfig(rec.status).label }}
+                </div>
+              </td>
+              <!-- Badge suspect -->
+<div class="suspect-badge" *ngIf="rec.isSuspect" title="{{ rec.moderationReason }}">
+  🚨 Suspect
+</div>
+              <td class="dt__date" [title]="formatDate(rec.createdDate)">{{ formatRelative(rec.createdDate) }}</td>
+              <td>
+                <div class="ra" (click)="$event.stopPropagation()">
+                  <button class="ra__next" *ngIf="getNextStatus(rec.status)"
+                          (click)="advanceStatus(rec, $event)"
+                          [title]="'→ ' + getStatusConfig(getNextStatus(rec.status)!).label">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                    {{ getStatusConfig(getNextStatus(rec.status)!).label }}
+                  </button>
+                  <button class="ra__view" (click)="openDetail(rec)" title="Voir">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                  <button class="ra__del" (click)="deleteReclamation(rec.id!, $event)" title="Supprimer">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class="pg" *ngIf="totalPages > 1">
+          <span class="pg__info">{{ (currentPage-1)*itemsPerPage+1 }}–{{ paginationEnd }} sur {{ filteredReclamations.length }}</span>
+          <div class="pg__btns">
+            <button class="pgb" (click)="goToPage(currentPage-1)" [disabled]="currentPage===1">‹</button>
+            <ng-container *ngFor="let p of pages">
+              <span *ngIf="p===-1" class="pgb pgb--dots">…</span>
+              <button *ngIf="p!==-1" class="pgb" [class.pgb--cur]="p===currentPage" (click)="goToPage(p)">{{ p }}</button>
+            </ng-container>
+            <button class="pgb" (click)="goToPage(currentPage+1)" [disabled]="currentPage===totalPages">›</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+
+
+  <!-- ══════════════════════════════════════
+       DETAIL VIEW
+  ══════════════════════════════════════ -->
+  <ng-container *ngIf="viewMode === 'detail' && selectedReclamation">
+
+    <div class="dv">
+
+      <!-- Header -->
+      <div class="dv__head">
+        <button class="back" (click)="backToTable()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          Retour
+        </button>
+
+        <!-- Status Progress Bar -->
+        <div class="status-journey">
+          <div *ngFor="let s of statusOptions; let i = index"
+               class="sj-step"
+               [class.sj-step--done]="getStatusProgress(selectedReclamation.status) > getStatusProgress(s.value) - 1"
+               [class.sj-step--cur]="selectedReclamation.status === s.value"
+               (click)="updateStatus(selectedReclamation, s.value)"
+               [title]="'Passer à : ' + s.label">
+            <div class="sj-dot">{{ s.icon }}</div>
+            <span class="sj-lbl">{{ s.label }}</span>
+          </div>
+          <div class="sj-bar">
+            <div class="sj-bar__fill" [style.width.%]="getStatusProgress(selectedReclamation.status)"></div>
+          </div>
+        </div>
+
+        <div class="dv__head-actions">
+          <button class="action-btn action-btn--resolve"
+                  *ngIf="selectedReclamation.status === 'IN_PROGRESS'"
+                  (click)="markResolved()">
+            ✅ Mark as resolved
+          </button>
+          <button class="action-btn action-btn--reject"
+                  *ngIf="selectedReclamation.status === 'PENDING' || selectedReclamation.status === 'IN_PROGRESS'"
+                  (click)="markRejected()">
+            ❌ Reject
+          </button>
+          <button class="action-btn action-btn--delete" (click)="deleteReclamation(selectedReclamation.id!)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="dv__body">
+
+        <!-- ── Main column ── -->
+        <div class="dv__main">
+          <!-- ── Bandeau de traduction ── -->
+<!-- ── Bandeau de traduction ── -->
+<div class="translation-banner" 
+     *ngIf="detectedLanguage && detectedLanguage !== 'FR'">
+
+  <!-- Header -->
+  <div class="translation-banner__ready">
+    <div class="translation-banner__info">
+      <span class="translation-banner__flag">
+        {{ getLanguageFlag(detectedLanguage) }}
+      </span>
+      <span class="translation-banner__lang">
+        Réclamation en <strong>{{ getLanguageName(detectedLanguage) }}</strong>
+      </span>
+      <span class="translation-banner__badge" *ngIf="isTranslated">
+        ✓ Traduit
+      </span>
+    </div>
+
+    <div class="translation-banner__controls">
+      <select class="translation-lang-select"
+              [(ngModel)]="selectedTargetLang"
+              (change)="onTargetLangChange()">
+        <option *ngFor="let lang of targetLanguages" [value]="lang.value">
+          {{ lang.flag }} {{ lang.label }}
+        </option>
+      </select>
+
+      <button class="translation-banner__toggle"
+              (click)="doTranslate()"
+              [disabled]="isTranslating">
+        <div class="ring ring--xs" *ngIf="isTranslating"
+             style="border-top-color:#15803d;
+       border-right-color:rgba(21,128,61,.3);
+       border-bottom-color:rgba(21,128,61,.3);
+       border-left-color:rgba(21,128,61,.3);"></div>
+        <span *ngIf="!isTranslating && !isTranslated">🌐 Translate</span>
+        <span *ngIf="!isTranslating && isTranslated && showTranslation">👁 Hide</span>
+        <span *ngIf="!isTranslating && isTranslated && !showTranslation">👁 Show</span>
+        <span *ngIf="isTranslating">Translation...</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Chargement -->
+  <div class="translation-banner__loading" *ngIf="isTranslating">
+    <div class="ring ring--sm"></div>
+    <span>Translation via AI in progress...</span>
+  </div>
+
+  <!-- Résultat -->
+  <div class="translation-content" *ngIf="showTranslation && isTranslated">
+    <div class="translation-content__section">
+      <span class="translation-content__label">Sujet traduit</span>
+      <p class="translation-content__text">{{ translatedSubject }}</p>
+    </div>
+    <div class="translation-content__section">
+      <span class="translation-content__label">Description traduite</span>
+      <p class="translation-content__text">{{ translatedDescription }}</p>
+    </div>
+  </div>
+
+</div>
+
+          <!-- Title card -->
+          <div class="dc dc--title">
+            <div class="dc__type-badge"
+                 [style.background]="getTypeConfig(selectedReclamation.type).color + '18'"
+                 [style.color]="getTypeConfig(selectedReclamation.type).color">
+              {{ getTypeConfig(selectedReclamation.type).icon }} {{ getTypeConfig(selectedReclamation.type).label }}
+            </div>
+            <h2 class="dc__h2">{{ selectedReclamation.subject }}</h2>
+            <div class="dc__meta">
+              <span class="dc__id">#{{ selectedReclamation.id }}</span>
+              <span class="ppill ppill--{{ getPriorityConfig(selectedReclamation.priority).css }}">
+                {{ getPriorityConfig(selectedReclamation.priority).icon }} {{ getPriorityConfig(selectedReclamation.priority).label }}
+              </span>
+              <span class="dc__date">{{ formatDate(selectedReclamation.createdDate) }}</span>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="dc">
+            <div class="dc__label">Description</div>
+            <p class="dc__body">{{ selectedReclamation.description }}</p>
+          </div>
+          <!-- ⭐ PANEL DE MODÉRATION -->
+<!-- ⭐ PANEL DE MODÉRATION - HARMONISÉ AVEC LE THÈME -->
+<!-- ── Bloc Modération ── -->
+<div class="mod-card" *ngIf="selectedReclamation.isSuspect">
+  <div class="mod-header">
+    <div class="mod-header-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" width="16" height="16">
+        <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      </svg>
+    </div>
+    <div class="mod-header-text">
+      <div class="mod-header-title">Verification required</div>
+      <div class="mod-header-sub">Complaint #{{ selectedReclamation.id }} · Potentially inappropriate content</div>
+    </div>
+    <span class="mod-status-pill">{{ getStatusConfig(selectedReclamation.status).label }}</span>
+  </div>
+
+  <div class="mod-body">
+    <div class="mod-alert">
+      <div class="mod-alert-dot"></div>
+      <div>
+        <div class="mod-alert-label">Forbidden words detected</div>
+        <div class="mod-words">
+          <span class="mod-word-tag" *ngFor="let w of (selectedReclamation.flaggedWords || [])">{{ w }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mod-section">
+      <div class="mod-section-label">Subject</div>
+      <div class="mod-section-content" 
+     [innerHTML]="highlightWords(selectedReclamation.subject, selectedReclamation.flaggedWords || [])">
+</div>
+    </div>
+
+    <div class="mod-section">
+      <div class="mod-section-label">Description</div>
+      <div class="mod-section-content" 
+     [innerHTML]="highlightWords(selectedReclamation.description, selectedReclamation.flaggedWords || [])">
+</div>
+    </div>
+
+    <div class="mod-actions">
+      <button class="mod-btn mod-btn-approve" (click)="approveReclamation()">
+  ✓ Approve
+</button>
+
+<!-- Remplacer openEditMode() → editAndApprove() -->
+<button class="mod-btn mod-btn-edit" (click)="editAndApprove()">
+  ✎ modify
+</button>
+
+<!-- Remplacer rejectReclamation() reste tel quel — déjà correct -->
+<button class="mod-btn mod-btn-reject" (click)="rejectReclamation()">
+  ✕ Reject
+</button>
+    </div>
+  </div>
+</div>
+          <!-- Specific fields -->
+          <div class="dc" *ngIf="hasSpecificInfo(selectedReclamation)">
+            <div class="dc__label">
+              {{ getTypeConfig(selectedReclamation.type).icon }} Informations spécifiques
+            </div>
+            <div class="spec-grid">
+              <div class="spec-item" *ngIf="selectedReclamation.browserName">
+                <span class="spec-item__k">Navigateur</span>
+                <span class="spec-item__v">{{ selectedReclamation.browserName }}</span>
+              </div>
+              <div class="spec-item" *ngIf="selectedReclamation.osVersion">
+                <span class="spec-item__k">Système</span>
+                <span class="spec-item__v">{{ selectedReclamation.osVersion }}</span>
+              </div>
+              <div class="spec-item" *ngIf="selectedReclamation.errorCode">
+                <span class="spec-item__k">Code erreur</span>
+                <code class="spec-item__code">{{ selectedReclamation.errorCode }}</code>
+              </div>
+              <div class="spec-item" *ngIf="selectedReclamation.errorMessage">
+                <span class="spec-item__k">Message</span>
+                <code class="spec-item__code">{{ selectedReclamation.errorMessage }}</code>
+              </div>
+              <div class="spec-item" *ngIf="selectedReclamation.transactionId">
+                <span class="spec-item__k">Transaction</span>
+                <code class="spec-item__code">{{ selectedReclamation.transactionId }}</code>
+              </div>
+              <div class="spec-item" *ngIf="selectedReclamation.invoiceNumber">
+                <span class="spec-item__k">Facture</span>
+                <span class="spec-item__v">{{ selectedReclamation.invoiceNumber }}</span>
+              </div>
+              <div class="spec-item" *ngIf="selectedReclamation.amount">
+                <span class="spec-item__k">Montant</span>
+                <span class="spec-item__v spec-item__v--money">{{ selectedReclamation.amount | number:'1.3-3' }} DT</span>
+              </div>
+              <div class="spec-item" *ngIf="selectedReclamation.paymentMethod">
+                <span class="spec-item__k">Paiement</span>
+                <span class="spec-item__v">{{ selectedReclamation.paymentMethod }}</span>
+              </div>
+              <div class="spec-item" *ngIf="selectedReclamation.courseId">
+                <span class="spec-item__k">Cours</span>
+                <span class="spec-item__v">#{{ selectedReclamation.courseId }}</span>
+              </div>
+              <div class="spec-item" *ngIf="selectedReclamation.contentType">
+                <span class="spec-item__k">Contenu</span>
+                <span class="spec-item__v">{{ selectedReclamation.contentType }}</span>
+              </div>
+              <div class="spec-item" *ngIf="selectedReclamation.deviceType">
+                <span class="spec-item__k">Appareil</span>
+                <span class="spec-item__v">{{ selectedReclamation.deviceType }}</span>
+              </div>
+              <div class="spec-item" *ngIf="selectedReclamation.certificateType">
+                <span class="spec-item__k">Certificat</span>
+                <span class="spec-item__v">{{ selectedReclamation.certificateType }}</span>
+              </div>
+              <div class="spec-item" *ngIf="selectedReclamation.completionDate">
+                <span class="spec-item__k">Completion</span>
+                <span class="spec-item__v">{{ selectedReclamation.completionDate }}</span>
+              </div>
+              <div class="spec-item spec-item--full" *ngIf="selectedReclamation.pageUrl">
+                <span class="spec-item__k">URL</span>
+                <a [href]="selectedReclamation.pageUrl" target="_blank" class="spec-item__link">
+                  {{ selectedReclamation.pageUrl }}
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Thread ── -->
+          <div class="dc dc--thread">
+            <div class="dc__label">
+              Fil de discussion
+              <span class="dc__count" *ngIf="reclamationResponses.length > 0">
+                {{ reclamationResponses.length }}
+              </span>
+            </div>
+
+            <div class="thread-loading" *ngIf="loadingResponses">
+              <div class="ring ring--sm"></div>
+            </div>
+
+            <div class="thread" *ngIf="!loadingResponses">
+              <div class="thread__empty" *ngIf="reclamationResponses.length === 0">
+                No messages yet. Be the first to reply.
+              </div>
+              <div *ngFor="let resp of reclamationResponses"
+                   class="msg"
+                   [class.msg--internal]="resp.isInternal"
+                   [class.msg--learner]="resp.adminId !== adminId && !resp.isInternal">
+                <div class="msg__av"
+                     [style.background]="resp.adminId !== adminId && !resp.isInternal ? '#10b981' : ''">
+                  <span *ngIf="resp.isInternal">🔒</span>
+                  <span *ngIf="!resp.isInternal && resp.adminId === adminId">A</span>
+                  <span *ngIf="!resp.isInternal && resp.adminId !== adminId">L</span>
+                </div>
+                <div class="msg__bubble">
+                  <div class="msg__top">
+                    <span class="msg__who">
+                      <ng-container *ngIf="resp.isInternal">🔒 Note interne</ng-container>
+                      <ng-container *ngIf="!resp.isInternal && resp.adminId === adminId">Administrateur</ng-container>
+                      <ng-container *ngIf="!resp.isInternal && resp.adminId !== adminId">
+                        👤 Apprenant #{{ resp.adminId }}
+                      </ng-container>
+                    </span>
+                    <span class="msg__when">{{ formatDate(resp.createdDate) }}</span>
+                  </div>
+                  <p class="msg__text">{{ resp.responseText }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── Reply box ── -->
+            <div class="reply">
+
+              <!-- Mode tabs -->
+              <div class="reply__mode">
+                <button class="rmode" [class.rmode--on]="!isInternalNote" (click)="isInternalNote=false">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                  </svg>
+                  Réponse publique
+                </button>
+                <button class="rmode" [class.rmode--on]="isInternalNote" (click)="isInternalNote=true">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                  </svg>
+                  Note interne
+                </button>
+              </div>
+
+              <!-- ── Suggestions IA (uniquement en mode réponse publique) ── -->
+              <div class="ai-suggest" *ngIf="!isInternalNote">
+
+                <!-- Chargement -->
+                <div class="ai-suggest__loading" *ngIf="loadingSuggestions">
+                  <div class="ring ring--sm"></div>
+                  <span>Analyse IA en cours...</span>
+                </div>
+
+                <!-- Erreur -->
+                <div class="ai-suggest__error" *ngIf="suggestionError && !loadingSuggestions">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  Suggestions IA indisponibles
+                </div>
+
+                <!-- Chips cliquables -->
+                <div class="ai-suggest__chips" *ngIf="!loadingSuggestions && !suggestionError && aiSuggestions.length > 0">
+  <div class="ai-suggest__label">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+    </svg>
+    Suggestions IA — cliquer pour insérer
+  </div>
+  <div class="ai-suggest__chips-list">
+    <button *ngFor="let s of aiSuggestions; let i = index"
+            class="ai-chip"
+            (click)="applySuggestion(s)"
+            [title]="s">
+      <span class="ai-chip__num">{{ i + 1 }}</span>
+      <span class="ai-chip__text">{{ s.length > 90 ? (s | slice:0:90) + '…' : s }}</span>
+      <svg class="ai-chip__arrow" width="13" height="13" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+              </div>
+              <!-- fin ai-suggest -->
+
+              <!-- Textarea -->
+              <textarea [(ngModel)]="adminResponse"(input)="onAdminResponseInput()"
+                        class="reply__ta"
+                        [class.reply__ta--internal]="isInternalNote"
+                        [placeholder]="isInternalNote ? '🔒 Note visible uniquement par les admins...' : 'Répondre à l\'apprenant...'"
+                        rows="4"></textarea>
+
+              <!-- Footer -->
+              <div class="reply__foot">
+                <div class="reply__hints">
+                  <span *ngIf="!isInternalNote && selectedReclamation.status === 'PENDING'"
+                        class="reply__auto-hint">
+                    ⚡ The status will automatically change to <strong>En cours</strong> après envoi
+                  </span>
+                  <span *ngIf="isInternalNote" class="reply__internal-hint">
+                    🔒 Not visible to the learner
+                  </span>
+                </div>
+                <button class="send-btn"
+                        (click)="submitResponse()"
+                        [disabled]="!adminResponse.trim() || submittingResponse">
+                  <div class="ring ring--xs" *ngIf="submittingResponse"></div>
+                  <svg *ngIf="!submittingResponse" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="22" y1="2" x2="11" y2="13"/>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                  </svg>
+                  {{ submittingResponse ? 'Envoi...' : (isInternalNote ? 'Ajouter la note' : 'Envoyer') }}
+                </button>
+              </div>
+
+            </div>
+            <!-- fin reply -->
+
+          </div>
+          <!-- fin dc--thread -->
+
+        </div>
+        <!-- fin dv__main -->
+
+        <!-- ── Sidebar ── -->
+        <aside class="dv__side">
+
+          <!-- Quick actions -->
+          <div class="sc sc--actions">
+            <div class="sc__h">Actions rapides</div>
+            <div class="sc__body">
+              <button class="qa qa--resolve"
+                      (click)="markResolved()"
+                      [disabled]="selectedReclamation.status === 'RESOLVED' || selectedReclamation.status === 'CLOSED'"
+                      [class.qa--disabled]="selectedReclamation.status === 'RESOLVED' || selectedReclamation.status === 'CLOSED'">
+                ✅ Mark as resolved
+              </button>
+              <button class="qa qa--reject"
+                      (click)="markRejected()"
+                      [disabled]="selectedReclamation.status === 'REJECTED' || selectedReclamation.status === 'CLOSED'"
+                      [class.qa--disabled]="selectedReclamation.status === 'REJECTED' || selectedReclamation.status === 'CLOSED'">
+                ❌ Reject
+              </button>
+              <button class="qa qa--advance"
+                      (click)="advanceStatus(selectedReclamation)"
+                      *ngIf="getNextStatus(selectedReclamation.status)"
+                      [title]="'Passer à : ' + getStatusConfig(getNextStatus(selectedReclamation.status)!).label">
+                ⏩ {{ getStatusConfig(getNextStatus(selectedReclamation.status)!).label }}
+              </button>
+            </div>
+          </div>
+          <div class="sc">
+  <div class="sc__h">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
+      <polyline points="10 9 9 9 8 9"/>
+    </svg>
+    Project integration
+  </div>
+  <div class="sc__body">
+    
+    <!-- Ticket déjà créé -->
+    <div *ngIf="ticketInfo?.exists" class="ticket-card">
+      <div class="ticket-card__badge" [style.background]="getToolColor(ticketInfo?.toolName || '')">
+        {{ getToolIcon(ticketInfo?.toolName || '') }} {{ ticketInfo?.toolName }}
+      </div>
+      <div class="ticket-card__info">
+        <span class="ticket-card__id">{{ ticketInfo?.ticketId }}</span>
+        <a [href]="ticketInfo?.ticketUrl" target="_blank" class="ticket-card__link">
+          Voir dans {{ ticketInfo?.toolName }}
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+        </a>
+      </div>
+      <button class="ticket-card__refresh" (click)="createExternalTicket()" title="Ouvrir le ticket">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+          <polyline points="15 3 21 3 21 9"/>
+          <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+      </button>
+    </div>
+    
+    <!-- Formulaire de création -->
+    <div *ngIf="!ticketInfo?.exists" class="ticket-create">
+      <!-- Sélecteur d'outil -->
+      <div class="ticket-tool-selector">
+        <button *ngFor="let tool of tools"
+                class="tool-btn"
+                [class.tool-btn--active]="selectedTool === tool.value"
+                (click)="selectedTool = tool.value"
+                [style.border-color]="selectedTool === tool.value ? tool.color : '#e2e8f0'">
+          <span class="tool-btn__icon">{{ tool.icon }}</span>
+          <span class="tool-btn__label">{{ tool.label }}</span>
+        </button>
+      </div>
+      
+      <!-- Bouton création -->
+      <button class="ticket-create__btn" 
+              (click)="createExternalTicket()"
+              [disabled]="creatingTicket">
+        <div class="ring ring--xs" *ngIf="creatingTicket"></div>
+        <ng-container *ngIf="!creatingTicket">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="12" y1="18" x2="12" y2="12"/>
+            <line x1="9" y1="15" x2="15" y2="15"/>
+          </svg>
+          Create ticket {{ getSelectedToolLabel() }}
+        </ng-container>
+      </button>
+      
+      <p class="ticket-create__hint">
+        {{ getToolHint() }}
+      </p>
+    </div>
+    
+  </div>
+</div>
+
+          <!-- Status selector -->
+          <div class="sc">
+            <div class="sc__h">Statut</div>
+            <div class="sc__body sc__body--statuses">
+              <button *ngFor="let s of statusOptions"
+                      class="ss ss--{{ s.css }}"
+                      [class.ss--cur]="selectedReclamation.status === s.value"
+                      (click)="updateStatus(selectedReclamation, s.value)">
+                {{ s.icon }} {{ s.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Info -->
+          <div class="sc">
+            <div class="sc__h">Informations</div>
+            <div class="sc__rows">
+              <div class="sr">
+                <span class="sr__k">Apprenant</span>
+                <span class="sr__v">ID #{{ selectedReclamation.learnerId }}</span>
+              </div>
+              <div class="sr">
+                <span class="sr__k">Created</span>
+                <span class="sr__v">{{ formatDate(selectedReclamation.createdDate) }}</span>
+              </div>
+              <div class="sr" *ngIf="selectedReclamation.updatedDate">
+                <span class="sr__k">Updated</span>
+                <span class="sr__v">{{ formatRelative(selectedReclamation.updatedDate) }}</span>
+              </div>
+              <div class="sr" *ngIf="selectedReclamation.resolvedDate">
+                <span class="sr__k">Resolved</span>
+                <span class="sr__v sr__v--green">{{ formatDate(selectedReclamation.resolvedDate) }}</span>
+              </div>
+              <div class="sr" *ngIf="selectedReclamation.adminId">
+                <span class="sr__k">Assigned to</span>
+                <span class="sr__v">Admin #{{ selectedReclamation.adminId }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact -->
+          <div class="sc"
+               *ngIf="selectedReclamation.contactPhone || selectedReclamation.desiredResolutionDate || selectedReclamation.attachmentUrl">
+            <div class="sc__h">Contact & deadlines</div>
+            <div class="sc__rows">
+              <div class="sr" *ngIf="selectedReclamation.contactPhone">
+                <span class="sr__k">Phone</span>
+                <a [href]="'tel:' + selectedReclamation.contactPhone" class="sr__link">
+                  {{ selectedReclamation.contactPhone }}
+                </a>
+              </div>
+              <div class="sr" *ngIf="selectedReclamation.desiredResolutionDate">
+                <span class="sr__k">Desired resolution date</span>
+                <span class="sr__v">{{ selectedReclamation.desiredResolutionDate }}</span>
+              </div>
+              <div class="sr" *ngIf="selectedReclamation.attachmentUrl">
+                <span class="sr__k">Attachment</span>
+                <a [href]="selectedReclamation.attachmentUrl" target="_blank" class="sr__link">
+                  View file ↗
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Additional info -->
+          <div class="sc" *ngIf="selectedReclamation.additionalInfo">
+            <div class="sc__h">Learner notes</div>
+            <p class="sc__text">{{ selectedReclamation.additionalInfo }}</p>
+          </div>
+
+        </aside>
+        <!-- fin dv__side -->
+
+      </div>
+      <!-- fin dv__body -->
+
+    </div>
+    <!-- fin dv -->
+
+  </ng-container>
+
+</div>

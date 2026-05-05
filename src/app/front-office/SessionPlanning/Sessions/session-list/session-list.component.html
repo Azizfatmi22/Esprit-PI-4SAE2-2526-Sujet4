@@ -1,0 +1,408 @@
+<div class="session-manager">
+  <!-- Header avec titre et actions -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <rect x="2" y="4" width="20" height="16" rx="2" stroke-width="2"/>
+          <path d="M8 2v4M16 2v4M3 10h18" stroke-width="2"/>
+        </svg>
+        Gestion des sessions
+      </h1>
+      <p class="page-subtitle">{{ sessions.length }} sessions au total</p>
+    </div>
+    <button class="btn-create" routerLink="/sessions/new" [queryParams]="courseId ? { courseId: courseId } : {}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M12 5v14M5 12h14" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Nouvelle session
+    </button>
+  </div>
+
+  <!-- Barre de recherche avancée -->
+  <div class="search-section">
+    <div class="search-main">
+      <div class="search-box">
+        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="11" cy="11" r="8" stroke-width="2"/>
+          <path d="M21 21l-4.35-4.35" stroke-width="2"/>
+        </svg>
+        <input 
+          type="text" 
+          placeholder="Rechercher par ID, statut, date..." 
+          [(ngModel)]="searchText"
+          (input)="onSearchInput()"
+          (keyup.enter)="applyFilters()"
+          class="search-input"
+          #searchInput
+        />
+        <button *ngIf="searchText" class="clear-search" (click)="clearSearch()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M18 6L6 18M6 6l12 12" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <button class="btn-filter-toggle" (click)="showAdvancedFilters = !showAdvancedFilters" [class.active]="showAdvancedFilters">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Filtres avancés
+        <span class="filter-badge" *ngIf="hasActiveFilters()">●</span>
+      </button>
+    </div>
+
+    <!-- Filtres avancés -->
+    <div class="advanced-filters" *ngIf="showAdvancedFilters">
+      <div class="filters-grid">
+        <!-- Filtre par statut -->
+        <div class="filter-group">
+          <label class="filter-label">Statut</label>
+          <div class="filter-options">
+            <button class="filter-chip" 
+                    [class.active]="statusFilter === ''"
+                    (click)="statusFilter = ''; applyFilters()">
+              Tous
+            </button>
+            <button class="filter-chip" 
+                    *ngFor="let status of statusOptions"
+                    [class.active]="statusFilter === status.value"
+                    (click)="statusFilter = status.value; applyFilters()">
+              <span class="status-dot" [class]="status.class"></span>
+              {{ status.label }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Filtre par plage de participants -->
+        <div class="filter-group">
+          <label class="filter-label">Participants</label>
+          <div class="range-inputs">
+            <div class="range-input">
+              <span class="range-label">Min</span>
+              <input 
+                type="number" 
+                [(ngModel)]="participantsMin" 
+                (input)="applyFilters()"
+                placeholder="0"
+                min="0"
+                class="range-field"
+              />
+            </div>
+            <span class="range-separator">-</span>
+            <div class="range-input">
+              <span class="range-label">Max</span>
+              <input 
+                type="number" 
+                [(ngModel)]="participantsMax" 
+                (input)="applyFilters()"
+                placeholder="100"
+                min="0"
+                class="range-field"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Filtre par date -->
+        <div class="filter-group">
+          <label class="filter-label">Période</label>
+          <div class="date-filters">
+            <select [(ngModel)]="dateRange" (change)="applyFilters()" class="date-select">
+              <option value="all">Toutes les dates</option>
+              <option value="today">Aujourd'hui</option>
+              <option value="week">Cette semaine</option>
+              <option value="month">Ce mois</option>
+              <option value="custom">Personnalisé</option>
+            </select>
+            
+            <div class="custom-date-range" *ngIf="dateRange === 'custom'">
+              <input 
+                type="date" 
+                [(ngModel)]="dateFrom" 
+                (change)="applyFilters()"
+                class="date-input"
+              />
+              <span class="date-separator">→</span>
+              <input 
+                type="date" 
+                [(ngModel)]="dateTo" 
+                (change)="applyFilters()"
+                class="date-input"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Options de tri -->
+        <div class="filter-group">
+          <label class="filter-label">Trier par</label>
+          <div class="sort-options">
+            <select [(ngModel)]="sortBy" (change)="applyFilters()" class="sort-select">
+              <option value="date">Date de création</option>
+              <option value="participants">Nombre de participants</option>
+              <option value="status">Statut</option>
+              <option value="id">ID</option>
+            </select>
+            
+            <button class="sort-order" (click)="toggleSortOrder()" title="Changer l'ordre">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path *ngIf="sortOrder === 'asc'" d="M12 5v14M5 12l7-7 7 7" stroke-width="2"/>
+                <path *ngIf="sortOrder === 'desc'" d="M12 5v14M5 12l7 7 7-7" stroke-width="2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions des filtres -->
+      <div class="filter-actions">
+        <button class="btn-reset" (click)="resetFilters()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M23 4v6h-6M1 20v-6h6" stroke-width="2"/>
+            <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" stroke-width="2"/>
+          </svg>
+          Réinitialiser
+        </button>
+        <span class="results-count" *ngIf="filteredSessions.length !== sessions.length">
+          {{ filteredSessions.length }} résultats sur {{ sessions.length }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Tags de recherche active -->
+    <div class="active-filters" *ngIf="hasActiveFilters()">
+      <span class="active-filters-label">Filtres actifs:</span>
+      <div class="filter-tags">
+        <span class="filter-tag" *ngIf="searchText">
+          Recherche: "{{ searchText }}"
+          <button class="remove-tag" (click)="searchText = ''; applyFilters()">×</button>
+        </span>
+        <span class="filter-tag" *ngIf="statusFilter">
+          Statut: 
+          <button class="remove-tag" (click)="statusFilter = ''; applyFilters()">×</button>
+        </span>
+        <span class="filter-tag" *ngIf="participantsMin !== null || participantsMax !== null">
+          Participants: {{ participantsMin || 0 }} - {{ participantsMax || '∞' }}
+          <button class="remove-tag" (click)="participantsMin = null; participantsMax = null; applyFilters()">×</button>
+        </span>
+        <span class="filter-tag" *ngIf="dateRange !== 'all'">
+          Période: {{ getDateRangeLabel() }}
+          <button class="remove-tag" (click)="dateRange = 'all'; dateFrom = null; dateTo = null; applyFilters()">×</button>
+        </span>
+      </div>
+      <button class="clear-all" (click)="resetFilters()">Tout effacer</button>
+    </div>
+  </div>
+
+  <!-- Résultats de recherche -->
+  <div class="search-results-header" *ngIf="searchText || hasActiveFilters()">
+    <div class="results-info">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="11" cy="11" r="8" stroke-width="2"/>
+        <path d="M21 21l-4.35-4.35" stroke-width="2"/>
+      </svg>
+      <span>
+        <strong>{{ filteredSessions.length }}</strong> session(s) trouvée(s)
+        <span *ngIf="searchText">pour "{{ searchText }}"</span>
+      </span>
+    </div>
+    <button class="btn-view-all" (click)="clearSearch()" *ngIf="searchText">
+      Voir toutes les sessions
+    </button>
+  </div>
+
+  <!-- Statistiques rapides -->
+  <div class="stats-grid">
+    <div class="stat-card" (click)="statusFilter = SessionStatus.PLANNED; applyFilters()" [class.active]="statusFilter === SessionStatus.PLANNED">
+      <div class="stat-icon planned">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="10" stroke-width="2"/>
+          <path d="M12 6v6l4 2" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ getCountByStatus(SessionStatus.PLANNED) }}</span>
+        <span class="stat-label">Planifiées</span>
+      </div>
+    </div>
+
+    <div class="stat-card" (click)="statusFilter = SessionStatus.ONGOING; applyFilters()" [class.active]="statusFilter === SessionStatus.ONGOING">
+      <div class="stat-icon progress">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="10" stroke-width="2"/>
+          <path d="M12 8v4l3 3" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ getCountByStatus(SessionStatus.ONGOING) }}</span>
+        <span class="stat-label">En cours</span>
+      </div>
+    </div>
+
+    <div class="stat-card" (click)="statusFilter = SessionStatus.COMPLETED; applyFilters()" [class.active]="statusFilter === SessionStatus.COMPLETED">
+      <div class="stat-icon completed">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="10" stroke-width="2"/>
+          <path d="M9 12l2 2 4-4" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ getCountByStatus(SessionStatus.COMPLETED) }}</span>
+        <span class="stat-label">Terminées</span>
+      </div>
+    </div>
+
+    <div class="stat-card" (click)="statusFilter = SessionStatus.CANCELLED; applyFilters()" [class.active]="statusFilter === SessionStatus.CANCELLED">
+      <div class="stat-icon cancelled">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="10" stroke-width="2"/>
+          <path d="M15 9l-6 6M9 9l6 6" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ getCountByStatus(SessionStatus.CANCELLED) }}</span>
+        <span class="stat-label">Annulées</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Liste des sessions -->
+  <div class="sessions-list">
+    <!-- État vide avec suggestions -->
+    <div class="empty-state" *ngIf="filteredSessions.length === 0">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="11" cy="11" r="8" stroke-width="2"/>
+        <path d="M21 21l-4.35-4.35" stroke-width="2"/>
+      </svg>
+      <h3>Aucune session trouvée</h3>
+      <p *ngIf="searchText || hasActiveFilters()">
+        Aucun résultat ne correspond à vos critères de recherche.
+        <br>
+        <button class="text-link" (click)="resetFilters()">Effacer tous les filtres</button>
+      </p>
+      <p *ngIf="!searchText && !hasActiveFilters()">
+        Commencez par créer une nouvelle session
+      </p>
+      <button class="btn-create-empty" routerLink="/sessions/new" [queryParams]="courseId ? { courseId: courseId } : {}" *ngIf="!searchText && !hasActiveFilters()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M12 5v14M5 12h14" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Créer une session
+      </button>
+    </div>
+
+    <!-- Cartes de sessions -->
+    <div class="session-cards" *ngIf="filteredSessions.length > 0">
+      <div class="session-card" *ngFor="let session of filteredSessions">
+        <!-- En-tête de la carte -->
+        <div class="card-header">
+          <div class="card-header-left">
+            <span class="session-id">#{{ session.id }}</span>
+            <span class="session-status" [class]="getStatusClass(session.status)">
+              {{ getStatusLabel(session.status) }}
+            </span>
+          </div>
+          <div class="card-actions">
+            <button class="action-btn edit" [routerLink]="['/sessions/edit', session.id]" title="Modifier">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke-width="2"/>
+              </svg>
+            </button>
+            <button class="action-btn delete" (click)="session.id !== undefined && deleteSession(session.id)" title="Supprimer">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke-width="2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Corps de la carte -->
+        <div class="card-body">
+          <div class="info-row">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-width="2"/>
+              <circle cx="9" cy="7" r="4" stroke-width="2"/>
+            </svg>
+            <span class="info-label">Participants max:</span>
+            <span class="info-value" [class.highlight]="session.maxParticipants === participantsMax || session.maxParticipants === participantsMin">
+              {{ session.maxParticipants }}
+            </span>
+          </div>
+
+          <div class="info-row">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-width="2"/>
+            </svg>
+            <span class="info-label">Créée le:</span>
+            <span class="info-value" [class.highlight]="isDateInRange(session.createdAt)">
+              {{ session.createdAt | date:'dd MMM yyyy' }}
+            </span>
+          </div>
+
+          <!-- Indicateur de planning (optionnel) -->
+          <div class="info-row" *ngIf="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="2"/>
+              <line x1="8" y1="2" x2="8" y2="6" stroke-width="2"/>
+              <line x1="16" y1="2" x2="16" y2="6" stroke-width="2"/>
+            </svg>
+            <span class="info-label">Planning:</span>
+            <span class="info-value planning-badge">✓ Planifié</span>
+          </div>
+        </div>
+
+        <!-- Pied de carte avec boutons d'action -->
+        <div class="card-footer">
+  <div class="footer-actions">
+    <!-- Bouton Voir détails -->
+    <button class="btn-details" [routerLink]="['/sessions', session.id]">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="12" r="3" stroke-width="2"/>
+        <path d="M22 12c-2.667 4.667-6 7-10 7s-7.333-2.333-10-7c2.667-4.667 6-7 10-7s7.333 2.333 10 7z" stroke-width="2"/>
+      </svg>
+      Détails
+    </button>
+
+    <!-- Bouton Planning - UNIQUEMENT si pas de planning -->
+    <button *ngIf="!hasPlanning(session.id)" 
+            class="btn-planning no-planning"
+            (click)="handlePlanningClick(session.id!)"
+            (mouseenter)="loadPlanning(session.id)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="2"/>
+        <line x1="8" y1="2" x2="8" y2="6" stroke-width="2"/>
+        <line x1="16" y1="2" x2="16" y2="6" stroke-width="2"/>
+        <line x1="3" y1="10" x2="21" y2="10" stroke-width="2"/>
+      </svg>
+      + Planning
+    </button>
+
+    <!-- Bouton Voir planning - UNIQUEMENT si planning existe -->
+    <button *ngIf="hasPlanning(session.id!)" 
+            class="btn-planning has-planning"
+            (click)="handlePlanningClick(session.id!)
+            ">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="2"/>
+        <line x1="8" y1="2" x2="8" y2="6" stroke-width="2"/>
+        <line x1="16" y1="2" x2="16" y2="6" stroke-width="2"/>
+        <line x1="3" y1="10" x2="21" y2="10" stroke-width="2"/>
+      </svg>
+      Voir planning
+    </button>
+  </div>
+</div>
+
+
+  <!-- Message de confirmation/succès -->
+  <div class="message-container" *ngIf="message.show">
+    <div class="message" [class.success]="message.type === 'success'" [class.error]="message.type === 'error'">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path *ngIf="message.type === 'success'" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        <path *ngIf="message.type === 'error'" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      {{ message.text }}
+    </div>
+  </div>
+</div>

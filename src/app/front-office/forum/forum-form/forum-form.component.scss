@@ -1,0 +1,303 @@
+/* Variables */
+/* LinkedIn-Style Variables */
+:host {
+    --linkedin-blue: #00acc1;
+    --linkedin-blue-dark: #00838f;
+    --linkedin-blue-light: #4dd0e1;
+    --linkedin-bg: #f3f2ef;
+    --white: #ffffff;
+    --gray-100: #f8f9fa;
+    --gray-200: #e9ecef;
+    --gray-300: #dee2e6;
+    --gray-400: #ced4da;
+    --gray-500: #adb5bd;
+    --gray-600: #6c757d;
+    --gray-700: #495057;
+    --gray-800: #343a40;
+    --gray-900: #212529;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+    --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --radius: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Container */
+.forum-form-container {
+    min-height: 100vh;
+    background: var(--linkedin-bg);
+    padding: 40px 20px;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+/* Header Section */
+.header-section {
+    text-align: center;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--gray-300);
+}
+
+.header-section h1 {
+    margin: 0 0 8px 0;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--gray-900);
+}
+
+.subtitle {
+    margin: 0;
+    color: var(--gray-600);
+    font-size: 15px;
+}
+
+/* Loading State */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    color: var(--gray-600);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--gray-300);
+    border-top-color: var(--linkedin-blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Form Card */
+.form-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 32px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--gray-300);
+}
+
+/* Input Group */
+.input-group {
+    margin-bottom: 28px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: var(--gray-900);
+    font-size: 15px;
+}
+
+.required {
+    color: #ef4444;
+    font-weight: 700;
+}
+
+.input-group input,
+.input-group textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--gray-300);
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--gray-900);
+    transition: all 0.3s ease;
+    background: var(--white);
+}
+
+.input-group input:focus,
+.input-group textarea:focus {
+    outline: none;
+    border-color: var(--linkedin-blue);
+    box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.1);
+}
+
+.input-group input[readonly] {
+    background: var(--gray-100);
+    cursor: not-allowed;
+    color: var(--gray-600);
+}
+
+.input-group textarea {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.6;
+}
+
+.helper-text {
+    display: block;
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--gray-600);
+    font-style: italic;
+}
+
+/* Button Group */
+.button-group {
+    display: flex;
+    gap: 16px;
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--gray-300);
+}
+
+.btn-cancel,
+.btn-save {
+    flex: 1;
+    padding: 12px 24px;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.btn-cancel {
+    background: var(--white);
+    color: var(--gray-700);
+    border: 1px solid var(--gray-400);
+}
+
+.btn-cancel:hover {
+    background: var(--gray-100);
+    border-color: var(--gray-600);
+    color: var(--gray-900);
+}
+
+.btn-save {
+    background: var(--linkedin-blue);
+    color: white;
+    box-shadow: var(--shadow);
+}
+
+.btn-save:hover:not(:disabled) {
+    background: var(--linkedin-blue-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-save:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Image Upload Section */
+.optional {
+    color: var(--gray-500);
+    font-weight: 400;
+    font-size: 13px;
+}
+
+.image-upload-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.btn-upload-image {
+    background: var(--white);
+    border: 2px dashed var(--gray-400);
+    border-radius: var(--radius);
+    padding: 32px 24px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: var(--gray-700);
+    font-size: 15px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-upload-image:hover {
+    border-color: var(--linkedin-blue);
+    background: var(--gray-100);
+    color: var(--linkedin-blue);
+}
+
+.btn-upload-image svg {
+    color: var(--gray-500);
+}
+
+.btn-upload-image:hover svg {
+    color: var(--linkedin-blue);
+}
+
+.image-preview-container {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--gray-300);
+}
+
+.image-preview {
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+    object-fit: cover;
+    display: block;
+}
+
+.btn-remove-image {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-remove-image:hover {
+    background: rgba(239, 68, 68, 0.9);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .forum-form-container {
+        padding: 24px 16px;
+    }
+
+    .header-section h1 {
+        font-size: 26px;
+    }
+
+    .subtitle {
+        font-size: 14px;
+    }
+
+    .form-card {
+        padding: 28px 24px;
+    }
+
+    .input-group {
+        margin-bottom: 24px;
+    }
+}

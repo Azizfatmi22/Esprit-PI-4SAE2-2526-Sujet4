@@ -1,0 +1,1133 @@
+<div class="planning-container" [class.magic-mode]="showMagicWand">
+  <!-- Confetti Celebration -->
+  <div class="confetti" *ngIf="showConfetti">
+    <div class="confetti-piece"></div>
+    <div class="confetti-piece"></div>
+    <div class="confetti-piece"></div>
+    <div class="confetti-piece"></div>
+    <div class="confetti-piece"></div>
+    <div class="confetti-piece"></div>
+  </div>
+
+  <!-- Floating Magic Wand -->
+  <div class="magic-wand" *ngIf="showMagicWand && !isEditMode" 
+       [class.casting]="isGenerating" 
+       [class.active]="activeQuickAction === 'magic'"
+       (click)="handleQuickAction('magic')">
+    <div class="wand-icon">✨</div>
+    <div class="wand-glow"></div>
+    <div class="wand-tooltip">
+      <span class="tooltip-title">Magic Auto</span>
+      <span class="tooltip-desc">Génération automatique complète</span>
+    </div>
+  </div>
+
+  <!-- Risk Alert Banner -->
+  <div class="risk-banner" *ngIf="showRiskAlert" (click)="handleQuickAction('analyze')">
+    <span class="alert-icon">⚠️</span>
+    <span class="alert-message">Planning à risque détecté - Cliquez pour analyse</span>
+    <button class="alert-close" (click)="showRiskAlert = false; $event.stopPropagation()">×</button>
+  </div>
+
+  <!-- Creative Header -->
+  <div class="dynamic-header" [style.background]="getModeGradient(planningForm.get('mode')?.value)">
+    <div class="header-particles">
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+    </div>
+    
+    <div class="header-content">
+      <div class="header-left">
+        <button class="btn-back" (click)="goBack()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2"/>
+          </svg>
+        </button>
+        <div class="header-title">
+          <h1>{{ isEditMode ? 'Modifier le Planning' : 'Créer un Planning' }}</h1>
+          <p class="dynamic-subtitle">{{ getModeDescription(planningForm.get('mode')?.value) || 'Configurez votre session de formation' }}</p>
+        </div>
+      </div>
+      
+      <div class="header-stats" *ngIf="hasAnyData()">
+        <div class="stat-chip">
+          <span class="stat-value">{{ planningStats.totalDays || 0 }}</span>
+          <span class="stat-label">jours</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-value">{{ planningStats.averageHoursPerDay || 0 }}h</span>
+          <span class="stat-label">/jour</span>
+        </div>
+        <div class="progress-chip">
+          <div class="progress-circle" [style.--progress]="getCompletionPercentage()">
+            <span>{{ getCompletionPercentage() }}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay - Enhanced with all states -->
+  <div class="loading-overlay" *ngIf="isProcessing || loading || isGenerating || isDistributing || isGeneratingFill || isGeneratingRolling || isAnalyzingRisk || isFindingBestLocation || isAnalyzingBusyDays">
+    <div class="loading-creative">
+      <div class="loading-icon">
+        <span *ngIf="activeQuickAction === 'magic' || isGenerating" class="magic-spell">✨</span>
+        <span *ngIf="activeQuickAction === 'optimize' || isDistributing || isGeneratingFill" class="magic-spell">⚡</span>
+        <span *ngIf="activeQuickAction === 'analyze' || isAnalyzingRisk || isFindingBestLocation || isAnalyzingBusyDays" class="magic-spell">📊</span>
+        <span *ngIf="activeQuickAction === 'fix'" class="magic-spell">🛠️</span>
+        <span *ngIf="loading && !activeQuickAction" class="magic-spell">⏳</span>
+      </div>
+      <div class="loading-text">
+        <span *ngIf="activeQuickAction === 'magic'">✨ Magie en cours...</span>
+        <span *ngIf="activeQuickAction === 'optimize'">⚡ Optimisation intelligente...</span>
+        <span *ngIf="activeQuickAction === 'analyze'">📊 Analyse complète...</span>
+        <span *ngIf="activeQuickAction === 'fix'">🛠️ Correction automatique...</span>
+        <span *ngIf="loading && !activeQuickAction">Chargement...</span>
+      </div>
+      <div class="loading-bar">
+        <div class="loading-progress"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simple Success/Error Toasts -->
+  <div class="simple-toast success" *ngIf="showSuccess">
+    ✅ {{ successMessage }}
+  </div>
+  <div class="simple-toast error" *ngIf="showError">
+    ❌ {{ errorMessage }}
+  </div>
+  <div class="simple-toast info" *ngIf="showInfo">
+    ℹ️ {{ infoMessage }}
+  </div>
+
+  <!-- Main Layout -->
+  <div class="main-layout">
+    <!-- Left Column - Form -->
+    <div class="form-column">
+      <!-- SIMPLIFIED QUICK ACTIONS - JUST 4 POWERFUL BUTTONS -->
+      <div class="quick-actions-simple" *ngIf="selectedLocation && !isEditMode">
+        <div class="actions-title">
+          <span class="sparkle">✨</span>
+          <span>Actions Magiques</span>
+        </div>
+        <div class="actions-grid-simple">
+          <button *ngFor="let action of quickActions" 
+                  class="action-btn-simple" 
+                  [class.active]="activeQuickAction === action.id"
+                  [style.--action-color]="action.color"
+                  (click)="handleQuickAction(action.id)"
+                  [disabled]="isProcessing">
+            <span class="action-icon">{{ action.icon }}</span>
+            <span class="action-label">{{ action.label }}</span>
+            <span class="action-desc">{{ action.description }}</span>
+          </button>
+        </div>
+      </div>
+
+      <form [formGroup]="planningForm" (ngSubmit)="onSubmit()" class="planning-form">
+        <!-- Mode Selection -->
+        <div class="modes-showcase">
+          <div class="showcase-title">
+            <span class="title-glow"></span>
+            <h2>Choisir le mode de formation</h2>
+          </div>
+          
+          <div class="modes-grid">
+            <div *ngFor="let mode of planningModes" 
+                 class="mode-card"
+                 [class.active]="planningForm.get('mode')?.value === mode.value"
+                 [style.--mode-color]="mode.color"
+                 (click)="planningForm.patchValue({ mode: mode.value })">
+              <div class="mode-icon" [style.background]="mode.gradient">
+                <span>{{ mode.icon }}</span>
+              </div>
+              <div class="mode-content">
+                <h3>{{ mode.label }}</h3>
+                <p>{{ mode.description }}</p>
+              </div>
+              <div class="mode-check" *ngIf="planningForm.get('mode')?.value === mode.value">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M20 6L9 17l-5-5" stroke-width="3"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Planning Zone -->
+        <div class="planning-zone" *ngIf="planningForm.get('mode')?.value">
+          <div class="zone-header">
+            <div class="zone-title">
+              <span class="zone-icon">📅</span>
+              <h3>Zone de Planification</h3>
+            </div>
+            <div class="zone-status" [ngClass]="conflictStatusClass">
+              <span class="status-dot"></span>
+              <span>{{ conflictStatusText || 'Définir les dates' }}</span>
+            </div>
+          </div>
+
+          <!-- Creative Date Picker -->
+          <div class="date-picker-creative">
+            <div class="date-group">
+              <label class="creative-label">
+                <span class="label-icon">🚀</span>
+                <span>Début</span>
+              </label>
+              <div class="creative-input" [class.filled]="!!planningForm.get('startDate')?.value">
+                <input type="date" formControlName="startDate" 
+                       [class.magic-highlight]="suggestedDate === planningForm.get('startDate')?.value">
+                <div class="input-glow"></div>
+              </div>
+            </div>
+            
+            <div class="date-connector">
+              <span class="connector-arrow">→</span>
+            </div>
+            
+            <div class="date-group">
+              <label class="creative-label">
+                <span class="label-icon">🎯</span>
+                <span>Fin</span>
+              </label>
+              <div class="creative-input" [class.filled]="!!planningForm.get('endDate')?.value">
+                <input type="date" formControlName="endDate">
+                <div class="input-glow"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Schedule Options -->
+          <div class="schedule-options">
+            <div class="option-item">
+              <label class="checkbox-label">
+                <input type="checkbox" formControlName="excludeWeekends">
+                <span class="checkbox-custom"></span>
+                <span>Exclure les weekends</span>
+              </label>
+            </div>
+            <div class="option-item">
+              <label class="time-label">
+                <span>Début:</span>
+                <select formControlName="preferredStartTime" class="time-select">
+                  <option *ngFor="let slot of timeSlots" [value]="slot">{{ slot }}</option>
+                </select>
+              </label>
+            </div>
+            <div class="option-item">
+              <label class="time-label">
+                <span>Fin:</span>
+                <select formControlName="preferredEndTime" class="time-select">
+                  <option *ngFor="let slot of timeSlots" [value]="slot">{{ slot }}</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <!-- Date Error with Quick Fix - Now uses the fix action -->
+          <div class="date-error-creative" *ngIf="dateError">
+            <div class="error-content">
+              <span class="error-icon">⚠️</span>
+              <span class="error-message">{{ dateError }}</span>
+            </div>
+            <button type="button" class="quick-fix-btn" (click)="handleQuickAction('fix')">
+              <span>Correction Auto</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Hours Slider -->
+          <div class="hours-creative">
+            <label class="creative-label">
+              <span class="label-icon">⏰</span>
+              <span>Heures Totales</span>
+              <span class="hours-badge">{{ planningForm.get('totalHours')?.value || 0 }}h</span>
+            </label>
+            <div class="slider-container">
+              <input type="range" 
+                     formControlName="totalHours" 
+                     min="1" 
+                     max="100" 
+                     class="magic-slider"
+                     [style.--fill]="(planningForm.get('totalHours')?.value || 0) / 100">
+              <div class="slider-markers">
+                <span>1h</span>
+                <span>25h</span>
+                <span>50h</span>
+                <span>75h</span>
+                <span>100h</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hours Recommendation -->
+          <div class="hours-recommendation" *ngIf="hoursRecommendation" [ngClass]="{
+            'warning': planningStats.isOverloaded,
+            'info': planningStats.isUnderloaded,
+            'success': !planningStats.isOverloaded && !planningStats.isUnderloaded && planningStats.totalDays > 0
+          }">
+            <span class="rec-icon">
+              <span *ngIf="planningStats.isOverloaded">⚠️</span>
+              <span *ngIf="planningStats.isUnderloaded">📚</span>
+              <span *ngIf="!planningStats.isOverloaded && !planningStats.isUnderloaded && planningStats.totalDays > 0">✅</span>
+            </span>
+            <span class="rec-text">{{ hoursRecommendation }}</span>
+            <span class="rec-optimal" *ngIf="optimalDistribution">{{ optimalDistribution }}</span>
+          </div>
+
+          <!-- Location Section -->
+          <div class="location-section" *ngIf="showLocation">
+            <div class="section-header">
+              <div class="section-title">
+                <span class="title-icon">{{ isOnlineMode ? '🌐' : (isHybridMode ? '🔄' : '📍') }}</span>
+                <h4>{{ getLocationSectionTitle() }}</h4>
+              </div>
+              <div class="magic-badge" *ngIf="showMagicWand" (click)="handleQuickAction('magic')">
+                <span class="badge-icon">✨</span>
+                <span>Magic Auto</span>
+              </div>
+            </div>
+
+            <!-- Online Mode -->
+            <!-- Dans votre template - Section pour le mode ONLINE -->
+<div *ngIf="isOnlineMode" class="online-section">
+  <!-- Sélecteur de plateforme en ligne -->
+  <div class="location-selector" *ngIf="!selectedLocation">
+    <div class="form-group">
+      <label>Plateforme en ligne</label>
+      <select class="form-control" (change)="onPlatformSelect($event)">
+        <option value="">-- Sélectionnez une plateforme --</option>
+        <option *ngFor="let location of filteredLocations" [value]="location.id">
+          {{ location.name }} - {{ location.platformUrl }}
+        </option>
+      </select>
+    </div>
+    
+    <!-- Ou saisie manuelle de l'URL -->
+    <div class="form-group mt-3">
+      <label>Ou saisissez l'URL de la plateforme</label>
+      <input type="url" 
+             class="form-control" 
+             placeholder="https://zoom.us/j/123456789"
+             [formControl]="platformUrlControl!"
+             (blur)="onPlatformUrlChange()">
+    </div>
+  </div>
+
+  <!-- Plateforme sélectionnée -->
+  <div class="selected-platform" *ngIf="selectedLocation">
+    <div class="platform-info">
+      <span class="platform-icon">🌐</span>
+      <div>
+        <strong>{{ selectedLocation.name }}</strong>
+        <br>
+        <small>{{ selectedLocation.platformUrl }}</small>
+      </div>
+    </div>
+    <button type="button" class="btn-change" (click)="clearSelectedLocation()">Changer</button>
+  </div>
+</div>
+
+            <!-- Onsite/Hybrid Mode -->
+            <div *ngIf="isOnsiteMode || isHybridMode" class="location-selector">
+              <!-- Selected Location -->
+              <div class="selected-location" *ngIf="selectedLocation">
+                <div class="location-badge" [style.background-color]="getLocationTypeColor(selectedLocation.type)">
+                  <span class="location-emoji">{{ getLocationTypeIcon(selectedLocation.type) }}</span>
+                  <div class="location-details">
+                    <span class="location-name">{{ selectedLocation.name }}</span>
+                    <span class="location-address">{{ selectedLocation.address }}</span>
+                    <span class="location-capacity">👥 {{ selectedLocation.capacity }} personnes</span>
+                  </div>
+                </div>
+                <button type="button" class="btn-change" (click)="clearSelectedLocation()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M6 18L18 6M6 6l12 12" stroke-width="2"/>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Location Grid -->
+              <div class="locations-grid" *ngIf="!selectedLocation">
+                <div class="grid-header">
+                  <span class="grid-count">{{ filteredLocations.length }} lieux disponibles</span>
+                  <button type="button" class="btn-create" (click)="createNewLocation()">
+                    <span>+</span> Nouveau
+                  </button>
+                </div>
+                
+                <div class="location-cards">
+                  <div class="location-card" 
+                       *ngFor="let location of filteredLocations"
+                       (click)="selectLocation(location)">
+                    <div class="card-header" [style.background-color]="getLocationTypeColor(location.type) + '20'">
+                      <span class="card-icon">{{ getLocationTypeIcon(location.type) }}</span>
+                      <span class="card-type">{{ getLocationTypeLabel(location.type) }}</span>
+                      <span class="card-capacity">👥 {{ location.capacity }}</span>
+                    </div>
+                    <div class="card-body">
+                      <h5>{{ location.name }}</h5>
+                      <p>{{ location.address }}, {{ location.city }}</p>
+                    </div>
+                    <div class="card-footer">
+                      <button type="button" class="btn-select">Sélectionner</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Capacity Recommendation -->
+            <div class="capacity-recommendation" *ngIf="capacityRecommendation">
+              <span class="cap-icon">👥</span>
+              <span class="cap-text">{{ capacityRecommendation }}</span>
+            </div>
+
+            <!-- Conflict Status -->
+            <div class="conflict-status" *ngIf="selectedLocation && planningForm.get('startDate')?.value" [ngClass]="conflictStatusClass">
+              <div class="conflict-icon">
+                <span *ngIf="checkingConflict">⌛</span>
+                <span *ngIf="!checkingConflict && hasConflict">⚠️</span>
+                <span *ngIf="!checkingConflict && !hasConflict">✅</span>
+              </div>
+              <span class="conflict-message">{{ conflictStatusText }}</span>
+              <span class="usage-count" *ngIf="locationUsageCount !== null">
+                Utilisé {{ locationUsageCount }} fois
+              </span>
+            </div>
+
+            <!-- Conflict Details -->
+            <div class="conflict-details" *ngIf="hasConflict && conflictDetails">
+              <p class="conflict-message">{{ conflictDetails.message }}</p>
+              <p class="conflict-suggestion">{{ conflictDetails.suggestion }}</p>
+              <div class="conflict-actions" *ngIf="suggestedDate">
+                <button type="button" class="btn-suggestion" (click)="handleQuickAction('fix')">
+                  <span>🔧 Appliquer correction</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Hybrid URL -->
+            <div class="hybrid-url" *ngIf="isHybridMode && selectedLocation">
+              <div class="url-creative mini">
+                <div class="url-prefix">🔗</div>
+                <input type="url" 
+                       [formControl]="platformUrlControl!"
+                       placeholder="URL de la plateforme en ligne">
+              </div>
+            </div>
+          </div>
+
+          <!-- Distribution Preview Modal (kept for optimize action) -->
+          <div class="distribution-preview" *ngIf="showDistributionPreview">
+            <div class="preview-content">
+              <h4>Aperçu de la Distribution</h4>
+              <p>Le planning sera réparti sur {{ distributeDays }} jours</p>
+              
+              <div class="preview-timeline">
+                <div class="timeline-day" *ngFor="let day of distributionPreview">
+                  <span class="day-number">Jour {{ day.day }}</span>
+                  <span class="day-date">{{ day.date | date:'dd MMM' }}</span>
+                  <span class="day-hours">{{ day.hours }}h</span>
+                </div>
+              </div>
+
+              <div class="preview-actions">
+                <button type="button" class="btn-cancel" (click)="cancelDistribute()">Annuler</button>
+                <button type="button" class="btn-confirm" (click)="confirmDistribute()">
+                  <span>✨ Confirmer</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Generated Planning Options (from magic action) -->
+        <div class="generated-plannings" *ngIf="generatedPlannings.length > 0">
+          <div class="generated-header">
+            <span class="magic-icon">✨</span>
+            <h4>Options de Planning Magique</h4>
+          </div>
+          <div class="generated-grid">
+            <div class="generated-card" 
+                 *ngFor="let planning of generatedPlannings"
+                 (click)="applySelectedPlanning(planning)">
+              <div class="card-dates">
+                <span>{{ planning.startDate | date:'dd MMM' }}</span>
+                <span>→</span>
+                <span>{{ planning.endDate | date:'dd MMM' }}</span>
+              </div>
+              <div class="card-hours">{{ planning.totalHours }}h</div>
+              <div class="card-select">Sélectionner</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button type="button" class="btn-outline" (click)="goBack()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2"/>
+            </svg>
+            Annuler
+          </button>
+          <button type="submit" 
+                  class="btn-primary" 
+                  [disabled]="planningForm.invalid || isSubmitting || hasConflict || isProcessing"
+                  [class.pulse]="planningForm.valid && !hasConflict && !isProcessing">
+            <span *ngIf="!isSubmitting" class="btn-content">
+              <span class="btn-icon">{{ isEditMode ? '📝' : '✨' }}</span>
+              <span>{{ isEditMode ? 'Mettre à jour' : 'Créer le planning' }}</span>
+            </span>
+            <span *ngIf="isSubmitting" class="loading-spinner">
+              <span class="spinner">⌛</span>
+              <span>Création...</span>
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Right Column - Preview avec Schedule -->
+    <div class="preview-column">
+      <div class="preview-card" [class.has-data]="hasAnyData()">
+        <div class="preview-header">
+          <span class="preview-icon">👁️</span>
+          <h3>Aperçu du Planning</h3>
+          <span class="live-badge" [class.active]="hasAnyData()">
+            <span class="live-dot"></span>
+            {{ hasAnyData() ? 'Live' : 'En attente' }}
+          </span>
+        </div>
+
+        <div class="preview-tabs" *ngIf="schedulePreview.length > 0">
+          <button class="tab-btn" [class.active]="selectedView === 'calendar'" (click)="selectedView = 'calendar'">
+            <span>📅</span> Calendrier
+          </button>
+          <button class="tab-btn" [class.active]="selectedView === 'list'" (click)="selectedView = 'list'">
+            <span>📋</span> Liste
+          </button>
+          <button class="tab-btn" [class.active]="selectedView === 'timeline'" (click)="selectedView = 'timeline'">
+            <span>⏱️</span> Timeline
+          </button>
+        </div>
+
+        <div class="preview-content">
+          <div class="preview-scene" *ngIf="hasAnyData(); else emptyPreview">
+            <!-- Mode Badge -->
+            <div class="preview-mode" *ngIf="planningForm.get('mode')?.value">
+              <div class="mode-chip" [style.background]="getModeGradient(planningForm.get('mode')?.value)">
+                <span>{{ getModeIcon(planningForm.get('mode')?.value) }}</span>
+                <span>{{ getModeLabel(planningForm.get('mode')?.value) }}</span>
+              </div>
+            </div>
+
+            <!-- Schedule Summary -->
+            <div class="schedule-summary" *ngIf="schedulePreview.length > 0">
+              <div class="summary-item">
+                <span class="summary-label">Total jours</span>
+                <span class="summary-value">{{ planningStats.totalDays }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Moyenne</span>
+                <span class="summary-value">{{ planningStats.averageHoursPerDay }}h/jour</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Weekends</span>
+                <span class="summary-value">{{ planningStats.weekendsIncluded > 0 ? '✓ Inclus' : 'Exclus' }}</span>
+              </div>
+            </div>
+
+            <!-- Schedule Preview - Calendar View -->
+            <div class="schedule-calendar" *ngIf="selectedView === 'calendar' && schedulePreview.length > 0">
+              <div class="calendar-header">
+                <span class="header-day">Jour</span>
+                <span class="header-date">Date</span>
+                <span class="header-hours">Heures</span>
+                <span class="header-schedule">Programme</span>
+              </div>
+              <div class="calendar-body">
+                <div class="calendar-row" *ngFor="let day of schedulePreview" 
+                     [class.weekend]="day.isWeekend">
+                  <span class="row-day">Jour {{ day.dayNumber }}</span>
+                  <span class="row-date">{{ day.date | date:'dd MMM yyyy' }}</span>
+                  <span class="row-hours">
+                    <span class="hours-badge" [class.light]="day.hours <= 4" 
+                          [class.medium]="day.hours > 4 && day.hours <= 6"
+                          [class.intense]="day.hours > 6">
+                      {{ day.hours }}h
+                    </span>
+                  </span>
+                  <span class="row-schedule">{{ getDailyScheduleDescription(day) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Schedule Preview - List View -->
+            <div class="schedule-list" *ngIf="selectedView === 'list' && schedulePreview.length > 0">
+              <div class="list-item" *ngFor="let day of schedulePreview" 
+                   [class.weekend]="day.isWeekend">
+                <div class="item-header">
+                  <span class="item-day">{{ day.dayName }} {{ day.date | date:'dd MMM' }}</span>
+                  <span class="item-hours" [ngClass]="{
+                    'light': day.hours <= 4,
+                    'medium': day.hours > 4 && day.hours <= 6,
+                    'intense': day.hours > 6
+                  }">{{ day.hours }} heures</span>
+                </div>
+                <div class="item-sessions">
+                  <div class="session" *ngIf="day.sessions.morning">
+                    <span class="session-time">☀️ {{ day.sessions.morning.start }} - {{ day.sessions.morning.end }}</span>
+                    <span class="session-hours">({{ day.sessions.morning.hours }}h)</span>
+                  </div>
+                  <div class="session-break" *ngIf="day.breaks.lunch">
+                    <span class="break-time">🍽️ Pause déjeuner: {{ day.breaks.lunch.start }} - {{ day.breaks.lunch.end }}</span>
+                  </div>
+                  <div class="session" *ngIf="day.sessions.afternoon">
+                    <span class="session-time">☕ {{ day.sessions.afternoon.start }} - {{ day.sessions.afternoon.end }}</span>
+                    <span class="session-hours">({{ day.sessions.afternoon.hours }}h)</span>
+                  </div>
+                  <div class="session-break" *ngFor="let coffee of day.breaks.coffee">
+                    <span class="break-time">⏸️ Pause café: {{ coffee.start }} - {{ coffee.end }}</span>
+                  </div>
+                  <div class="session" *ngIf="day.sessions.evening">
+                    <span class="session-time">🌙 {{ day.sessions.evening.start }} - {{ day.sessions.evening.end }}</span>
+                    <span class="session-hours">({{ day.sessions.evening.hours }}h)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Schedule Preview - Timeline View -->
+            <div class="schedule-timeline" *ngIf="selectedView === 'timeline' && schedulePreview.length > 0">
+              <div class="timeline-header">
+                <div class="time-column">Heure</div>
+                <div class="days-column">
+                  <div class="day-header" *ngFor="let day of schedulePreview">
+                    {{ day.date | date:'dd MMM' }}
+                  </div>
+                </div>
+              </div>
+              <div class="timeline-body">
+                <div class="time-row" *ngFor="let timeSlot of timeSlots">
+                  <div class="time-label">{{ timeSlot }}</div>
+                  <div class="time-cells">
+                    <div class="time-cell" *ngFor="let day of schedulePreview"
+                         [class.occupied]="isTimeSlotOccupied(day, timeSlot)"
+                         [class.session-morning]="getTimeSlotType(day, timeSlot) === 'morning'"
+                         [class.session-afternoon]="getTimeSlotType(day, timeSlot) === 'afternoon'"
+                         [class.session-evening]="getTimeSlotType(day, timeSlot) === 'evening'"
+                         [class.break]="getTimeSlotType(day, timeSlot) === 'break'">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Hours Circle -->
+            <div class="preview-hours" *ngIf="planningForm.get('totalHours')?.value">
+              <div class="hours-circle">
+                <span class="hours-number">{{ planningForm.get('totalHours')?.value }}</span>
+                <span class="hours-label">heures</span>
+              </div>
+            </div>
+
+            <!-- Location Preview -->
+            <div class="preview-location" *ngIf="selectedLocation">
+              <div class="location-mini-card">
+                <span class="mini-icon">{{ getLocationTypeIcon(selectedLocation.type) }}</span>
+                <div class="mini-details">
+                  <span class="mini-name">{{ selectedLocation.name }}</span>
+                  <span class="mini-capacity">👥 {{ selectedLocation.capacity }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- URL Preview -->
+            <div class="preview-url" *ngIf="(isOnlineMode || isHybridMode) && platformUrlControl?.value">
+              <div class="url-mini">
+                <span class="url-icon">🔗</span>
+                <span class="url-text">{{ platformUrlControl?.value | slice:0:30 }}...</span>
+              </div>
+            </div>
+
+            <!-- Conflict Warning -->
+            <div class="preview-warning" *ngIf="hasConflict">
+              <span>⚠️</span>
+              <span>Conflit détecté</span>
+            </div>
+          </div>
+
+          <ng-template #emptyPreview>
+            <div class="preview-empty">
+              <div class="empty-animation">
+                <span class="empty-emoji">✨</span>
+              </div>
+              <h4>Votre planning apparaîtra ici</h4>
+              <p>Remplissez le formulaire ou utilisez les boutons magiques</p>
+            </div>
+          </ng-template>
+        </div>
+
+        <div class="preview-footer" *ngIf="hasAnyData()">
+          <div class="footer-progress">
+            <span>Complétion</span>
+            <div class="progress-track">
+              <div class="progress-fill" [style.width.%]="getCompletionPercentage()"></div>
+            </div>
+            <span class="progress-value">{{ getCompletionPercentage() }}%</span>
+          </div>
+          <div class="schedule-note" *ngIf="schedulePreview.length > 0">
+            {{ getScheduleSummary() }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Magic Tips - Updated for simplified actions -->
+      <div class="magic-tips">
+        <div class="tips-header">
+          <span class="tips-icon">💡</span>
+          <span>Conseils Magiques</span>
+        </div>
+        <div class="tips-content">
+          <p *ngIf="!selectedLocation && (isOnsiteMode || isHybridMode)">
+            👆 Cliquez sur "Magic Auto" pour tout générer automatiquement
+          </p>
+          <p *ngIf="selectedLocation && !planningForm.get('startDate')?.value">
+            ✨ "Magic Auto" crée un planning complet en 1 clic
+          </p>
+          <p *ngIf="hasConflict">
+            🔮 "Auto Fix" corrige automatiquement les conflits
+          </p>
+          <p *ngIf="planningStats.isOverloaded">
+            ⚡ "Smart Optimize" répartit mieux la charge
+          </p>
+          <p *ngIf="!riskAssessment && selectedLocation">
+            📊 "Analyze" vérifie les risques et disponibilités
+          </p>
+          <p *ngIf="planningForm.valid && !hasConflict && !planningStats.isOverloaded && !planningStats.isUnderloaded">
+            🚀 Planning optimal! Prêt à être créé
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analytics Modal (for analyze action) -->
+  <div class="analytics-modal" *ngIf="showAnalytics">
+    <div class="analytics-content">
+      <div class="analytics-header">
+        <h3>
+          <span *ngIf="analyticsView === 'busy'">📊</span>
+          <span *ngIf="analyticsView === 'risk'">⚠️</span>
+          <span *ngIf="analyticsView === 'best'">🏆</span>
+          {{ analyticsView === 'busy' ? 'Jours d\'affluence' : 
+             analyticsView === 'risk' ? 'Analyse des risques' : 
+             'Meilleur lieu disponible' }}
+        </h3>
+        <button class="close-btn" (click)="showAnalytics = false">×</button>
+      </div>
+
+      <!-- Busy Days View -->
+      <!-- Busy Days View avec vérifications supplémentaires -->
+<div class="analytics-body" *ngIf="analyticsView === 'busy'">
+  <div *ngIf="busyDays && busyDays.length > 0; else noBusyData">
+    <div class="busy-calendar">
+      <div class="busy-day" *ngFor="let day of busyDays" 
+           [class.overbooked]="day.isOverbooked || day.occupancyRate > 80">
+        <div class="day-info">
+          <span class="day-date">{{ day.date || (day.dayDate | date) || 'Date inconnue' }}</span>
+          <span class="day-count">{{ day.sessionCount || day.count || 0 }} sessions</span>
+        </div>
+        <div class="occupancy-bar-container">
+          <div class="occupancy-bar">
+            <div class="occupancy-fill" 
+                 [style.width.%]="day.occupancyRate || day.rate || 0"
+                 [style.background]="(day.occupancyRate || day.rate || 0) > 80 ? '#ef4444' : ((day.occupancyRate || day.rate || 0) > 50 ? '#f59e0b' : '#10b981')">
+            </div>
+          </div>
+          <span class="occupancy-rate">{{ day.occupancyRate || day.rate || 0 }}%</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Statistiques -->
+    <div class="busy-stats" *ngIf="busyDays.length > 0">
+      <p>Total jours analysés: {{ busyDays.length }}</p>
+      <p>Taux occupation moyen: {{ calculateAverageOccupancy() }}%</p>
+    </div>
+  </div>
+  
+  <ng-template #noBusyData>
+    <div class="no-data">
+      <p>Aucune donnée d'affluence disponible pour ce lieu</p>
+    </div>
+  </ng-template>
+</div>
+
+      <!-- Risk Assessment View -->
+      <div class="analytics-body" *ngIf="analyticsView === 'risk' && riskAssessment">
+        <div class="risk-score" [class.high]="riskAssessment.isHighRisk || riskAssessment.highRisk">
+          <span class="score-value">{{ riskAssessment.riskScore || riskAssessment.score || 0 }}</span>
+          <span class="score-label">Risque</span>
+        </div>
+        
+        <div class="risk-factors" *ngIf="riskAssessment.riskFactors?.length > 0 || riskAssessment.factors?.length > 0">
+          <h4>Facteurs de risque</h4>
+          <ul>
+            <li *ngFor="let factor of (riskAssessment.riskFactors || riskAssessment.factors || [])">⚠️ {{ factor }}</li>
+          </ul>
+        </div>
+        
+        <div class="risk-recommendations" *ngIf="riskAssessment.recommendations?.length > 0 || riskAssessment.suggestions?.length > 0">
+          <h4>Recommandations</h4>
+          <ul>
+            <li *ngFor="let rec of (riskAssessment.recommendations || riskAssessment.suggestions || [])">💡 {{ rec }}</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Best Location View -->
+      <div class="analytics-body" *ngIf="analyticsView === 'best' && bestLocation">
+        <div class="best-location-card">
+          <div class="location-score">
+            <span class="score-badge">🏆</span>
+            <span class="score-number">{{ bestLocation.score || bestLocation.rating || 0 }}/100</span>
+          </div>
+          <h4>{{ bestLocation.name || bestLocation.locationName || 'Lieu' }}</h4>
+          <div class="location-stats">
+            <div class="stat">
+              <span class="stat-label">Créneaux disponibles</span>
+              <span class="stat-value">{{ bestLocation.availableSlots || bestLocation.slots || 0 }}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Prochaine date</span>
+              <span class="stat-value">{{ (bestLocation.nextAvailableDate || bestLocation.nextDate) | date:'dd MMM yyyy' }}</span>
+            </div>
+          </div>
+          <button class="btn-select-location" (click)="selectBestLocation()">
+            Sélectionner ce lieu
+          </button>
+        </div>
+      </div>
+
+      <div class="analytics-footer">
+        <button class="btn-close" (click)="showAnalytics = false">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simple Status Toast -->
+  <div class="status-toast" *ngIf="statusMessage" [ngClass]="statusType" (click)="statusMessage = ''">
+    <span class="toast-icon">{{ 
+      statusType === 'success' ? '✅' : 
+      statusType === 'error' ? '❌' : 
+      statusType === 'warning' ? '⚠️' : 'ℹ️' 
+    }}</span>
+    <span class="toast-message">{{ statusMessage }}</span>
+  </div>
+</div>
+
+<!-- Popup de prévisualisation du planning -->
+<div class="preview-modal" *ngIf="showPlanningPreview">
+  <div class="preview-modal-content">
+    <!-- En-tête -->
+    <div class="preview-modal-header">
+      <div class="header-title">
+        <span class="header-icon">📋</span>
+        <h3>Aperçu du planning généré</h3>
+      </div>
+      <button class="close-btn" (click)="cancelPreview()" title="Fermer">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M18 6L6 18M6 6l12 12" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Corps -->
+    <div class="preview-modal-body">
+      <!-- Résumé principal -->
+      <div class="preview-summary">
+        <div class="summary-stats">
+          <div class="stat-card">
+            <span class="stat-icon">📅</span>
+            <div class="stat-info">
+              <span class="stat-label">Jours</span>
+              <span class="stat-value">{{ previewSummary.totalDays }}</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">⏰</span>
+            <div class="stat-info">
+              <span class="stat-label">Heures</span>
+              <span class="stat-value">{{ previewSummary.totalHours }}h</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">📍</span>
+            <div class="stat-info">
+              <span class="stat-label">Lieux</span>
+              <span class="stat-value">{{ previewSummary.locations.length }}</span>
+            </div>
+          </div>
+          <div class="stat-card" *ngIf="planningStats.averageHoursPerDay">
+            <span class="stat-icon">⚖️</span>
+            <div class="stat-info">
+              <span class="stat-label">Moyenne</span>
+              <span class="stat-value">{{ planningStats.averageHoursPerDay }}h/j</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Période -->
+        <div class="summary-period">
+          <div class="period-item">
+            <span class="period-label">Début</span>
+            <span class="period-value">{{ previewSummary.startDate | date:'dd MMMM yyyy' }}</span>
+          </div>
+          <div class="period-arrow">→</div>
+          <div class="period-item">
+            <span class="period-label">Fin</span>
+            <span class="period-value">{{ previewSummary.endDate | date:'dd MMMM yyyy' }}</span>
+          </div>
+        </div>
+
+        <!-- Lieux -->
+        <div class="summary-locations" *ngIf="previewSummary.locations.length > 0">
+          <span class="locations-label">Lieux:</span>
+          <div class="locations-tags">
+            <span class="location-tag" *ngFor="let loc of previewSummary.locations">
+              📍 {{ loc }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline détaillée des jours avec horaires -->
+      <div class="preview-timeline">
+        <h4>
+          <span class="section-icon">📅</span>
+          Répartition par jour et horaires
+          <span class="section-badge" *ngIf="schedulePreview.length > 0">
+            {{ schedulePreview.length }} jours
+          </span>
+        </h4>
+        
+        <div class="timeline-grid" *ngIf="schedulePreview.length > 0; else noSchedule">
+          <div class="timeline-day" *ngFor="let day of schedulePreview; let i = index">
+            <!-- En-tête du jour -->
+            <div class="day-header" [class.weekend]="day.isWeekend">
+              <div class="day-title">
+                <span class="day-number">Jour {{ i + 1 }}</span>
+                <span class="day-name">{{ day.dayName }}</span>
+              </div>
+              <div class="day-date-badge">
+                {{ day.date | date:'dd MMM yyyy' }}
+              </div>
+              <div class="day-hours-badge" [class.high-hours]="day.hours > 7">
+                {{ day.hours }}h
+              </div>
+            </div>
+
+            <!-- Contenu du jour avec horaires détaillés -->
+            <div class="day-content">
+              <!-- Créneaux horaires -->
+              <div class="time-slots">
+                <!-- Matin -->
+                <div class="time-slot" *ngIf="day.sessions.morning">
+                  <div class="slot-icon morning">🌅</div>
+                  <div class="slot-details">
+                    <span class="slot-label">Matin</span>
+                    <span class="slot-time">
+                      {{ day.sessions.morning.start }} - {{ day.sessions.morning.end }}
+                    </span>
+                    <span class="slot-hours">{{ day.sessions.morning.hours }}h</span>
+                  </div>
+                </div>
+
+                <!-- Déjeuner -->
+                <div class="time-slot break" *ngIf="day.breaks.lunch">
+                  <div class="slot-icon">🍽️</div>
+                  <div class="slot-details">
+                    <span class="slot-label">Pause déjeuner</span>
+                    <span class="slot-time">
+                      {{ day.breaks.lunch.start }} - {{ day.breaks.lunch.end }}
+                    </span>
+                    <span class="slot-hours">{{ day.breaks.lunch.duration }}h</span>
+                  </div>
+                </div>
+
+                <!-- Après-midi -->
+                <div class="time-slot" *ngIf="day.sessions.afternoon">
+                  <div class="slot-icon afternoon">☀️</div>
+                  <div class="slot-details">
+                    <span class="slot-label">Après-midi</span>
+                    <span class="slot-time">
+                      {{ day.sessions.afternoon.start }} - {{ day.sessions.afternoon.end }}
+                    </span>
+                    <span class="slot-hours">{{ day.sessions.afternoon.hours }}h</span>
+                  </div>
+                </div>
+
+                <!-- Pauses café -->
+                <div class="time-slot coffee" *ngFor="let coffee of day.breaks.coffee; let j = index">
+                  <div class="slot-icon">☕</div>
+                  <div class="slot-details">
+                    <span class="slot-label">Pause café {{ j + 1 }}</span>
+                    <span class="slot-time">
+                      {{ coffee.start }} - {{ coffee.end }}
+                    </span>
+                    <span class="slot-hours">{{ coffee.duration }}h</span>
+                  </div>
+                </div>
+
+                <!-- Soir -->
+                <div class="time-slot" *ngIf="day.sessions.evening">
+                  <div class="slot-icon evening">🌙</div>
+                  <div class="slot-details">
+                    <span class="slot-label">Soir</span>
+                    <span class="slot-time">
+                      {{ day.sessions.evening.start }} - {{ day.sessions.evening.end }}
+                    </span>
+                    <span class="slot-hours">{{ day.sessions.evening.hours }}h</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Lieu du jour (si disponible) -->
+              <div class="day-location" *ngIf="previewPlannings[0]?.location">
+                <span class="location-icon">📍</span>
+                <span class="location-name">{{ previewPlannings[0].location?.name }}</span>
+              </div>
+            </div>
+
+            <!-- Barre de progression horaire -->
+            <div class="day-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" 
+                     [style.width.%]="(day.hours / 8) * 100"
+                     [class.overload]="day.hours > 8">
+                </div>
+              </div>
+              <span class="progress-text" [class.overload]="day.hours > 8">
+                {{ day.hours }}h / 8h recommandé
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Template si pas d'horaire disponible -->
+        <ng-template #noSchedule>
+          <div class="no-schedule">
+            <div class="no-schedule-icon">📅</div>
+            <p>Aucun détail horaire disponible pour le moment</p>
+            <small>Les horaires seront générés automatiquement</small>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- Vue alternative: Calendrier hebdomadaire -->
+      <div class="preview-calendar" *ngIf="schedulePreview.length > 0">
+        <h4>
+          <span class="section-icon">📊</span>
+          Vue calendrier
+        </h4>
+        
+        <div class="calendar-grid">
+          <div class="calendar-header">
+            <span>Lun</span>
+            <span>Mar</span>
+            <span>Mer</span>
+            <span>Jeu</span>
+            <span>Ven</span>
+            <span class="weekend">Sam</span>
+            <span class="weekend">Dim</span>
+          </div>
+          
+          <div class="calendar-body">
+            <ng-container *ngFor="let day of schedulePreview">
+              <div class="calendar-day" 
+                   [class.active]="true"
+                   [class.weekend]="day.isWeekend">
+                <span class="day-number">{{ day.date | date:'d' }}</span>
+                <span class="day-hours">{{ day.hours }}h</span>
+                <div class="day-indicator" 
+                     [style.background]="getBarColor(day.dayNumber - 1)"
+                     [style.height.%]="(day.hours / 8) * 100">
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+
+      <!-- Graphique de répartition -->
+      <div class="preview-chart" *ngIf="schedulePreview.length > 0">
+        <h4>
+          <span class="section-icon">📈</span>
+          Distribution horaire
+        </h4>
+        
+        <div class="chart-container">
+          <div class="chart-bars">
+            <div class="chart-bar-wrapper" *ngFor="let day of schedulePreview; let i = index">
+              <div class="chart-bar" 
+                   [style.height]="(day.hours * 2) + 'rem'"
+                   [style.background]="getBarColor(i)">
+                <span class="bar-label">{{ day.hours }}h</span>
+              </div>
+              <span class="bar-day">J{{ i + 1 }}</span>
+            </div>
+          </div>
+          
+          <!-- Ligne de référence 8h -->
+          <div class="chart-reference-line" style="bottom: 16rem">
+            <span class="reference-label">8h (max recommandé)</span>
+          </div>
+        </div>
+
+        <!-- Statistiques supplémentaires -->
+        <div class="chart-stats">
+          <div class="stat-chip" *ngIf="planningStats.isOverloaded">
+            ⚠️ Charge élevée détectée
+          </div>
+          <div class="stat-chip" *ngIf="planningStats.weekendsIncluded > 0">
+            📆 {{ planningStats.weekendsIncluded }} weekend(s) inclus
+          </div>
+          <div class="stat-chip">
+            ⏱️ Total: {{ planningStats.totalHours }}h
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pied de page avec actions -->
+    <div class="preview-modal-footer">
+      <div class="footer-left">
+        <button class="btn-secondary" (click)="regenerateWithMode()" *ngIf="planningForm.get('mode')?.value">
+          <span class="btn-icon">🔄</span>
+          Régénérer
+        </button>
+      </div>
+      <div class="footer-right">
+        <button class="btn-cancel" (click)="cancelPreview()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M6 18L18 6M6 6l12 12" stroke-width="2"/>
+          </svg>
+          Annuler
+        </button>
+        <button class="btn-confirm" (click)="confirmPlanning()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M20 6L9 17l-5-5" stroke-width="2"/>
+          </svg>
+          Confirmer le planning
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

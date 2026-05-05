@@ -1,0 +1,232 @@
+<div class="admin-course-wrapper">
+
+  <div class="page-header">
+    <div class="header-text">
+      <h1>Course Management</h1>
+      <p>Manage and review all platform courses.</p>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon blue"></div>
+      <div class="stat-content">
+        <span class="stat-label">Total Courses</span>
+        <span class="stat-value">{{ stats.totalCourses }}</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green"></div>
+      <div class="stat-content">
+        <span class="stat-label">Published</span>
+        <span class="stat-value">{{ stats.publishedCourses }}</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon purple"></div>
+      <div class="stat-content">
+        <span class="stat-label">Drafts</span>
+        <span class="stat-value">{{ stats.draftCourses }}</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange"></div>
+      <div class="stat-content">
+        <span class="stat-label">Paid Students</span>
+        <span class="stat-value">{{ stats.totalStudents }}</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon teal"></div>
+      <div class="stat-content">
+        <span class="stat-label">Estimated Revenue</span>
+        <span class="stat-value">{{ stats.estimatedRevenue | number : '1.0-0' }} dt</span>
+      </div>
+    </div>
+    <div class="stat-card wide">
+      <div class="stat-icon slate"></div>
+      <div class="stat-content">
+        <span class="stat-label">Top Paid Course</span>
+        <span class="stat-value course-name">{{ stats.topCourseTitle }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="data-section">
+    <div class="section-header">
+      <h2>Course List</h2>
+      <div class="header-actions">
+        <button class="btn-refresh" (click)="loadCourses()">Refresh</button>
+        <button class="btn-refresh" (click)="clearFilters()">Reset filters</button>
+      </div>
+    </div>
+
+    <div class="filters-row" *ngIf="!isLoading">
+      <input
+        type="text"
+        class="filter-input"
+        [(ngModel)]="searchTerm"
+        placeholder="Search by title or description"
+      />
+
+      <select class="filter-select" [(ngModel)]="selectedStatus">
+        <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+      </select>
+
+      <select class="filter-select" [(ngModel)]="selectedLevel">
+        <option *ngFor="let level of levelOptions" [value]="level">{{ level }}</option>
+      </select>
+
+      <select class="filter-select" [(ngModel)]="sortBy">
+        <option value="students-desc">Most paid students</option>
+        <option value="students-asc">Least paid students</option>
+        <option value="title-asc">Title A-Z</option>
+        <option value="title-desc">Title Z-A</option>
+        <option value="price-desc">Price high-low</option>
+        <option value="price-asc">Price low-high</option>
+      </select>
+
+      <label class="paid-only-toggle">
+        <input type="checkbox" [(ngModel)]="showPaidOnly" />
+        <span>Paid only</span>
+      </label>
+    </div>
+
+    <p class="result-count" *ngIf="!isLoading && !errorMessage">
+      Showing {{ filteredCourses.length }} of {{ courses.length }} courses
+    </p>
+
+    <div class="table-container" *ngIf="!isLoading; else loading">
+      <div *ngIf="errorMessage" class="error-state">
+        <span> {{ errorMessage }}</span>
+        <button class="btn-refresh" (click)="loadCourses()">Retry</button>
+      </div>
+
+      <table class="modern-table" *ngIf="filteredCourses.length > 0">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Title</th>
+            <th>Level</th>
+            <th>Status</th>
+            <th>Students</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let course of filteredCourses; let i = index; trackBy: trackByCourseId">
+            <td>{{ i + 1 }}</td>
+            <td class="title-cell">{{ course.title }}</td>
+            <td>
+              <span class="type-pill" [class.beginner]="course.level === 'BEGINNER'"
+                    [class.intermediate]="course.level === 'INTERMEDIATE'">
+                {{ course.level }}
+              </span>
+            </td>
+            <td>
+              <span class="type-pill" [class.quiz]="course.status === 'PUBLISHED'">
+                {{ course.status }}
+              </span>
+            </td>
+            <td>{{ getPaidStudentsCount(course.title) }}</td>
+            <td class="actions">
+              <button
+                class="action-btn publish"
+                (click)="toggleCourseStatus(course)"
+                [title]="course.status === 'PUBLISHED' ? 'Move to draft' : 'Publish course'"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+              </button>
+              <button class="action-btn view" (click)="viewCourse(course.id!)" title="View details">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+              <button class="action-btn delete" (click)="deleteCourse(course.id!)" title="Delete">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="!isLoading && filteredCourses.length === 0 && !errorMessage" class="empty-state">
+        <div></div>
+        <p>{{ courses.length === 0 ? 'No courses found.' : 'No courses match your filters.' }}</p>
+      </div>
+    </div>
+
+    <ng-template #loading>
+      <div class="loader-container">Loading courses...</div>
+    </ng-template>
+  </div>
+
+</div>
+
+<!-- Course detail modal -->
+<div class="modal-backdrop" *ngIf="modalLoading || selectedCourse" (click)="closeModal()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+
+    <div *ngIf="modalLoading" class="loader-container">Loading course details...</div>
+
+    <div *ngIf="selectedCourse" class="modal-content-wrap">
+      <button class="modal-close" (click)="closeModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+
+      <div class="modal-thumbnail">
+        <img [src]="getThumbnailUrl(selectedCourse.thumbnailUrl, selectedCourse.id)" [alt]="selectedCourse.title" (error)="$any($event.target).style.display='none'" />
+        <div class="thumbnail-overlay"></div>
+      </div>
+
+      <div class="modal-body">
+      <div class="modal-header">
+        <div class="modal-badge-row">
+          <span class="type-pill" [class.quiz]="selectedCourse.status === 'PUBLISHED'">{{ selectedCourse.status }}</span>
+          <span class="type-pill beginner">{{ selectedCourse.level }}</span>
+        </div>
+        <h2 class="modal-title">{{ selectedCourse.title }}</h2>
+        <p class="modal-desc">{{ selectedCourse.description }}</p>
+      </div>
+
+      <div class="modal-meta">
+        <div class="meta-item">
+          <span class="stat-label">Students</span>
+          <span class="stat-value">{{ getPaidStudentsCount(selectedCourse.title) }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="stat-label">Chapters</span>
+          <span class="stat-value">{{ selectedCourse.chapters?.length ?? 0 }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="stat-label">Price</span>
+          <span class="stat-value">{{ selectedCourse.price === 0 ? 'Free' : selectedCourse.price + ' dt' }}</span>
+        </div>
+        <div class="meta-item" *ngIf="selectedCourse.durationMinutes">
+          <span class="stat-label">Duration</span>
+          <span class="stat-value">{{ selectedCourse.durationMinutes }}m</span>
+        </div>
+      </div>
+
+      <div class="modal-chapters" *ngIf="selectedCourse.chapters?.length">
+        <h4 class="section-heading"> Curriculum</h4>
+        <table class="modern-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Chapter</th>
+              <th>Lessons</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let ch of selectedCourse.chapters; let i = index">
+              <td>{{ i + 1 }}</td>
+              <td class="title-cell">{{ ch.title }}</td>
+              <td>{{ ch.contentBlocks?.length ?? 0 }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      </div>
+    </div>
+
+  </div>
+</div>

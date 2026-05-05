@@ -1,0 +1,109 @@
+<div class="quiz-create">
+  <div class="config-banner">
+    <div class="banner-left">
+      <button class="btn-back" [routerLink]="['/dashboard']">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Retour
+      </button>
+      <h1>{{ isEditMode ? 'Modifier le Quiz' : 'Création du Quiz QCM' }}</h1>
+    </div>
+    <div class="banner-right">
+      <div class="banner-stats">
+        <span class="stat-chip">{{ questionCount }} questions</span>
+        <span class="stat-chip">{{ totalPoints }} points</span>
+        <span class="stat-chip">{{ quiz.config?.duration || 0 }} min</span>
+      </div>
+      <button class="btn-save" (click)="saveQuiz()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" stroke-width="2" />
+        </svg>
+        {{ isEditMode ? 'Mettre à jour' : 'Enregistrer' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <div class="left-col">
+      <div class="form-section">
+        <div class="form-header">
+          <div class="header-left">
+            <h2>{{ editingQuestionId !== null ? 'Modifier la question' : 'Nouvelle question' }}</h2>
+          </div>
+          <button class="btn-add-header" (click)="addQuestion()">
+            {{ editingQuestionId !== null ? 'Mettre à jour' : 'Ajouter' }}
+          </button>
+        </div>
+
+        <div class="field-group">
+          <label>Question</label>
+          <textarea [(ngModel)]="currentQuestion.question" rows="2" class="field-input"></textarea>
+        </div>
+
+        <div class="field-group">
+          <label>Points</label>
+          <input type="number" [(ngModel)]="currentQuestion.points" class="points-input" />
+        </div>
+
+        <div class="answers-section">
+          <div class="answers-list">
+            <div class="answer-row" *ngFor="let answer of currentQuestion.answers; let i = index">
+              <button class="answer-check" [class.correct]="answer.isCorrect" (click)="setCorrectAnswer(answer.id)">
+                <svg *ngIf="answer.isCorrect" width="10" height="10" viewBox="0 0 24 24" fill="none">
+                  <path d="M20 6L9 17l-5-5" stroke="white" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <span class="answer-letter">{{ getAnswerLetter(i) }}</span>
+              <input type="text" [(ngModel)]="answer.text" class="answer-field" />
+              <button class="answer-remove" *ngIf="currentQuestion.answers.length > 2" (click)="removeAnswer(answer.id)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M18 6L6 18M6 6l12 12" stroke-width="2" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="add-answer-row">
+            <input type="text" [(ngModel)]="newAnswerText" placeholder="Nouvelle réponse..." class="add-answer-field" (keyup.enter)="addAnswer()" />
+            <button (click)="addAnswer()">Ajouter</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="list-section">
+        <div class="questions-container" *ngIf="quiz.questions.length > 0; else empty">
+          <div class="question-card" *ngFor="let question of quiz.questions" [class.editing]="editingQuestionId === question.id">
+            <div class="question-card-header">
+              <div class="question-badge">Q{{ question.id }} - {{ question.points }} pts</div>
+              <div class="question-actions">
+                <button class="action-btn" (click)="editQuestion(question)">
+                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke-width="2"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke-width="2"/>
+                  </svg>
+                </button>
+                <button class="action-btn" (click)="duplicateQuestion(question)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke-width="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-width="2"/>
+                  </svg>
+                </button>
+                <button class="action-btn delete" (click)="removeQuestion(question.id)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-width="2"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="question-card-text">{{ question.question }}</div>
+          </div>
+        </div>
+        <ng-template #empty>
+          <div class="empty-state">Aucune question ajoutée.</div>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+</div>

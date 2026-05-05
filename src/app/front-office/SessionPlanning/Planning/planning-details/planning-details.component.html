@@ -1,0 +1,136 @@
+<div class="planning-details-container">
+  <!-- En-tête -->
+  <div class="details-header">
+    <button class="btn-back" (click)="goBack()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      Retour
+    </button>
+    <h1 class="page-title">
+      <span class="title-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="2"/>
+          <path d="M8 2v4M16 2v4M3 10h18" stroke-width="2"/>
+        </svg>
+      </span>
+      <span>Détails du Planning</span>
+    </h1>
+    <div class="header-actions">
+      <button class="btn-edit" (click)="editPlanning()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke-width="2"/>
+        </svg>
+        Modifier
+      </button>
+       <button class="btn-schedule" (click)="goToScheduleManagement()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <rect x="3" y="4" width="18" height="16" rx="2" stroke-width="2"/>
+      <line x1="8" y1="2" x2="8" y2="6" stroke-width="2"/>
+      <line x1="16" y1="2" x2="16" y2="6" stroke-width="2"/>
+      <line x1="3" y1="10" x2="21" y2="10" stroke-width="2"/>
+    </svg>
+    Gérer les séances
+  </button>
+      <button class="btn-delete" (click)="deletePlanning()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke-width="2"/>
+        </svg>
+        Supprimer
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement des détails...</p>
+  </div>
+
+  <!-- Error state -->
+  <div class="error-state" *ngIf="!loading && error">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <circle cx="12" cy="12" r="10" stroke-width="2"/>
+      <line x1="12" y1="8" x2="12" y2="12" stroke-width="2"/>
+      <circle cx="12" cy="16" r="1" fill="currentColor"/>
+    </svg>
+    <h3>{{ error }}</h3>
+    <button class="btn-retry" (click)="planningId && loadPlanningDetails(planningId)">Réessayer</button>
+  </div>
+
+  <!-- Planning details -->
+  <div class="details-content" *ngIf="!loading && !error && planning">
+    <!-- Mode badge -->
+    <div class="mode-section">
+      <div class="mode-badge" [class]="getModeClass(planning.mode)">
+        <span class="mode-icon">{{ getModeIcon(planning.mode) }}</span>
+        <span class="mode-label">{{ getModeLabel(planning.mode) }}</span>
+      </div>
+    </div>
+
+    <!-- Informations générales -->
+    <div class="info-card">
+      <h3>Informations générales</h3>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">Session associée</span>
+          <span class="info-value">#{{ planning.sessionId }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Période</span>
+          <span class="info-value">Du {{ formatDate(planning.startDate) }} au {{ formatDate(planning.endDate) }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Durée totale</span>
+          <span class="info-value">{{ planning.totalHours }} heures</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Platform URL (pour ONLINE et HYBRID) -->
+    <div class="info-card" *ngIf="planning.mode === PlanningMode.ONLINE || planning.mode === PlanningMode.HYBRID">
+      <h3>Plateforme en ligne</h3>
+      <div class="url-display">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="10" stroke-width="2"/>
+          <line x1="2" y1="12" x2="22" y2="12" stroke-width="2"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke-width="2"/>
+        </svg>
+        <a [href]="planning.location?.platformUrl" target="_blank" class="url-link">
+          {{ planning.location?.platformUrl }}
+        </a>
+      </div>
+    </div>
+
+    <!-- Location (pour ONSITE et HYBRID) -->
+    <div class="info-card" *ngIf="planning.mode === PlanningMode.ONSITE || planning.mode === PlanningMode.HYBRID">
+      <h3>Lieu de formation</h3>
+      <div class="location-details" *ngIf="planning.location; else noLocation">
+        <div class="location-header">
+          <span class="location-type-badge" [style.background-color]="getLocationTypeColor(planning.location.type)">
+            {{ getLocationTypeIcon(planning.location.type) }} {{ getLocationTypeLabel(planning.location.type) }}
+          </span>
+        </div>
+        <div class="location-info">
+          <p class="location-name"><strong>{{ planning.location.name }}</strong></p>
+          <p class="location-address">{{ planning.location.address }}</p>
+          <p class="location-city">{{ planning.location.city }}</p>
+          <p class="location-capacity">Capacité: {{ planning.location.capacity }} personnes</p>
+        </div>
+      </div>
+      <ng-template #noLocation>
+        <p class="no-data">Aucun lieu assigné</p>
+      </ng-template>
+    </div>
+
+    <!-- Actions supplémentaires -->
+    <div class="actions-footer">
+      <button class="btn-secondary" (click)="goBack()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2"/>
+        </svg>
+        Retour à la session
+      </button>
+    </div>
+  </div>
+</div>

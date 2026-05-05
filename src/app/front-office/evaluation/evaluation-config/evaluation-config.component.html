@@ -1,0 +1,227 @@
+<!-- Carte principale compacte -->
+<div class="config-card">
+  <!-- En-tête compact -->
+  <div class="card-header-compact">
+    <div class="header-icon-small">
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+      >
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-width="2" />
+        <polyline points="22 4 12 14.01 9 11.01" stroke-width="2" />
+      </svg>
+    </div>
+    <h1>Configuration de l'Évaluation</h1>
+  </div>
+
+  <!-- Grille principale 2 colonnes -->
+  <div class="config-grid-2col">
+    <!-- Colonne gauche - Configuration de base -->
+    <div class="config-left">
+      <!-- Titre -->
+      <div class="form-group">
+        <label for="title">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <path
+              d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"
+              stroke-width="2"
+            />
+          </svg>
+          Titre
+        </label>
+        <input
+          type="text"
+          id="title"
+          [(ngModel)]="evaluationConfig.title"
+          placeholder="Ex: Examen de Mathématiques"
+          class="form-input"
+          name="title"
+        />
+      </div>
+
+      <!-- Ligne durée + date -->
+      <div class="form-row-2">
+        <div class="form-group">
+          <label for="duration">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <circle cx="12" cy="12" r="10" stroke-width="2" />
+              <polyline points="12 6 12 12 16 14" stroke-width="2" />
+            </svg>
+            Durée
+          </label>
+          <input
+            type="number"
+            id="duration"
+            [(ngModel)]="evaluationConfig.duration"
+            min="1"
+            max="360"
+            class="form-input"
+            name="duration"
+            placeholder="minutes"
+          />
+        </div>
+        <div class="form-group">
+          <label for="date">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <rect
+                x="3"
+                y="4"
+                width="18"
+                height="18"
+                rx="2"
+                ry="2"
+                stroke-width="2"
+              />
+              <line x1="16" y1="2" x2="16" y2="6" stroke-width="2" />
+              <line x1="8" y1="2" x2="8" y2="6" stroke-width="2" />
+              <line x1="3" y1="10" x2="21" y2="10" stroke-width="2" />
+            </svg>
+            Date
+          </label>
+          <input
+            type="datetime-local"
+            id="date"
+            [(ngModel)]="evaluationConfig.date"
+            [min]="minDate"
+            class="form-input"
+            name="date"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Colonne droite - Score de réussite compact -->
+    <div class="config-right">
+      <div class="score-compact">
+        <div class="score-header">
+          <label>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke-width="2" />
+              <polyline points="22 4 12 14.01 9 11.01" stroke-width="2" />
+            </svg>
+            Score de réussite
+          </label>
+          <span class="score-value-small"
+            >{{ evaluationConfig.minSuccessScore }}%</span
+          >
+        </div>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          [(ngModel)]="evaluationConfig.minSuccessScore"
+          class="compact-slider"
+          name="minSuccessScore"
+        />
+        <div class="score-mini-labels">
+          <span>0%</span>
+          <span>50%</span>
+          <span>100%</span>
+        </div>
+        <p class="score-hint">
+          Seuil minimum: {{ evaluationConfig.minSuccessScore }}%
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sélection du Type - Une ligne avec 2 cartes côte à côte -->
+  <div class="type-row">
+    <div
+      class="type-card-small"
+      [class.selected]="selectedType === 'QUIZ'"
+      (click)="selectType('QUIZ')"
+    >
+      <div class="type-icon-small quiz-icon">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <circle cx="12" cy="12" r="10" stroke-width="2" />
+          <circle cx="12" cy="12" r="3" stroke-width="2" />
+        </svg>
+      </div>
+      <div class="type-info">
+        <h4>QUIZ</h4>
+        <span class="type-badge">QCM</span>
+      </div>
+    </div>
+
+    <div
+      class="type-card-small"
+      [class.selected]="selectedType === 'EXAM'"
+      (click)="selectType('EXAM')"
+    >
+      <div class="type-icon-small exam-icon">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+        >
+          <path d="M12 20h9" stroke-width="2" stroke-linecap="round" />
+          <path
+            d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
+            stroke-width="2"
+          />
+        </svg>
+      </div>
+      <div class="type-info">
+        <h4>EXAMEN</h4>
+        <span class="type-badge">Réponses ouvertes</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bouton d'action -->
+  <div class="action-row">
+    <button class="btn-next" (click)="proceedToNextStep()">
+      Continuer vers les Questions
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+      >
+        <path
+          d="M5 12h14M12 5l7 7-7 7"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
+  </div>
+</div>

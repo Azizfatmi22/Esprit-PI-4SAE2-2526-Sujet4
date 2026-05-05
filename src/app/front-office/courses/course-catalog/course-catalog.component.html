@@ -1,0 +1,210 @@
+<div class="course-catalog-page">
+  <section class="catalog-top">
+    <div class="catalog-top-inner">
+      <div class="catalog-heading">
+        <h1 class="catalog-title">Course Catalog</h1>
+        <p class="catalog-subtitle">
+          Explore your training library, filter quickly, and manage courses in
+          one clean view.
+        </p>
+      </div>
+
+      <div class="catalog-search-row">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            (input)="onSearchChange()"
+            placeholder="Search by title or description..."
+            class="search-input"
+          />
+        </div>
+
+        <button class="btn-create-course" routerLink="/course/create">
+          + Create Course
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="catalog-toolbar">
+    <div class="catalog-toolbar-inner">
+      <div class="toolbar-left">
+        <button
+          class="filter-chip"
+          [class.active]="selectedLevel === 'ALL'"
+          (click)="onLevelChange('ALL')"
+        >
+          All
+        </button>
+        <button
+          class="filter-chip"
+          [class.active]="selectedLevel === Level.BEGINNER"
+          (click)="onLevelChange(Level.BEGINNER)"
+        >
+          Beginner
+        </button>
+        <button
+          class="filter-chip"
+          [class.active]="selectedLevel === Level.INTERMEDIATE"
+          (click)="onLevelChange(Level.INTERMEDIATE)"
+        >
+          Intermediate
+        </button>
+        <button
+          class="filter-chip"
+          [class.active]="selectedLevel === Level.ADVANCED"
+          (click)="onLevelChange(Level.ADVANCED)"
+        >
+          Advanced
+        </button>
+      </div>
+
+      <div class="toolbar-right">
+        <select
+          [(ngModel)]="sortBy"
+          (change)="onSortChange()"
+          class="sort-select"
+        >
+          <option value="newest">Newest</option>
+          <option value="popular">Most Popular</option>
+          <option value="price-low">Price: Low to High</option>
+          <option value="price-high">Price: High to Low</option>
+        </select>
+
+        <div class="results-count">
+          {{ filteredCourses.length }} course{{
+            filteredCourses.length !== 1 ? "s" : ""
+          }}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="courses-section">
+    <div class="courses-container">
+      <div *ngIf="loading" class="loading-container">
+        <div class="spinner"></div>
+        <p>Loading courses...</p>
+      </div>
+
+      <div *ngIf="!loading && filteredCourses.length === 0" class="empty-state">
+        <div class="empty-icon">📚</div>
+        <h3>No courses found</h3>
+        <p>Try changing filters or search keywords.</p>
+      </div>
+
+      <div *ngIf="!loading && filteredCourses.length > 0" class="courses-grid">
+        <article *ngFor="let course of filteredCourses" class="course-card">
+          <div class="course-thumbnail">
+            <img
+              [src]="getThumbnailUrl(course.thumbnailUrl, course.id)"
+              [alt]="course.title"
+              class="thumbnail-image"
+              (error)="onImageError($event)"
+            />
+
+            <div class="thumbnail-placeholder">
+              <span class="placeholder-icon">📖</span>
+            </div>
+          </div>
+
+          <div class="course-content">
+            <div class="course-header">
+              <div class="course-badges">
+                <span
+                  class="level-badge"
+                  [ngClass]="getLevelBadgeClass(course.level)"
+                >
+                  {{ getLevelLabel(course.level) }}
+                </span>
+                <span
+                  class="status-badge"
+                  [ngClass]="
+                    (course.status || 'DRAFT') === 'PUBLISHED'
+                      ? 'status-published'
+                      : 'status-draft'
+                  "
+                >
+                  {{
+                    (course.status || "DRAFT") === "PUBLISHED"
+                      ? "Published"
+                      : "Draft"
+                  }}
+                </span>
+              </div>
+
+              <div class="course-rating" *ngIf="course.rating">
+                <span class="star-icon">⭐</span>
+                <span class="rating-value">{{ course.rating.toFixed(1) }}</span>
+              </div>
+            </div>
+
+            <h3 class="course-title">{{ course.title }}</h3>
+            <p class="course-description">{{ course.description }}</p>
+
+            <div class="course-meta">
+              <div class="meta-item">
+                <span class="meta-icon">👥</span>
+                <span class="meta-text">{{ getPaidStudentsCount(course.title) }} students</span>
+
+              </div>
+              <div class="meta-item" *ngIf="course.totalChapters">
+                <span class="meta-icon">📑</span>
+                <span class="meta-text"
+                  >{{ course.totalChapters }} chapters</span
+                >
+              </div>
+              <div class="meta-item" *ngIf="course.totalDurationMinutes">
+                <span class="meta-icon">⏱️</span>
+                <span class="meta-text">{{
+                  formatDuration(course.totalDurationMinutes)
+                }}</span>
+              </div>
+            </div>
+
+            <div
+              *ngIf="isTrainer() && isCoursOwner(course.trainerId)"
+              class="trainer-actions-section"
+            >
+              <button
+                class="btn-action btn-edit-action"
+                title="Edit course"
+                (click)="openEditModal(course.id)"
+              >
+                <span class="action-icon">✏️</span>
+                <span class="action-label">Edit</span>
+              </button>
+              <button
+                class="btn-action btn-delete-action"
+                title="Delete course"
+                (click)="deleteCourse(course.id, course.title)"
+              >
+                <span class="action-icon">🗑️</span>
+                <span class="action-label">Delete</span>
+              </button>
+            </div>
+            <div
+              *ngIf="isTrainer() && isCoursOwner(course.trainerId)"
+              class="trainer-actions-section"
+            >
+              <button class="btn-action btn-session-view" (click)="viewSessions(course.id)">
+                <span class="action-label">View Sessions</span>
+              </button>
+            </div>
+
+            <div class="course-footer">
+              <div class="course-price">
+                <span class="price-label">Price</span>
+                <span class="price-value">{{
+                  course.price === 0 ? "Free" : course.price + " dt"
+                }}</span>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+</div>

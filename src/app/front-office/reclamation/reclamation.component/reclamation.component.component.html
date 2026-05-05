@@ -1,0 +1,743 @@
+
+<div class="page-wrapper">
+  <!-- ── ONBOARDING OVERLAY ── -->
+<div class="onboarding-overlay" *ngIf="showOnboarding" (click)="skipOnboarding()">
+  <div class="onboarding-modal" (click)="$event.stopPropagation()">
+    <div class="onboarding-modal__inner">
+
+      <!-- Header -->
+      <div class="onboarding-modal__header">
+        <span class="onboarding-modal__badge">
+          ✨ Bienvenue
+        </span>
+        <button class="onboarding-modal__skip" (click)="skipOnboarding()">
+          Passer
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Dots -->
+      <div class="onboarding-modal__dots">
+        <div *ngFor="let s of onboardingSteps; let i = index"
+             class="onboarding-dot"
+             [style.background]="i === onboardingStep ? onboardingSteps[onboardingStep].color : i < onboardingStep ? '#c7d2fe' : '#e2e8f0'"
+             (click)="onboardingStep = i">
+        </div>
+      </div>
+
+      <!-- Steps -->
+      <div class="onboarding-step"
+           *ngFor="let step of onboardingSteps; let i = index"
+           [class.onboarding-step--visible]="i === onboardingStep">
+
+        <!-- Icône avec anneau animé -->
+        <div class="onboarding-step__icon-wrap">
+          <div class="onboarding-step__icon-bg"
+               [style.background]="step.bg">
+            {{ step.icon }}
+          </div>
+          <div class="onboarding-step__icon-ring"
+               [style.borderColor]="step.color">
+          </div>
+        </div>
+
+        <!-- Compteur visuel -->
+        <div class="onboarding-step__counter" [style.color]="step.color">
+          <div class="onboarding-step__counter-bar">
+            <div *ngFor="let s of onboardingSteps; let j = index"
+                 class="onboarding-step__counter-pip"
+                 [class.onboarding-step__counter-pip--active]="j <= i">
+            </div>
+          </div>
+          Étape {{ i + 1 }} sur {{ onboardingSteps.length }}
+        </div>
+
+        <h3 class="onboarding-step__title" [style.color]="step.color">
+          {{ step.title }}
+        </h3>
+        <p class="onboarding-step__desc">{{ step.desc }}</p>
+
+        <div class="onboarding-step__tip"
+             [style.borderColor]="step.color"
+             [style.background]="step.bg">
+          <span class="onboarding-step__tip-icon">
+            {{ i === 0 ? '💡' : i === 1 ? '🔔' : '⭐' }}
+          </span>
+          <span>{{ step.tip }}</span>
+        </div>
+      </div>
+
+      <!-- Barre de progression -->
+      <div class="onboarding-modal__progress">
+        <div class="onboarding-modal__progress-fill"
+             [style.width.%]="((onboardingStep + 1) / onboardingSteps.length) * 100"
+             [style.background]="onboardingSteps[onboardingStep].color">
+        </div>
+      </div>
+
+      <!-- Boutons -->
+      <div class="onboarding-modal__footer">
+        <button class="onboarding-btn onboarding-btn--ghost"
+                (click)="prevOnboardingStep()"
+                *ngIf="onboardingStep > 0">
+          ← Previous
+        </button>
+        <div *ngIf="onboardingStep === 0"></div>
+
+        <button class="onboarding-btn onboarding-btn--primary"
+                (click)="nextOnboardingStep()"
+                [style.background]="'linear-gradient(135deg, ' + onboardingSteps[onboardingStep].color + ', ' + onboardingSteps[onboardingStep].color + 'cc)'">
+          <span *ngIf="onboardingStep < onboardingSteps.length - 1">
+            Following →
+          </span>
+          <span *ngIf="onboardingStep === onboardingSteps.length - 1">
+            To start 🚀
+          </span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+  <!-- Toast -->
+  <div class="toast" *ngIf="notification" [class]="'toast toast--' + notification.type">
+    <span class="toast__icon">{{ notification.type === 'success' ? '✓' : '!' }}</span>
+    {{ notification.message }}
+  </div>
+
+  <!-- ══════════════════════════════ VUE LISTE ══════════════════════════════ -->
+  <ng-container *ngIf="currentView === 'list'">
+
+    <div class="page-header">
+      <div class="page-header__left">
+        <div class="page-header__icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="page-header__title">My Complaints</h1>
+          <p class="page-header__subtitle">{{ stats.total }} complaint{{ stats.total > 1 ? 's' : '' }} in total</p>
+        </div>
+      </div>
+      <div class="page-header__actions">
+        <button class="btn btn--ghost" (click)="goToFaq()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          FAQ
+        </button>
+        <button class="btn btn--primary" (click)="goToForm()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Complaint
+        </button>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card" (click)="setFilter('ALL')" [class.active]="activeFilter==='ALL'">
+        <div class="stat-card__value">{{ stats.total }}</div><div class="stat-card__label">Total</div>
+      </div>
+      <div class="stat-card stat-card--pending" (click)="setFilter('PENDING')" [class.active]="activeFilter==='PENDING'">
+        <div class="stat-card__value">{{ stats.pending }}</div><div class="stat-card__label">Pending</div>
+      </div>
+      <div class="stat-card stat-card--progress" (click)="setFilter('IN_PROGRESS')" [class.active]="activeFilter==='IN_PROGRESS'">
+        <div class="stat-card__value">{{ stats.inProgress }}</div><div class="stat-card__label">In Progress</div>
+      </div>
+      <div class="stat-card stat-card--resolved" (click)="setFilter('RESOLVED')" [class.active]="activeFilter==='RESOLVED'">
+        <div class="stat-card__value">{{ stats.resolved }}</div><div class="stat-card__label">Resolved</div>
+      </div>
+      <div class="stat-card stat-card--rejected" (click)="setFilter('REJECTED')" [class.active]="activeFilter==='REJECTED'">
+        <div class="stat-card__value">{{ stats.rejected }}</div><div class="stat-card__label">Rejected</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearch()" class="search-box__input" placeholder="Search...">
+      </div>
+      <div class="filter-chips">
+        <button *ngFor="let f of filters" class="chip" [class.chip--active]="activeFilter===f" (click)="setFilter(f)">
+          {{ f === 'ALL' ? 'All' : getStatusConfig(f).label }}<span class="chip__count">{{ getFilterCount(f) }}</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="state-loading" *ngIf="loading"><div class="spinner"></div><p>Loading...</p></div>
+    <div class="state-empty" *ngIf="!loading && filteredReclamations.length === 0">
+      <div class="state-empty__icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
+      <h3>{{ searchQuery || activeFilter !== 'ALL' ? 'No results found' : 'No complaints' }}</h3>
+      <p>{{ searchQuery ? 'Modify your search.' : activeFilter !== 'ALL' ? 'No complaints in this category.' : 'Start by submitting your first complaint.' }}</p>
+      <button class="btn btn--primary" (click)="goToForm()" *ngIf="!searchQuery && activeFilter==='ALL'">Create a Complaint</button>
+      <button class="btn btn--ghost" (click)="setFilter('ALL'); searchQuery=''" *ngIf="searchQuery || activeFilter!=='ALL'">Reset</button>
+    </div>
+
+    <!-- ── CARDS ── -->
+    <div class="cards-list" *ngIf="!loading && filteredReclamations.length > 0">
+      <div class="rec-card" *ngFor="let rec of filteredReclamations" [class.rec-card--expanded]="isExpanded(rec.id)">
+
+        <div class="rec-card__header" (click)="toggleCard(rec.id)">
+          <div class="rec-card__header-left">
+            <div class="rec-card__emoji">{{ getTypeConfig(rec.type).icon }}</div>
+            <div class="rec-card__info">
+              <h3 class="rec-card__title">{{ rec.subject }}</h3>
+              <div class="rec-card__meta">
+                <span>{{ getTypeConfig(rec.type).label }}</span>
+                <span class="sep">·</span>
+                <span>{{ formatRelativeDate(rec.createdDate) }}</span>
+                <span class="sep" *ngIf="getPublicResponses(rec.id).length > 0">·</span>
+                <span class="responses-count" *ngIf="getPublicResponses(rec.id).length > 0">💬 {{ getPublicResponses(rec.id).length }}</span>
+                <span class="sat-badge" *ngIf="needsSatisfaction(rec)">⭐ Évaluez</span>
+                <span class="est-badge" [class]="getEstimationClass(rec)" *ngIf="getEstimatedDelay(rec)">⏱ {{ getEstimatedDelay(rec) }}</span>
+                <!-- ── BADGE TYPING EN TEMPS RÉEL ── -->
+                <span class="typing-badge" *ngIf="isAdminTyping(rec.id)">
+                  <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
+                  Written support...
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="rec-card__header-right">
+            <span class="priority-dot priority-dot--{{ getPriorityConfig(rec.priority).css }}"></span>
+            <span class="status-badge status-badge--{{ getStatusConfig(rec.status || 'PENDING').css }}">
+              {{ getStatusConfig(rec.status || 'PENDING').icon }} {{ getStatusConfig(rec.status || 'PENDING').label }}
+            </span>
+            <button class="icon-btn" (click)="deleteReclamation(rec.id, $event)" *ngIf="rec.status === 'PENDING'">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+            </button>
+            <button class="icon-btn icon-btn--detail" (click)="openDetail(rec); $event.stopPropagation()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <div class="chevron" [class.chevron--open]="isExpanded(rec.id)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="rec-card__body" [class.rec-card__body--open]="isExpanded(rec.id)">
+          <p class="rec-card__desc">{{ rec.description }}</p>
+
+          <!-- Mini Timeline -->
+          <div class="mini-timeline" *ngIf="getTimeline(rec.id).length > 0">
+            <div *ngFor="let step of getTimeline(rec.id); let last = last" class="mt-step" [class.mt-step--done]="step.done" [class.mt-step--cur]="step.current">
+              <div class="mt-step__dot">{{ step.done || step.current ? step.icon : '' }}</div>
+              <div class="mt-step__label">{{ step.label }}</div>
+              <div class="mt-step__date" *ngIf="step.date">{{ formatRelativeDate(step.date) }}</div>
+              <div class="mt-step__line" *ngIf="!last"></div>
+            </div>
+          </div>
+          
+
+          <!-- ── THREAD ── -->
+          <div class="thread-block" *ngIf="getPublicResponses(rec.id).length > 0 || canLearnerReply(rec) || isAdminTyping(rec.id)">
+            <div class="thread-block__title">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+              Messages
+              <span class="thread-count" *ngIf="getPublicResponses(rec.id).length > 0">{{ getPublicResponses(rec.id).length }}</span>
+            </div>
+
+            <!-- Messages -->
+            <div class="thread-messages" *ngIf="getPublicResponses(rec.id).length > 0">
+              <div *ngFor="let resp of getPublicResponses(rec.id)"
+                   class="thread-msg"
+                   [class.thread-msg--admin]="!isLearnerMessage(resp)"
+                   [class.thread-msg--learner]="isLearnerMessage(resp)">
+                <div class="thread-msg__av"
+                     [class.thread-msg__av--admin]="!isLearnerMessage(resp)"
+                     [class.thread-msg__av--learner]="isLearnerMessage(resp)">
+                  {{ isLearnerMessage(resp) ? 'Moi' : 'A' }}
+                </div>
+                <div class="thread-msg__bubble">
+                  <!-- Citation incluse dans ce message -->
+                  <div class="msg-quote" *ngIf="resp.quotedText">
+                    <div class="msg-quote__bar"></div>
+                    <div class="msg-quote__body">
+                      <div class="msg-quote__author">{{ resp.quotedAuthor }}</div>
+                      <div class="msg-quote__text">{{ resp.quotedText }}</div>
+                    </div>
+                  </div>
+                  <div class="thread-msg__head">
+                    <span class="thread-msg__who">{{ isLearnerMessage(resp) ? 'Vous' : 'Administrateur' }}</span>
+                    <div class="thread-msg__head-right">
+                      <span class="thread-msg__when">{{ formatDate(resp.createdDate) }}</span>
+                      <!-- Bouton Répondre (messages admin uniquement) -->
+                      <button class="reply-to-btn"
+                              *ngIf="!isLearnerMessage(resp) && canLearnerReply(rec)"
+                              (click)="quoteMessage(rec.id!, resp)" title="Citer ce message">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>
+                        Answer
+                      </button>
+                    </div>
+                  </div>
+                  <p class="thread-msg__text">{{ resp.responseText }}</p>
+                  <!-- Réactions -->
+                  <div class="msg__reactions" *ngIf="!isLearnerMessage(resp) && !resp.isInternal">
+                    <span class="msg__reaction-current" *ngIf="resp.reaction">
+                      {{ resp.reaction }}
+                      <span style="font-size:12px; color:#64748b;">{{ resp.reaction === '👍' ? 'Utile' : resp.reaction === '✅' ? 'Résolu' : 'Pas clair' }}</span>
+                      <button class="msg__reaction-remove" (click)="removeReaction(resp)">×</button>
+                    </span>
+                    <ng-container *ngIf="!resp.reaction">
+                      <span class="msg__reaction-label">This answer helped you ?</span>
+                      <div class="msg__reaction-btns">
+                        <button class="msg__reaction-btn msg__reaction-btn--yes" (click)="react(resp, '👍')">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/><path d="M7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>
+                          Useful
+                        </button>
+                        <button class="msg__reaction-btn msg__reaction-btn--solved" (click)="react(resp, '✅')">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                          Resolved
+                        </button>
+                        <button class="msg__reaction-btn msg__reaction-btn--unclear" (click)="react(resp, '❓')">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                          Not clear
+                        </button>
+                      </div>
+                    </ng-container>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── TYPING INDICATOR WebSocket ── -->
+            <div class="typing-indicator" *ngIf="isAdminTyping(rec.id)">
+              <div class="typing-indicator__av">A</div>
+              <div class="typing-indicator__bubble">
+                <span class="typing-indicator__label">Support is being responded to.</span>
+                <span class="typing-dots">
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Awaiting -->
+            <div class="awaiting" *ngIf="getPublicResponses(rec.id).length === 0 && canLearnerReply(rec) && !isAdminTyping(rec.id)">
+              ⏳ Awaiting the support team...
+            </div>
+
+            <!-- Zone de réponse avec citation -->
+            <div class="learner-reply" *ngIf="canLearnerReply(rec)">
+              <!-- Bulle de citation active -->
+              <div class="reply-quote-preview" *ngIf="getQuote(rec.id!)">
+                <div class="reply-quote-preview__bar"></div>
+                <div class="reply-quote-preview__content">
+                  <div class="reply-quote-preview__author">{{ getQuote(rec.id!)!.author }}</div>
+                  <div class="reply-quote-preview__text">{{ getQuote(rec.id!)!.text | slice:0:100 }}{{ getQuote(rec.id!)!.text.length > 100 ? '…' : '' }}</div>
+                </div>
+                <button class="reply-quote-preview__close" (click)="cancelQuote(rec.id!)" title="Annuler la citation">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+              <div class="learner-reply__hint" [class.learner-reply__hint--progress]="rec.status === 'IN_PROGRESS'">
+                {{ getQuote(rec.id!) ? '↩ Répondre à ' + getQuote(rec.id!)!.author : rec.status === 'PENDING' ? '💡 Ajoutez des précisions' : '💬 Répondre à l\'équipe' }}
+              </div>
+              <div class="learner-reply__input-row">
+                <div class="learner-reply__av">Moi</div>
+                <textarea class="learner-reply__ta"
+                          [id]="'reply-ta-' + rec.id"
+                          [value]="getLearnerReply(rec.id!)"
+                          (input)="setLearnerReply(rec.id!, $any($event.target).value)"
+                          [placeholder]="getQuote(rec.id!) ? 'Votre réponse à ' + getQuote(rec.id!)!.author + '...' : 'Votre message...'"
+                          rows="2"></textarea>
+              </div>
+              <div class="learner-reply__foot">
+                <span class="learner-reply__chars">{{ getLearnerReply(rec.id!).length }} car.</span>
+                <button class="learner-reply__btn"
+                        (click)="submitLearnerReplyWithQuote(rec)"
+                        [disabled]="!getLearnerReply(rec.id!).trim() || submittingReply.has(rec.id!)">
+                  <span class="spinner-inline" *ngIf="submittingReply.has(rec.id!)"></span>
+                  <svg *ngIf="!submittingReply.has(rec.id!) && getQuote(rec.id!)" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>
+                  {{ submittingReply.has(rec.id!) ? '...' : getQuote(rec.id!) ? 'Répondre' : 'Envoyer' }}
+                </button>
+              </div>
+            </div>
+
+            <div class="thread-closed" *ngIf="rec.status === 'CLOSED' || rec.status === 'RESOLVED' || rec.status === 'REJECTED'">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+              {{ rec.status === 'RESOLVED' ? 'Résolue' : rec.status === 'CLOSED' ? 'Fermée' : 'Rejetée' }} — Discussion clôturée
+            </div>
+          </div>
+
+          <!-- Satisfaction -->
+          <div class="satisfaction-block" *ngIf="needsSatisfaction(rec)">
+            <div class="sat__title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Your complaint has been resolved — Rate our support</div>
+            <div class="sat__stars">
+              <button *ngFor="let s of [1,2,3,4,5]" class="star-btn" [class.star-btn--on]="getSatisfactionDraft(rec.id!).score >= s" (click)="setSatisfactionScore(rec.id!, s)">★</button>
+              <span class="sat__label">{{ starLabel(getSatisfactionDraft(rec.id!).score) }}</span>
+            </div>
+            <textarea class="sat__comment" [value]="getSatisfactionDraft(rec.id!).comment" (input)="setSatisfactionComment(rec.id!, $any($event.target).value)" placeholder="Commentaire optionnel..." rows="2"></textarea>
+            <button class="sat__submit" (click)="submitSatisfaction(rec)" [disabled]="!getSatisfactionDraft(rec.id!).score || submittingSatisfaction.has(rec.id!)">
+              <span class="spinner-inline" *ngIf="submittingSatisfaction.has(rec.id!)"></span>
+              {{ submittingSatisfaction.has(rec.id!) ? 'Envoi...' : 'Envoyer mon évaluation' }}
+            </button>
+          </div>
+          <div class="sat-done" *ngIf="rec.satisfactionScore">
+            <span *ngFor="let s of [1,2,3,4,5]" class="sat-done__star" [class.sat-done__star--on]="rec.satisfactionScore! >= s">★</span>
+            <span class="sat-done__txt">Thank you for your review !</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+
+  <!-- ══════════════════════════════ VUE DÉTAIL ══════════════════════════════ -->
+  <ng-container *ngIf="currentView === 'detail' && selectedReclamation">
+    <div class="detail-page">
+      <button class="back-btn" (click)="goToList()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Back to the list</button>
+      <div class="detail-header">
+        <div class="detail-header__badge">{{ getTypeConfig(selectedReclamation.type).icon }}</div>
+        <div>
+          <h2 class="detail-header__title">{{ selectedReclamation.subject }}</h2>
+          <div class="detail-header__meta">
+            <span class="status-badge status-badge--{{ getStatusConfig(selectedReclamation.status || 'PENDING').css }}">{{ getStatusConfig(selectedReclamation.status || 'PENDING').icon }} {{ getStatusConfig(selectedReclamation.status || 'PENDING').label }}</span>
+            <span class="priority-dot priority-dot--{{ getPriorityConfig(selectedReclamation.priority).css }}"></span>
+            <span class="detail-header__type">{{ getTypeConfig(selectedReclamation.type).label }}</span>
+            <span class="detail-header__date">Created {{ formatRelativeDate(selectedReclamation.createdDate) }}</span>
+            <span class="est-badge" [class]="getEstimationClass(selectedReclamation)" *ngIf="getEstimatedDelay(selectedReclamation)">⏱ {{ getEstimatedDelay(selectedReclamation) }}</span>
+            <!-- Typing indicator dans le header du détail -->
+            <span class="typing-badge" *ngIf="isAdminTyping(selectedReclamation.id)">
+              <span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>
+              Support is being responded to...
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-tabs">
+        <button class="dtab" [class.dtab--on]="detailTab === 'timeline'" (click)="detailTab = 'timeline'">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Progression
+        </button>
+        <button class="dtab" [class.dtab--on]="detailTab === 'messages'" (click)="detailTab = 'messages'">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> Messages
+          <span class="dtab__count" *ngIf="detailResponses.length > 0">{{ detailResponses.length }}</span>
+        </button>
+      </div>
+
+      <div class="detail-body" *ngIf="!loadingDetail">
+        <!-- TAB TIMELINE -->
+        <div *ngIf="detailTab === 'timeline'">
+          <p class="detail-desc">{{ selectedReclamation.description }}</p>
+          <div class="vtimeline">
+            <div *ngFor="let step of detailTimeline; let last = last" class="vt-step" [class.vt-step--done]="step.done" [class.vt-step--cur]="step.current" [class.vt-step--pending]="!step.done && !step.current">
+              <div class="vt-step__left"><div class="vt-step__icon">{{ step.icon }}</div><div class="vt-step__line" *ngIf="!last"></div></div>
+              <div class="vt-step__content">
+                <div class="vt-step__label">{{ step.label }}</div>
+                <div class="vt-step__meta" *ngIf="step.date || step.actor"><span *ngIf="step.date">{{ formatDate(step.date) }}</span><span *ngIf="step.actor" class="vt-step__actor">by {{ step.actor }}</span></div>
+                <div class="vt-step__waiting" *ngIf="step.current && !step.date && step.status !== 'PENDING'">pending...</div>
+              </div>
+            </div>
+            <div class="vt-step vt-step--rejected" *ngIf="selectedReclamation.status === 'REJECTED'">
+              <div class="vt-step__left"><div class="vt-step__icon">❌</div></div>
+              <div class="vt-step__content"><div class="vt-step__label">Complaint rejected</div><div class="vt-step__meta">{{ formatDate(selectedReclamation.updatedDate) }}</div></div>
+            </div>
+          </div>
+          <div class="satisfaction-block" *ngIf="needsSatisfaction(selectedReclamation)">
+            <div class="sat__title">⭐ Evaluate our support</div>
+            <div class="sat__stars">
+              <button *ngFor="let s of [1,2,3,4,5]" class="star-btn" [class.star-btn--on]="getSatisfactionDraft(selectedReclamation.id!).score >= s" (click)="setSatisfactionScore(selectedReclamation.id!, s)">★</button>
+              <span class="sat__label">{{ starLabel(getSatisfactionDraft(selectedReclamation.id!).score) }}</span>
+            </div>
+            <textarea class="sat__comment" [value]="getSatisfactionDraft(selectedReclamation.id!).comment" (input)="setSatisfactionComment(selectedReclamation.id!, $any($event.target).value)" placeholder="Optional comment..." rows="2"></textarea>
+            <button class="sat__submit" (click)="submitSatisfaction(selectedReclamation)" [disabled]="!getSatisfactionDraft(selectedReclamation.id!).score">Submit my evaluation</button>
+          </div>
+        </div>
+
+        <!-- TAB MESSAGES -->
+        <div *ngIf="detailTab === 'messages'">
+          <div class="thread-messages" *ngIf="detailResponses.length > 0">
+            <div *ngFor="let resp of detailResponses" class="thread-msg" [class.thread-msg--admin]="!isLearnerMessage(resp)" [class.thread-msg--learner]="isLearnerMessage(resp)">
+              <div class="thread-msg__av" [class.thread-msg__av--admin]="!isLearnerMessage(resp)" [class.thread-msg__av--learner]="isLearnerMessage(resp)">{{ isLearnerMessage(resp) ? 'Moi' : 'A' }}</div>
+              <div class="thread-msg__bubble">
+                <div class="msg-quote" *ngIf="resp.quotedText">
+                  <div class="msg-quote__bar"></div>
+                  <div class="msg-quote__body"><div class="msg-quote__author">{{ resp.quotedAuthor }}</div><div class="msg-quote__text">{{ resp.quotedText }}</div></div>
+                </div>
+                <div class="thread-msg__head"><span class="thread-msg__who">{{ isLearnerMessage(resp) ? 'Vous' : 'Administrateur' }}</span><span class="thread-msg__when">{{ formatDate(resp.createdDate) }}</span></div>
+                <p class="thread-msg__text">{{ resp.responseText }}</p>
+              </div>
+            </div>
+          </div>
+          <!-- Typing indicator dans vue détail -->
+          <div class="typing-indicator" *ngIf="isAdminTyping(selectedReclamation.id)">
+            <div class="typing-indicator__av">A</div>
+            <div class="typing-indicator__bubble">
+              <span class="typing-indicator__label">Support is being responded to.</span>
+              <span class="typing-dots">
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+              </span>
+            </div>
+          </div>
+          <div class="awaiting" *ngIf="detailResponses.length === 0 && !isAdminTyping(selectedReclamation.id)">⏳ No messages at the moment.</div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+
+  <!-- ══════════════════════════════ VUE FAQ ══════════════════════════════ -->
+  <ng-container *ngIf="currentView === 'faq'">
+    <div class="faq-page">
+      <button class="back-btn" (click)="goToList()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Back</button>
+      <div class="faq-header"><div class="faq-header__icon">❓</div><div><h2 class="faq-header__title">Frequently Asked Questions</h2><p class="faq-header__sub">Find quick answers before submitting a complaint</p></div></div>
+      <div class="faq-search-wrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" [(ngModel)]="faqSearch" class="faq-search" placeholder="Search..."></div>
+      <div class="faq-list">
+        <div *ngFor="let item of filteredFaq; let i = index" class="faq-item" [class.faq-item--open]="expandedFaq.has(i)">
+          <div class="faq-item__q" (click)="toggleFaq(i)"><span class="faq-item__icon">{{ item.icon }}</span><span class="faq-item__text">{{ item.question }}</span><svg class="faq-item__chevron" [class.faq-item__chevron--open]="expandedFaq.has(i)" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+          <div class="faq-item__a" [class.faq-item__a--open]="expandedFaq.has(i)"><p>{{ item.answer }}</p></div>
+        </div>
+        <div class="faq-empty" *ngIf="filteredFaq.length === 0"><p>No questions found for "{{ faqSearch }}"</p></div>
+      </div>
+      <div class="faq-cta"><p>Didn't find the answer you were looking for?</p><button class="btn btn--primary" (click)="goToForm()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Submit a Complaint</button></div>
+    </div>
+  </ng-container>
+
+
+  <!-- ══════════════════════════════ VUE FORMULAIRE ══════════════════════════════ -->
+  <ng-container *ngIf="currentView === 'form'">
+    <div class="form-header">
+      <button class="back-btn" (click)="goToList()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Back</button>
+      <div class="form-header__title-block"><h1 class="form-header__title">New Complaint</h1><p class="form-header__sub">Fields marked with <span class="req">*</span> are required.</p></div>
+      <div class="progress-wrap"><div class="progress-wrap__label">{{ formProgress }}% completed</div><div class="progress-bar"><div class="progress-bar__fill" [style.width.%]="formProgress"></div></div></div>
+    </div>
+
+    <div class="form-layout">
+      <div class="form-section">
+        <div class="form-section__head"><span class="form-section__num">1</span><div><div class="form-section__title">Type of Complaint <span class="req">*</span></div><div class="form-section__sub">The form adapts according to your choice</div></div></div>
+        <div class="type-grid">
+          <div *ngFor="let t of reclamationTypes" class="type-card" [class.type-card--sel]="reclamationForm.type === t.value" (click)="reclamationForm.type = t.value">
+            <span class="type-card__icon">{{ t.icon }}</span><span class="type-card__label">{{ t.label }}</span><span class="type-card__desc">{{ t.desc }}</span><span class="type-card__check" *ngIf="reclamationForm.type === t.value">✓</span>
+          </div>
+        </div>
+        <div class="form-estimation" *ngIf="formTypeEstimation">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Estimated delay : <strong>{{ formTypeEstimation }}</strong>
+          <span class="form-estimation__note">(based on your history)</span>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section__head"><span class="form-section__num">2</span><div><div class="form-section__title">Main Information</div><div class="form-section__sub">Describe your issue with precision</div></div></div>
+        <div class="field">
+          <label class="field__label">Subject <span class="req">*</span>
+            <button *ngIf="voiceSupported" class="voice-btn" [class.voice-btn--on]="isRecordingSubject" (click)="startRecording('subject')" type="button">
+              <svg *ngIf="!isRecordingSubject" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+              <span *ngIf="isRecordingSubject" class="voice-dot"></span>
+              {{ isRecordingSubject ? 'Écoute...' : 'Dicter' }}
+            </button>
+          </label>
+          <input type="text" [(ngModel)]="reclamationForm.subject" (input)="onTextChange()" class="field__input" [class.field__input--filled]="reclamationForm.subject" [class.field__input--recording]="isRecordingSubject" placeholder="{{ isRecordingSubject ? '🎤 Parlez maintenant...' : 'Résumez votre problème...' }}" maxlength="200">
+          <div class="field__footer"><span class="field__hint">Be concise</span><span class="field__count">{{ reclamationForm.subject.length }}/200</span></div>
+        </div>
+        <div class="field">
+          <label class="field__label">Description <span class="req">*</span>
+            <button *ngIf="voiceSupported" class="voice-btn" [class.voice-btn--on]="isRecordingDesc" (click)="startRecording('description')" type="button">
+              <svg *ngIf="!isRecordingDesc" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+              <span *ngIf="isRecordingDesc" class="voice-dot"></span>
+              {{ isRecordingDesc ? 'Écoute...' : 'Dicter' }}
+            </button>
+          </label>
+          <div class="voice-recording-banner" *ngIf="isRecordingDesc"><span class="voice-dot"></span> Speak now — click again to stop</div>
+          <textarea [(ngModel)]="reclamationForm.description" (input)="onDescriptionChange()" class="field__textarea" [class.field__textarea--filled]="reclamationForm.description" [class.field__textarea--recording]="isRecordingDesc" rows="5" placeholder="{{ isRecordingDesc ? '🎤 Transcription en cours...' : 'Décrivez le problème en détail...' }}"></textarea>
+          <div class="voice-unsupported" *ngIf="!voiceSupported">💡 Voice dictation is available on Chrome and Edge.</div>
+        </div>
+        <!-- Suggestion de catégorisation automatique - Nouveau Design -->
+<div class="ai-category-card" *ngIf="showTypeSuggestion && !isApplyingSuggestion">
+  <div class="ai-category-card__header">
+    <div class="ai-category-card__badge">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+      </svg>
+      <span>IA Smart Detection</span>
+    </div>
+    <div class="ai-category-card__confidence">
+      <div class="confidence-ring">
+        <svg class="confidence-ring__circle" viewBox="0 0 36 36">
+          <path class="confidence-ring__bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e2e8f0" stroke-width="3"/>
+          <path class="confidence-ring__fill" [attr.stroke-dasharray]="getConfidenceDashArray(suggestionConfidence)" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" [attr.stroke]="getConfidenceColor(suggestionConfidence)" stroke-width="3" stroke-linecap="round"/>
+          <text x="18" y="22" text-anchor="middle" fill="currentColor" font-size="7" font-weight="700">{{ suggestionConfidence }}%</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+  
+  <div class="ai-category-card__body">
+    <div class="ai-category-card__message">
+      <span class="ai-category-card__message-icon">✨</span>
+      <span class="ai-category-card__message-text">
+        We have detected that your complaint concerns
+      </span>
+    </div>
+    <div class="ai-category-card__type">
+      <span class="category-badge" [style.background]="getCategoryColor(suggestedType)">
+        {{ getCategoryIcon(suggestedType) }} {{ suggestedTypeLabel }}
+      </span>
+    </div>
+    <div class="ai-category-card__keywords">
+      <span class="keywords-label">Detected keywords:</span>
+      <div class="keywords-list">
+        <span *ngFor="let kw of suggestionKeywords" class="keyword-chip">
+          <span class="keyword-chip__dot"></span>
+          {{ kw }}
+        </span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="ai-category-card__actions">
+    <button class="ai-category-card__btn ai-category-card__btn--apply" (click)="applySuggestion()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      Apply suggestion
+    </button>
+    <button class="ai-category-card__btn ai-category-card__btn--ignore" (click)="dismissSuggestion()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+      Ignore
+    </button>
+  </div>
+</div>
+<!-- Extraction automatique d'informations - Notification -->
+<div class="extraction-notification" *ngIf="showExtractionNotification && !isExtracting">
+  <div class="extraction-notification__header">
+    <span class="extraction-notification__icon">🔍</span>
+    <span class="extraction-notification__title">Information detected</span>
+    <button class="extraction-notification__close" (click)="dismissExtractionNotification()">×</button>
+  </div>
+  <div class="extraction-notification__body">
+    <div class="extraction-items">
+      <div class="extraction-item" *ngIf="extractedInfo.amount">
+        <span class="extraction-item__icon">💰</span>
+        <span class="extraction-item__label">Amount:</span>
+        <span class="extraction-item__value">{{ extractedInfo.amount }} DT</span>
+      </div>
+      <div class="extraction-item" *ngIf="extractedInfo.transactionId">
+        <span class="extraction-item__icon">💳</span>
+        <span class="extraction-item__label">Transaction:</span>
+        <span class="extraction-item__value">{{ extractedInfo.transactionId }}</span>
+      </div>
+      <div class="extraction-item" *ngIf="extractedInfo.errorCode">
+        <span class="extraction-item__icon">⚠️</span>
+        <span class="extraction-item__label">Error code:</span>
+        <span class="extraction-item__value">{{ extractedInfo.errorCode }}</span>
+      </div>
+      <div class="extraction-item" *ngIf="extractedInfo.email">
+        <span class="extraction-item__icon">📧</span>
+        <span class="extraction-item__label">Email:</span>
+        <span class="extraction-item__value">{{ extractedInfo.email }}</span>
+      </div>
+      <div class="extraction-item" *ngIf="extractedInfo.extractedDate">
+        <span class="extraction-item__icon">📅</span>
+        <span class="extraction-item__label">Date:</span>
+        <span class="extraction-item__value">{{ extractedInfo.extractedDate }}</span>
+      </div>
+    </div>
+    <p class="extraction-notification__message">
+      The corresponding fields have been automatically filled.
+    </p>
+  </div>
+</div>
+
+<!-- Indicateur d'extraction en cours -->
+<div class="extracting-indicator" *ngIf="isExtracting">
+  <div class="spinner-inline"></div>
+  <span>Text analysis...</span>
+</div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section__head"><span class="form-section__num">3</span><div><div class="form-section__title">Priority</div></div></div>
+        <div class="priority-cards">
+          <div *ngFor="let p of priorities" class="priority-card priority-card--{{ p.color }}" [class.priority-card--sel]="reclamationForm.priority === p.value" (click)="reclamationForm.priority = p.value">
+            <div class="priority-card__dot"></div>
+            <div class="priority-card__text"><div class="priority-card__label">{{ p.label }}</div><div class="priority-card__desc">{{ p.desc }}</div></div>
+            <div class="priority-card__check" *ngIf="reclamationForm.priority === p.value">✓</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section form-section--dynamic" *ngIf="hasSpecificFields()">
+        <div class="form-section__head">
+          <span class="form-section__num form-section__num--dynamic">{{ reclamationForm.type === 'TECHNICAL' ? '⚙️' : reclamationForm.type === 'PAYMENT' ? '💳' : reclamationForm.type === 'CONTENT' ? '📚' : reclamationForm.type === 'ACCESS' ? '🔒' : '🏆' }}</span>
+          <div><div class="form-section__title">{{ getSpecificSectionTitle() }}</div><div class="form-section__sub">Specific information</div></div>
+          <span class="dynamic-badge">Auto-adapted</span>
+        </div>
+        <ng-container *ngIf="showField('browserName')">
+          <div class="fields-row">
+            <div class="field"><label class="field__label">Browser</label><select [(ngModel)]="reclamationForm.browserName" class="field__select"><option value="">—</option><option value="Chrome">Chrome</option><option value="Firefox">Firefox</option><option value="Safari">Safari</option><option value="Edge">Edge</option></select></div>
+            <div class="field"><label class="field__label">Operating System</label><select [(ngModel)]="reclamationForm.osVersion" class="field__select"><option value="">—</option><option value="Windows 11">Windows 11</option><option value="Windows 10">Windows 10</option><option value="macOS">macOS</option><option value="Linux">Linux</option><option value="iOS">iOS</option><option value="Android">Android</option></select></div>
+          </div>
+          <div class="fields-row">
+            <div class="field"><label class="field__label">Error Code</label><input type="text" [(ngModel)]="reclamationForm.errorCode" class="field__input" placeholder="e.g., 404..."></div>
+            <div class="field"><label class="field__label">Error Message</label><input type="text" [(ngModel)]="reclamationForm.errorMessage" class="field__input" placeholder="Copy the message..."></div>
+          </div>
+        </ng-container>
+        <ng-container *ngIf="showField('transactionId')">
+          <div class="fields-row">
+            <div class="field"><label class="field__label">Transaction</label><input type="text" [(ngModel)]="reclamationForm.transactionId" class="field__input" placeholder="TXN-XXXXX"></div>
+            <div class="field"><label class="field__label">N° Facture</label><input type="text" [(ngModel)]="reclamationForm.invoiceNumber" class="field__input" placeholder="INV-XXXXX"></div>
+          </div>
+          <div class="fields-row">
+            <div class="field"><label class="field__label">Amount (DT)</label><input type="number" [(ngModel)]="reclamationForm.amount" class="field__input" step="0.001"></div>
+            <div class="field"><label class="field__label">Payment</label><select [(ngModel)]="reclamationForm.paymentMethod" class="field__select"><option value="">—</option><option value="CARD">Credit Card</option><option value="CASH">Cash</option><option value="TRANSFER">Bank Transfer</option></select></div>
+          </div>
+        </ng-container>
+        <ng-container *ngIf="showField('contentType')">
+          <div class="fields-row">
+            <div class="field"><label class="field__label">Course</label><select [(ngModel)]="reclamationForm.courseId" class="field__select"><option [ngValue]="null">—</option><option *ngFor="let c of availableCourses" [ngValue]="c.id">{{ c.title }}</option></select></div>
+            <div class="field"><label class="field__label">Content Type</label><select [(ngModel)]="reclamationForm.contentType" class="field__select"><option value="">—</option><option value="VIDEO">Video</option><option value="PDF">PDF</option><option value="QUIZ">Quiz</option></select></div>
+          </div>
+          <div class="field"><label class="field__label">URL</label><input type="url" [(ngModel)]="reclamationForm.pageUrl" class="field__input" placeholder="https://..."></div>
+        </ng-container>
+        <ng-container *ngIf="showField('deviceType')">
+          <div class="fields-row">
+            <div class="field"><label class="field__label">Device</label><select [(ngModel)]="reclamationForm.deviceType" class="field__select"><option value="">—</option><option value="PC">PC/Mac</option><option value="MOBILE">Mobile</option><option value="TABLET">Tablet</option></select></div>
+            <div class="field"><label class="field__label">Problem Date</label><input type="date" [(ngModel)]="reclamationForm.accessDate" class="field__input"></div>
+          </div>
+        </ng-container>
+        <ng-container *ngIf="showField('certificateType')">
+          <div class="fields-row">
+            <div class="field"><label class="field__label">Course</label><select [(ngModel)]="reclamationForm.courseId" class="field__select"><option [ngValue]="null">—</option><option *ngFor="let c of availableCourses" [ngValue]="c.id">{{ c.title }}</option></select></div>
+            <div class="field"><label class="field__label">Certificate Type</label><select [(ngModel)]="reclamationForm.certificateType" class="field__select"><option value="">—</option><option value="COMPLETION">Completion</option><option value="EXCELLENCE">Excellence</option><option value="PROFESSIONAL">Professional</option></select></div>
+          </div>
+          <div class="field"><label class="field__label">Completion Date</label><input type="date" [(ngModel)]="reclamationForm.completionDate" class="field__input"></div>
+        </ng-container>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section__head"><span class="form-section__num">{{ hasSpecificFields() ? '5' : '4' }}</span><div><div class="form-section__title">Additional Information <span class="optional-tag">Optional</span></div></div></div>
+        <div class="fields-row">
+          <div class="field"><label class="field__label">Phone</label><input type="tel" [(ngModel)]="reclamationForm.contactPhone" class="field__input" placeholder="+216 XX XXX XXX"></div>
+          <div class="field"><label class="field__label">Desired Resolution Date</label><input type="date" [(ngModel)]="reclamationForm.desiredResolutionDate" class="field__input" [min]="todayDate"></div>
+        </div>
+        <div class="field">
+          <label class="field__label">Pièce jointe</label>
+          <label class="file-upload" [class.file-upload--filled]="selectedFileName">
+            <input type="file" (change)="onFileSelected($event)" accept=".pdf,.jpg,.png,.doc,.docx" style="display:none">
+            <span>{{ selectedFileName || 'Cliquer pour joindre un fichier' }}</span>
+            <span class="file-upload__hint">PDF, Image, Word</span>
+          </label>
+        </div>
+        <div class="field"><label class="field__label">Additional Information</label><textarea [(ngModel)]="reclamationForm.additionalInfo" class="field__textarea" rows="3" placeholder="Any other useful information..."></textarea></div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn--ghost" (click)="goToList()" [disabled]="submitting">Cancel</button>
+        <button type="button" class="btn btn--primary" (click)="submitReclamation()" [disabled]="submitting || !isFormValid()">
+          <span class="spinner-inline" *ngIf="submitting"></span>
+          {{ submitting ? 'Sending...' : 'Submit Reclamation' }}
+        </button>
+      </div>
+    </div>
+  </ng-container>
+
+</div>

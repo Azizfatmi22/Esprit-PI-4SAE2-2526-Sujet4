@@ -1,0 +1,255 @@
+<!-- Loading Overlay with Progress -->
+<div class="loading-overlay" *ngIf="loadingFormData">
+  <div class="loading-progress-container">
+    <div class="loading-spinner"></div>
+    <div class="loading-message">{{ loadingMessage }}</div>
+    <div class="progress-bar">
+      <div class="progress-fill" [style.width.%]="loadingProgress"></div>
+    </div>
+    <div class="progress-percentage">{{ loadingProgress }}%</div>
+  </div>
+</div>
+
+<!-- Warning Alert -->
+<div class="warning-alert" *ngIf="showWarningAlert" (click)="showWarningAlert = false">
+  <div class="alert-icon">⚠️</div>
+  <div class="alert-message">{{ warningMessage }}</div>
+  <button class="alert-close">✕</button>
+</div>
+
+<div class="learningpath-create">
+  <!-- Progress Steps Wizard -->
+  <div class="steps-container">
+    <div class="step" *ngFor="let step of [1,2,3,4]" [class]="getStepClass(step)">
+      <div class="step-indicator">{{ getStepIcon(step) }}</div>
+      <div class="step-label">
+        <span class="step-title">
+          {{ step === 1 ? 'Informations' : step === 2 ? 'Cours' : step === 3 ? 'Sessions' : 'Analyse' }}
+        </span>
+        <span class="step-desc">
+          {{ step === 1 ? 'Titre & description' : step === 2 ? 'Sélection des cours' : step === 3 ? 'Choix des sessions' : 'Tableau de bord' }}
+        </span>
+      </div>
+      <div class="step-line" *ngIf="step < 4"></div>
+    </div>
+  </div>
+
+  <!-- Step Content -->
+  <div class="step-content">
+    
+    <!-- STEP 1: Basic Information -->
+    <div class="step-panel" *ngIf="currentStep === 1">
+      <div class="form-card">
+        <div class="card-header">
+          <h2>📝 Informations générales</h2>
+        </div>
+        <form [formGroup]="pathForm" class="path-form">
+          <div class="input-group">
+            <label>Titre du parcours <span class="required">*</span></label>
+            <input formControlName="title" placeholder="Ex: Développeur Full Stack" class="form-input"/>
+            <div class="error-message" *ngIf="pathForm.get('title')?.invalid && pathForm.get('title')?.touched">Le titre est requis</div>
+          </div>
+
+          <div class="input-group">
+            <label>Description <span class="required">*</span></label>
+            <textarea formControlName="description" rows="4" placeholder="Décrivez le parcours..." class="form-input"></textarea>
+          </div>
+
+          <div class="input-group">
+            <label>Niveau <span class="required">*</span></label>
+            <div class="level-selector">
+              <div *ngFor="let level of levelOptions" class="level-option" [class.selected]="pathForm.get('level')?.value === level.value" (click)="pathForm.patchValue({ level: level.value })">
+                <div class="level-info">
+                  <strong>{{ level.label }}</strong>
+                  <span>{{ level.description }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>Statut <span class="required">*</span></label>
+            <div class="status-selector">
+              <div *ngFor="let status of statusOptions" class="status-option" [class.selected]="pathForm.get('status')?.value === status.value" (click)="pathForm.patchValue({ status: status.value })">
+                <div class="status-info">
+                  <strong>{{ status.label }}</strong>
+                  <span>{{ status.description }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>Objectifs pédagogiques <span class="required">*</span></label>
+            <textarea formControlName="objectives" rows="4" placeholder="Listez les objectifs..." class="form-input"></textarea>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- STEP 2: Course Selection -->
+    <div class="step-panel" *ngIf="currentStep === 2">
+      <div class="form-card">
+        <div class="card-header">
+          <h2>📚 Sélection des cours</h2>
+          <p class="header-subtitle">Cours disponibles pour le niveau <strong>{{ getLevelLabel(selectedLevel) }}</strong></p>
+        </div>
+
+        <div class="course-selection">
+          <div class="search-box">
+            <input type="text" placeholder="Rechercher un cours..." [(ngModel)]="courseSearchTerm" (input)="filterCourses()" class="search-input"/>
+          </div>
+
+          <div class="courses-grid" *ngIf="!loadingCourses; else loadingCoursesTemplate">
+            <div *ngFor="let course of filteredCourses" class="course-card" [class.selected]="isCourseSelected(course.id)" (click)="toggleCourse(course)">
+              <div class="course-check">✓</div>
+              <div class="course-info">
+                <h3>{{ course.title }}</h3>
+                <p>{{ course.description | slice:0:100 }}</p>
+                <div class="course-meta">
+                  <span class="level-badge" [style.background]="getLevelColor(course.level)">{{ getLevelLabel(course.level) }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="empty-state" *ngIf="filteredCourses.length === 0"><p>Aucun cours disponible pour ce niveau</p></div>
+          </div>
+
+          <div class="selected-summary" *ngIf="selectedCourses.length > 0">
+            <h4>Cours sélectionnés ({{ selectedCourses.length }})</h4>
+            <div class="selected-tags">
+              <span class="tag" *ngFor="let course of selectedCourses">
+                {{ course.title }}
+                <button (click)="toggleCourse(course)">✕</button>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3: Session Selection -->
+    <div class="step-panel" *ngIf="currentStep === 3">
+      <div class="form-card">
+        <div class="card-header">
+          <h2>🎯 Sélection des sessions</h2>
+          <p class="header-subtitle">Sessions planifiées et disponibles</p>
+        </div>
+
+        <div class="sessions-selection">
+          <div class="search-box">
+            <input type="text" placeholder="Rechercher une session..." [(ngModel)]="sessionSearchTerm" (input)="filterAllSessions()" class="search-input"/>
+          </div>
+
+          <div *ngFor="let course of selectedCourses" class="course-session-group">
+            <div class="course-header">
+              <h3>{{ course.title }}</h3>
+              <span class="session-count">{{ getSessionsForCourse(course.id).length }} sessions disponibles</span>
+            </div>
+
+            <div class="sessions-grid" *ngIf="!loadingSessions; else loadingSessionsTemplate">
+              <div *ngFor="let session of getSessionsForCourse(course.id)" 
+                   class="session-card" 
+                   [class.selected]="isSessionSelected(session.id)" 
+                   [class.no-planning]="!session.hasPlanning"
+                   (click)="addSession(session)">
+                <div class="session-info">
+                  <h4>{{ session.title || 'Session #' + session.id }}</h4>
+                  <div class="session-meta">
+                    <span>⏱️ {{ session.totalHours || 0 }}h</span>
+                    <span *ngIf="session.startDate && session.endDate">📅 {{ session.startDate | date:'dd/MM/yyyy' }} → {{ session.endDate | date:'dd/MM/yyyy' }}</span>
+                    <span *ngIf="session.mode">🎯 {{ session.mode }}</span>
+                    <span *ngIf="!session.hasPlanning" class="warning-badge">⚠️ Sans planning</span>
+                  </div>
+                </div>
+                <button class="add-btn">+</button>
+              </div>
+              <div class="empty-state" *ngIf="getSessionsForCourse(course.id).length === 0"><p>Aucune session planifiée disponible</p></div>
+            </div>
+          </div>
+
+          <div class="selected-summary" *ngIf="selectedSessions.length > 0">
+            <h4>Sessions sélectionnées ({{ selectedSessions.length }})</h4>
+            <div class="selected-list">
+              <div *ngFor="let session of selectedSessions; let i = index" class="selected-item">
+                <span class="number">{{ i + 1 }}</span>
+                <span class="title">{{ session.title }}</span>
+                <span class="hours">{{ session.totalHours }}h</span>
+                <span *ngIf="!session.hasPlanning" class="warning-badge-small">⚠️ Planning manquant</span>
+                <button (click)="removeSession(session.id)">✕</button>
+              </div>
+            </div>
+            <div class="total-hours">Total: {{ totalHours }} heures ({{ dashboardData.estimatedWeeks }} semaines à 5h/semaine)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4: Analysis Dashboard -->
+    <div class="step-panel" *ngIf="currentStep === 4">
+      <div class="dashboard-container">
+        
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-icon">⏱️</div><div class="kpi-info"><div class="kpi-value">{{ dashboardData.totalHours }}h</div><div class="kpi-label">Heures totales</div></div></div>
+          <div class="kpi-card"><div class="kpi-icon">📚</div><div class="kpi-info"><div class="kpi-value">{{ dashboardData.totalSessions }}</div><div class="kpi-label">Sessions</div></div></div>
+          <div class="kpi-card"><div class="kpi-icon">🎓</div><div class="kpi-info"><div class="kpi-value">{{ dashboardData.totalCourses }}</div><div class="kpi-label">Cours</div></div></div>
+          <div class="kpi-card"><div class="kpi-icon">📅</div><div class="kpi-info"><div class="kpi-value">{{ dashboardData.estimatedWeeks }}</div><div class="kpi-label">Semaines estimées</div></div></div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+          <div class="section-header"><h3>📊 Analyse visuelle</h3><p>Distribution des sessions et charge de travail</p></div>
+          <div class="charts-grid">
+            <div class="chart-card"><div class="chart-title">Charge horaire par semaine</div><div class="chart-container"><canvas #hoursChart></canvas></div><div class="chart-note">Ligne rouge: maximum recommandé (40h/semaine)</div></div>
+            <div class="chart-card"><div class="chart-title">Distribution par difficulté</div><div class="chart-container"><canvas #difficultyChart></canvas></div><div class="chart-stats"><div class="stat-badge easy">Facile: {{ dashboardData.difficultyDistribution.easy }}</div><div class="stat-badge medium">Moyen: {{ dashboardData.difficultyDistribution.medium }}</div><div class="stat-badge hard">Intensif: {{ dashboardData.difficultyDistribution.hard }}</div></div></div>
+            <div class="chart-card"><div class="chart-title">Répartition par mode</div><div class="chart-container"><canvas #progressChart></canvas></div><div class="chart-stats"><div class="stat-badge onsite">Présentiel: {{ dashboardData.modeDistribution.ONSITE }}</div><div class="stat-badge online">En ligne: {{ dashboardData.modeDistribution.ONLINE }}</div><div class="stat-badge hybrid">Hybride: {{ dashboardData.modeDistribution.HYBRID }}</div></div></div>
+          </div>
+        </div>
+
+        <!-- Scores Section -->
+        <div class="scores-section">
+          <div class="section-header"><h3>🎯 Indicateurs de performance</h3><p>Évaluation de la qualité du parcours</p></div>
+          <div class="scores-grid">
+            <div class="score-card"><div class="score-circle" [style.border-color]="getRiskColor(dashboardData.riskScore)"><span class="score-value">{{ dashboardData.riskScore }}%</span></div><div class="score-info"><div class="score-title">Risque d'abandon</div><div class="score-desc" [style.color]="getRiskColor(dashboardData.riskScore)">{{ dashboardData.riskScore >= 70 ? 'Élevé' : dashboardData.riskScore >= 40 ? 'Modéré' : 'Faible' }}</div></div></div>
+            <div class="score-card"><div class="score-circle" [style.border-color]="getScoreColor(dashboardData.efficiencyScore)"><span class="score-value">{{ dashboardData.efficiencyScore }}%</span></div><div class="score-info"><div class="score-title">Efficacité pédagogique</div><div class="score-desc" [style.color]="getScoreColor(dashboardData.efficiencyScore)">{{ dashboardData.efficiencyScore >= 70 ? 'Optimale' : dashboardData.efficiencyScore >= 50 ? 'Correcte' : 'À améliorer' }}</div></div></div>
+            <div class="score-card"><div class="score-circle" [style.border-color]="getScoreColor(dashboardData.balanceScore)"><span class="score-value">{{ dashboardData.balanceScore }}%</span></div><div class="score-info"><div class="score-title">Équilibre du parcours</div><div class="score-desc" [style.color]="getScoreColor(dashboardData.balanceScore)">{{ dashboardData.balanceScore >= 70 ? 'Excellent' : dashboardData.balanceScore >= 50 ? 'Bon' : 'À équilibrer' }}</div></div></div>
+          </div>
+        </div>
+
+        <!-- Recommendations Section -->
+        <div class="recommendations-section" *ngIf="recommendations.length > 0">
+          <div class="section-header"><h3>💡 Recommandations personnalisées</h3><p>Actions suggérées pour optimiser votre parcours</p></div>
+          <div class="recommendations-list"><div *ngFor="let rec of recommendations" class="recommendation-item" [class.warning]="rec.includes('⚠️')" [class.success]="rec.includes('✅')">{{ rec }}</div></div>
+        </div>
+
+        <!-- Monthly Distribution -->
+        <div class="monthly-section">
+          <div class="section-header"><h3>📅 Répartition mensuelle</h3><p>Distribution des heures par mois</p></div>
+          <div class="monthly-bars"><div *ngFor="let month of dashboardData.monthlyDistribution" class="month-bar"><div class="bar-label">{{ month.month }}</div><div class="bar-container"><div class="bar-fill" [style.height.%]="(month.hours / 100) * 100" [style.background]="month.hours > 0 ? '#6366f1' : '#e5e7eb'"></div></div><div class="bar-value">{{ month.hours }}h</div></div></div>
+        </div>
+
+        <!-- Decision Summary -->
+        <div class="decision-card">
+          <div class="decision-header"><span class="decision-icon">🎯</span><h3>Synthèse pour décision</h3></div>
+          <div class="decision-content">
+            <div class="decision-item" *ngIf="dashboardData.riskScore < 40">✅ <strong>Parcours validé</strong> - Les indicateurs sont au vert. Vous pouvez procéder à la création.</div>
+            <div class="decision-item warning" *ngIf="dashboardData.riskScore >= 40 && dashboardData.riskScore < 70">⚠️ <strong>Attention modérée</strong> - Quelques ajustements sont recommandés avant la création.</div>
+            <div class="decision-item danger" *ngIf="dashboardData.riskScore >= 70">🚨 <strong>Risque élevé</strong> - Des modifications importantes sont nécessaires.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="navigation-buttons">
+      <button class="btn-prev" (click)="previousStep()" *ngIf="currentStep > 1">← Précédent</button>
+      <button class="btn-next" (click)="currentStep === totalSteps ? onSubmit() : nextStep()">{{ currentStep === totalSteps ? 'Créer le parcours' : 'Suivant →' }}</button>
+    </div>
+  </div>
+</div>
+
+<ng-template #loadingCoursesTemplate><div class="loading-state">Chargement des cours...</div></ng-template>
+<ng-template #loadingSessionsTemplate><div class="loading-state">Chargement des sessions...</div></ng-template>
+
+<div class="success-toast" *ngIf="showSuccess" (click)="showSuccess = false"><div class="toast-icon">✅</div><div class="toast-message">{{ successMessage }}</div></div>
+<div class="error-toast" *ngIf="showError" (click)="showError = false"><div class="toast-icon">❌</div><div class="toast-message">{{ errorMessage }}</div></div>

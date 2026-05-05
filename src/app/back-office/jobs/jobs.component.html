@@ -1,0 +1,279 @@
+<div class="admin-container">
+    <!-- Background Decor -->
+    <div class="triangle-bg triangle-1"></div>
+    <div class="triangle-bg triangle-2"></div>
+
+    <div class="header">
+        <div class="header-text">
+            <h1>Job Postings Management</h1>
+            <p>Monitor and manage active job opportunities</p>
+        </div>
+        <button class="btn-create" (click)="toggleCreateForm()">
+            <i class="fas" [class.fa-plus]="!showCreateForm" [class.fa-times]="showCreateForm"></i>
+            {{ showCreateForm ? 'Cancel' : 'Post New Job' }}
+        </button>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div *ngIf="successMessage" class="alert alert-success">
+        <i class="fas fa-check-circle"></i> {{ successMessage }}
+    </div>
+    <div *ngIf="errorMessage" class="alert alert-danger">
+        <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
+    </div>
+
+    <!-- Create Form Section -->
+    <div *ngIf="showCreateForm" class="create-form-section animated-fade-in">
+        <div class="glass-card form-card">
+            <h2 class="form-title">Define New Position</h2>
+            <form [formGroup]="jobForm" (ngSubmit)="onJobSubmit()">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label>Target Partner</label>
+                        <select formControlName="partnerId">
+                            <option value="" disabled>Select Partner Organization</option>
+                            <option *ngFor="let partner of acceptedPartners" [value]="partner.id">
+                                {{ partner.organizationName }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Job Title</label>
+                        <input type="text" formControlName="title" placeholder="e.g. Senior Java Architect">
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            Expertise Area (Technology)
+                            <button *ngIf="jobForm.get('technology')?.value" type="button" class="btn-magic-wand" (click)="generateTemplate()" [disabled]="isGeneratingTemplate">
+                                <i class="fas" [class.fa-magic]="!isGeneratingTemplate" [class.fa-spinner]="isGeneratingTemplate" [class.fa-spin]="isGeneratingTemplate"></i>
+                                Auto-Generate Template
+                            </button>
+                        </label>
+                        <select formControlName="technology">
+                            <option value="" disabled>Select Technology</option>
+                            <option *ngFor="let tech of technologies" [value]="tech">{{ tech }}</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Work Location</label>
+                        <select formControlName="location">
+                            <option value="" disabled>Select City</option>
+                            <option *ngFor="let city of cities" [value]="city">{{ city }}</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Experience Required (Years)</label>
+                        <input type="number" formControlName="minExperience">
+                        
+                        <!-- Market Sync Gauge -->
+                        <div class="market-sync-panel animated-fade-in" *ngIf="marketSyncAvgExp !== null">
+                            <div class="sync-icon"><i class="fas fa-chart-line"></i></div>
+                            <div class="sync-info">
+                                <h4>Market Sync</h4>
+                                <p>Platform Avg: <strong>{{marketSyncAvgExp}} Years</strong></p>
+                            </div>
+                            <div class="sync-status" [ngClass]="{'high': jobForm.get('minExperience')?.value > marketSyncAvgExp, 'low': jobForm.get('minExperience')?.value < marketSyncAvgExp, 'perfect': jobForm.get('minExperience')?.value === marketSyncAvgExp}">
+                                <i class="fas" [class.fa-arrow-up]="jobForm.get('minExperience')?.value > marketSyncAvgExp" [class.fa-arrow-down]="jobForm.get('minExperience')?.value < marketSyncAvgExp" [class.fa-check-double]="jobForm.get('minExperience')?.value === marketSyncAvgExp"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label>Job Description & Responsibilities</label>
+                        <textarea formControlName="description" rows="4"
+                            placeholder="Detailed requirements..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit masterpiece" [disabled]="jobForm.invalid || isSubmitting">
+                        <span *ngIf="!isSubmitting">Publish Posting <i class="fas fa-paper-plane"></i></span>
+                        <span *ngIf="isSubmitting"><i class="fas fa-spinner fa-spin"></i> Publishing...</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div *ngIf="isLoading" class="loader-container">
+        <div class="loader"></div>
+        <p>Synchronizing job catalog...</p>
+    </div>
+
+    <div *ngIf="!isLoading" class="content">
+        <div class="jobs-grid" *ngIf="jobs.length > 0">
+            <div *ngFor="let job of jobs" class="job-card glass-card animated-slide-up" (click)="selectJob(job)">
+                <div class="job-card-decor"></div>
+                <div class="job-badge">{{ job.technology }}</div>
+                <div class="job-main">
+                    <h3>{{ job.title }}</h3>
+                    <div class="meta-info">
+                        <span><i class="fas fa-building"></i> {{ job.partnerName }}</span>
+                        <span><i class="fas fa-map-marker-alt"></i> {{ job.location }}</span>
+                    </div>
+                    <p class="description">{{ job.description | slice:0:120 }}...</p>
+                </div>
+
+                <div class="job-footer">
+                    <div class="stats">
+                        <span class="stat-tag"><i class="fas fa-user-graduate"></i> {{ job.minExperience }}+ yrs</span>
+                        <span class="stat-tag primary"><i class="fas fa-wallet"></i> {{ job.salaryRange || 'Competitive'
+                            }}</span>
+                    </div>
+                    <div class="actions">
+                        <button class="btn-action-icon view" (click)="selectJob(job); $event.stopPropagation()"
+                            title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div *ngIf="jobs.length === 0" class="empty-state">
+            <div class="empty-icon"><i class="fas fa-folder-open"></i></div>
+            <h3>No Active Postings</h3>
+            <p>Ready to start hiring? Use the button above to post your first job requirement.</p>
+        </div>
+    </div>
+
+    <!-- Job Details Modal -->
+    <div class="modal-overlay" *ngIf="selectedJob" (click)="closeDetails()">
+        <div class="modal-card glass-card animated-zoom-in" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title-group">
+                    <div class="modal-icon"><i class="fas fa-briefcase"></i></div>
+                    <div>
+                        <h2>{{ selectedJob.title }}</h2>
+                        <span class="modal-subtitle">{{ selectedJob.partnerName }}</span>
+                    </div>
+                </div>
+                <button class="btn-close" (click)="closeDetails()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Technology</label>
+                        <span class="value tech-badge">{{ selectedJob.technology }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Location</label>
+                        <span class="value-row"><i class="fas fa-map-marker-alt"></i> {{ selectedJob.location }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Exp. Required</label>
+                        <span class="value-row"><i class="fas fa-user-graduate"></i> {{ selectedJob.minExperience }}+
+                            Years</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Financial Level</label>
+                        <span class="value-row"><i class="fas fa-wallet"></i> {{ selectedJob.salaryRange ||
+                            'Competitive' }}</span>
+                    </div>
+                </div>
+
+                <div class="description-section">
+                    <h3>Position Responsibility</h3>
+                    <div class="description-content">
+                        {{ selectedJob.description }}
+                    </div>
+                </div>
+
+                <!-- Match Synthesis Loader (Glamorous Edition) -->
+                <div class="synthesis-loader animated-fade-in" *ngIf="isFindingCandidate">
+                    <div class="loader-magic-circle">
+                        <i class="fas fa-microchip pulse-chip"></i>
+                    </div>
+                    <div class="synthesis-text">
+                        <h3>Synthesizing Match...</h3>
+                        <p>Aligning CV vectors with position requirements</p>
+                    </div>
+                </div>
+
+                <!-- No Candidate Found Glamorous -->
+                <div class="no-candidate-ia animated-zoom-in" *ngIf="!isFindingCandidate && !topCandidate && selectedJob">
+                     <div class="ia-icon-hollow"><i class="fas fa-brain"></i></div>
+                     <p>Intelligence standby. Click "Find Best Candidate" to trigger analysis.</p>
+                </div>
+
+                <!-- Top Candidate Section (Glamorous IA Edition) -->
+                <div class="top-candidate-section animated-slide-up" *ngIf="topCandidate">
+                    <div class="candidate-header">
+                        <div class="candidate-avatar">
+                            <i class="fas fa-magic magic-star"></i>
+                        </div>
+                        <div class="candidate-info">
+                            <h4 class="magic-title">✨ Intelligent Match Synthesis</h4>
+                            <h3 class="candidate-name">{{ topCandidate.candidate?.name }} {{
+                                topCandidate.candidate?.forename }}</h3>
+                            <div class="score-badge">
+                                Global Match Accuracy: {{ topCandidate.globalScore | number:'1.0-1' }}%
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="candidate-reasoning">
+                        <div class="reasoning-text">
+                            <strong>AI Narrative:</strong> {{ topCandidate.recommendationReason }}
+                        </div>
+                    </div>
+
+                    <div class="candidate-contact" *ngIf="topCandidate.candidate">
+                        <span><i class="fas fa-envelope"></i> {{ topCandidate.candidate.email }}</span>
+                        <span><i class="fas fa-phone"></i> {{ topCandidate.candidate.phone }}</span>
+                        <span class="tech-badge">
+                            <i class="fas fa-microchip"></i> Core Tech: {{ topCandidate.candidate.technology }}
+                        </span>
+                        <span class="tech-badge" style="background: rgba(59, 130, 246, 0.1); color: #2563eb;">
+                            <i class="fas fa-history"></i> {{ topCandidate.candidate.yearsOfExperience }}+ Years Exp
+                        </span>
+                    </div>
+
+                    <div class="ia-metrics-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.5rem;">
+                        <div class="metric-mini-card" style="text-align: center; background: white; padding: 1rem; border-radius: 12px; border: 1px solid #f1f5f9;">
+                            <label style="display: block; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase;">Skill Sync</label>
+                            <span style="font-size: 1.1rem; font-weight: 700; color: #6366f1;">{{ topCandidate.candidate?.skillSyncScore }}%</span>
+                        </div>
+                        <div class="metric-mini-card" style="text-align: center; background: white; padding: 1rem; border-radius: 12px; border: 1px solid #f1f5f9;">
+                            <label style="display: block; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase;">Tone</label>
+                            <span style="font-size: 1.1rem; font-weight: 700; color: #ec4899;">{{ topCandidate.candidate?.toneClarityScore }}%</span>
+                        </div>
+                         <div class="metric-mini-card" style="text-align: center; background: white; padding: 1rem; border-radius: 12px; border: 1px solid #f1f5f9;">
+                            <label style="display: block; font-size: 0.7rem; color: #94a3b8; text-transform: uppercase;">Trend</label>
+                            <span style="font-size: 1.1rem; font-weight: 700; color: #10b981;">{{ topCandidate.candidate?.acceptanceProbability }}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Case where analysis is done but no one found -->
+                <div class="no-match-found animated-fade-in" *ngIf="!isFindingCandidate && topCandidate && !topCandidate.candidate">
+                    <div class="warning-icon"><i class="fas fa-user-slash"></i></div>
+                    <h3>No Viable Matches Found</h3>
+                    <p>{{ topCandidate.recommendationReason }}</p>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-magic" *ngIf="!isFindingCandidate && !topCandidate"
+                    (click)="findTopCandidate(selectedJob.id!)">
+                    ✨ Find Best Candidate
+                </button>
+                <button class="btn-magic loading" *ngIf="isFindingCandidate" disabled>
+                    <i class="fas fa-spinner fa-spin"></i> Synthesizing...
+                </button>
+
+                <span class="flex-spacer" style="flex: 1;"></span>
+
+                <button class="btn-modal-delete" (click)="deleteJob(selectedJob.id!)">
+                    <i class="fas fa-trash-alt"></i> Delete Posting
+                </button>
+                <button class="btn-modal-close" (click)="closeDetails()">Close View</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,187 @@
+<div class="stats-container">
+  <!-- Header -->
+  <div class="stats-header">
+    <div class="header-left">
+      <h1 class="page-title">
+        <span class="gradient-text">Dashboard</span>
+      </h1>
+      <p class="page-subtitle">
+        Welcome to your administrator space
+      </p>
+    </div>
+    <div class="header-right">
+      <div class="date-badge">
+        <span class="date-icon">📅</span>
+        <span class="date-text">{{ today | date:'EEEE, MMMM d, yyyy' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card" *ngFor="let stat of mainStats">
+      <div class="stat-card-content">
+        <div class="stat-icon" [style.background]="'rgba(' + getStatColor(stat.color) + ', 0.1)'">
+          <span>{{ stat.icon }}</span>
+        </div>
+        <div class="stat-details">
+          <span class="stat-label">{{ stat.title }}</span>
+          <div class="stat-value-wrapper">
+            <span class="stat-value">{{ stat.value }}</span>
+            <span class="stat-change" [style.color]="getStatColor(stat.color)">
+              {{ stat.change }}
+            </span>
+          </div>
+          <span class="stat-period">{{ stat.period }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Secondary Stats -->
+  <div class="secondary-stats-grid">
+    <div class="secondary-stat-card" *ngFor="let stat of secondaryStats">
+      <div class="secondary-stat-content">
+        <div class="secondary-stat-icon" [style.background]="'rgba(' + getStatColor(stat.color) + ', 0.1)'">
+          <span>{{ stat.icon }}</span>
+        </div>
+        <div class="secondary-stat-info">
+          <span class="secondary-stat-value">{{ stat.value }}</span>
+          <span class="secondary-stat-label">{{ stat.label }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart & Top Certifications Row -->
+  <div class="dashboard-row">
+    <!-- Evolution Chart -->
+    <div class="chart-card">
+      <div class="card-header">
+        <h2>Certifications Evolution</h2>
+        <div class="chart-legend">
+          <span class="legend-dot" style="background: #4facfe;"></span>
+          <span>Certifications issued</span>
+        </div>
+      </div>
+      <div class="chart-container">
+        <div class="chart-bars">
+          <div class="chart-bar-item" *ngFor="let data of chartData">
+            <div class="bar-wrapper">
+              <div class="bar"
+                   [style.height.px]="(data.value / maxChartValue) * 200"
+                   [style.background]="'linear-gradient(180deg, #4facfe 0%, #00f2fe 100%)'">
+                <span class="bar-value">{{ data.value }}</span>
+              </div>
+            </div>
+            <span class="bar-label">{{ data.label }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Certifications -->
+    <div class="top-certifications-card">
+      <div class="card-header">
+        <h2>Top Certifications</h2>
+        <a routerLink="/admin/certifications" class="view-all-link">
+          View all
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M5 12h14M12 5l7 7-7 7" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </a>
+      </div>
+      <div class="certifications-list">
+        <div class="certification-item" *ngFor="let cert of topCertifications">
+          <div class="cert-info">
+            <div class="cert-icon" [style.background]="'rgba(' + cert.color + ', 0.1)'">
+              <span>{{ cert.icon }}</span>
+            </div>
+            <div class="cert-details">
+              <h4>{{ cert.name }}</h4>
+              <span class="cert-enrollments">{{ cert.enrollments }} students</span>
+            </div>
+          </div>
+          <span class="cert-growth" [style.color]="cert.color">
+            {{ cert.growth }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activities & Alerts Row -->
+  <div class="dashboard-row">
+    <!-- Recent Activities -->
+    <div class="activities-card">
+      <div class="card-header">
+        <h2>Recent Activities</h2>
+        <span class="live-indicator">
+          <span class="pulse"></span>
+          Live
+        </span>
+      </div>
+      <div class="activities-list">
+        <div class="activity-item" *ngFor="let activity of recentActivities">
+          <div class="activity-avatar" [style.background]="'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'">
+            <span>{{ activity.avatar }}</span>
+          </div>
+          <div class="activity-content">
+            <p class="activity-text">
+              <strong>{{ activity.user }}</strong> {{ activity.action }}
+              <span class="activity-target">{{ activity.target }}</span>
+            </p>
+            <span class="activity-time">{{ activity.time }}</span>
+          </div>
+          <span class="activity-icon">{{ getActivityIcon(activity.type) }}</span>
+        </div>
+      </div>
+      <a routerLink="/admin/activities" class="view-all-bottom">
+        View all activities
+      </a>
+    </div>
+
+    <!-- Alerts -->
+    <div class="alerts-card">
+      <div class="card-header">
+        <h2>Alerts & Notifications</h2>
+        <span class="alert-count">{{ alerts.length }}</span>
+      </div>
+      <div class="alerts-list">
+        <div class="alert-item" *ngFor="let alert of alerts" [class]="getAlertClass(alert.type)">
+          <div class="alert-icon">{{ alert.icon }}</div>
+          <div class="alert-content">
+            <p class="alert-message">{{ alert.message }}</p>
+            <span class="alert-time">{{ alert.time }}</span>
+          </div>
+        </div>
+      </div>
+      <a routerLink="/admin/notifications" class="view-all-bottom">
+        View all notifications
+      </a>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <h3>Quick Actions</h3>
+    <div class="quick-actions-grid">
+      <button class="quick-action-btn" routerLink="/admin/certifications/new">
+        <span class="quick-action-icon">➕</span>
+        <span>New certification</span>
+      </button>
+      <button class="quick-action-btn" routerLink="/admin/sessions/schedule">
+        <span class="quick-action-icon">📅</span>
+        <span>Schedule session</span>
+      </button>
+      <button class="quick-action-btn" routerLink="/admin/trainers/invite">
+        <span class="quick-action-icon">👨‍🏫</span>
+        <span>Invite trainer</span>
+      </button>
+      <button class="quick-action-btn" routerLink="/admin/reports">
+        <span class="quick-action-icon">📊</span>
+        <span>Generate report</span>
+      </button>
+    </div>
+  </div>
+</div>
