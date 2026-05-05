@@ -11,7 +11,7 @@ pipeline {
         SONAR_TOKEN = 'sqa_ded110eee1c638fafe316ac69e08e9b045887e3f'
         DB_USER = 'root'
         DB_PASS = 'root'
-        DOCKER_HUB_USER = 'azizfatmi' // Remplacez par votre username Docker Hub
+        DOCKER_HUB_USER = 'arouss'
     }
 
     stages {
