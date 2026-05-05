@@ -1,72 +1,69 @@
 <?xml version="1.0"?>
-<testsuite name="Chrome Headless 147.0.0.0 (Windows 10)" package="" timestamp="2026-05-05T20:20:02" id="0" hostname="DESKTOP-D93PMIR" tests="59" errors="0" failures="0" time="0.332">
+<testsuite name="Chrome Headless 147.0.0.0 (Windows 10)" package="" timestamp="2026-05-05T20:33:50" id="0" hostname="DESKTOP-D93PMIR" tests="59" errors="0" failures="0" time="0.727">
   <properties>
     <property name="browser.fullName" value="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/147.0.0.0 Safari/537.36"/>
   </properties>
-  <testcase name="ForumListComponent getAuthorName() should return mapped name for known userId" time="0.1" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent onCategoryChange() should update selectedCategory and reload forums" time="0.005" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent should initialize with loading=true then false after load" time="0.006" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent should create" time="0.005" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent should load forums on init" time="0.005" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent formatDate() should return minutes ago for recent dates" time="0.006" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent formatDate() should return days ago for older dates" time="0.005" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent getAuthorName() should return fallback &quot;User {id}&quot; for unknown userId" time="0.004" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent displayedForums should return all posts when showMyPosts is false" time="0.006" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent formatEventDate() should return month and day" time="0.025" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent viewForum() should navigate to forum detail page" time="0.006" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent loadForums() should set loading=false on error" time="0.006" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent formatLevel() should return Beginner for undefined" time="0.007" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent formatLevel() should capitalize level string" time="0.004" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent setPostFilter() should update showMyPosts and reload forums" time="0.003" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent displayedForums should filter to current user posts when showMyPosts is true" time="0.005" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent createForum() should navigate to forum create page" time="0.005" classname="ForumListComponent"/>
-  <testcase name="ForumListComponent deleteForum() should reload forums after confirmation" time="0.004" classname="ForumListComponent"/>
-  <testcase name="ForumService getForumById() should GET a single post by id" time="0.002" classname="ForumService"/>
-  <testcase name="ForumService updateForum() should PUT updated post data" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService markBestAnswer() should PUT to mark a comment as best answer" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService getForums() should include category param when provided" time="0.002" classname="ForumService"/>
-  <testcase name="ForumService getPendingPosts() should GET pending posts" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService reactToPost() should POST a reaction" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService createForum() should POST a new post" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService deleteForum() should DELETE a post" time="0.001" classname="ForumService"/>
+  <testcase name="ForumService addComment() should POST a new comment" time="0.038" classname="ForumService"/>
   <testcase name="ForumService getComments() should GET comments for a post" time="0.002" classname="ForumService"/>
-  <testcase name="ForumService updatePostStatus() should PUT status with query param" time="0.002" classname="ForumService"/>
-  <testcase name="ForumService addComment() should POST a new comment" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService getUserReputation() should GET user reputation profile" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService getLeaderboard() should GET leaderboard with limit param" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService should be created" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService getForums() should GET all posts without filters" time="0.001" classname="ForumService"/>
+  <testcase name="ForumService getLeaderboard() should GET leaderboard with limit param" time="0.002" classname="ForumService"/>
+  <testcase name="ForumService createForum() should POST a new post" time="0.003" classname="ForumService"/>
+  <testcase name="ForumService deleteForum() should DELETE a post" time="0.001" classname="ForumService"/>
+  <testcase name="ForumService updateForum() should PUT updated post data" time="0.001" classname="ForumService"/>
+  <testcase name="ForumService getForumById() should GET a single post by id" time="0.001" classname="ForumService"/>
+  <testcase name="ForumService updatePostStatus() should PUT status with query param" time="0.001" classname="ForumService"/>
   <testcase name="ForumService getReactionCounts() should GET reaction counts for a post" time="0.001" classname="ForumService"/>
-  <testcase name="ForumService getForums() should include userId param when provided" time="0.001" classname="ForumService"/>
-  <testcase name="ParticipationService should be created" time="0.002" classname="ParticipationService"/>
-  <testcase name="ParticipationService getParticipants() should GET participants for an event" time="0.001" classname="ParticipationService"/>
-  <testcase name="ParticipationService removeParticipant() should send DELETE request" time="0.001" classname="ParticipationService"/>
-  <testcase name="ParticipationService addParticipant() should POST a new participant to an event" time="0" classname="ParticipationService"/>
-  <testcase name="ParticipationService getParticipants() should return empty array on error fallback" time="0.002" classname="ParticipationService"/>
-  <testcase name="ParticipationService confirm() should GET with token query param" time="0.002" classname="ParticipationService"/>
-  <testcase name="EventsListComponent deleteEvent() should reload events after successful deletion" time="0.027" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent createEvent() should navigate to create page" time="0.005" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent viewEvent() should navigate to event details" time="0.005" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent should set loading=false on error" time="0.006" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent topEvents should exclude CANCELLED and FINISHED events" time="0.007" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent topEvents should return at most 3 events sorted by attendees descending" time="0.014" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent should create" time="0.005" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent should load events on init" time="0.005" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent formatFullDate() should return a full date string" time="0.005" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent formatDate() should return month and day strings" time="0.004" classname="EventsListComponent"/>
-  <testcase name="EventsListComponent deleteEvent() should NOT call service when confirm is rejected" time="0.005" classname="EventsListComponent"/>
-  <testcase name="EventService updateEvent() should PUT updated event data" time="0.003" classname="EventService"/>
-  <testcase name="EventService getEvents() should handle empty array response" time="0.001" classname="EventService"/>
-  <testcase name="EventService createEvent() should POST and return created event" time="0.001" classname="EventService"/>
-  <testcase name="EventService getEvents() should return a list of events via GET" time="0.001" classname="EventService"/>
-  <testcase name="EventService getEventById() should return a single event by id via GET" time="0.001" classname="EventService"/>
-  <testcase name="EventService should be created" time="0" classname="EventService"/>
+  <testcase name="ForumService markBestAnswer() should PUT to mark a comment as best answer" time="0.001" classname="ForumService"/>
+  <testcase name="ForumService getForums() should GET all posts without filters" time="0.001" classname="ForumService"/>
+  <testcase name="ForumService reactToPost() should POST a reaction" time="0.001" classname="ForumService"/>
+  <testcase name="ForumService getUserReputation() should GET user reputation profile" time="0.001" classname="ForumService"/>
+  <testcase name="ForumService getPendingPosts() should GET pending posts" time="0.001" classname="ForumService"/>
+  <testcase name="ForumService should be created" time="0.001" classname="ForumService"/>
+  <testcase name="ForumService getForums() should include category param when provided" time="0.001" classname="ForumService"/>
+  <testcase name="ForumService getForums() should include userId param when provided" time="0" classname="ForumService"/>
+  <testcase name="ForumListComponent should initialize with loading=true then false after load" time="0.204" classname="ForumListComponent"/>
+  <testcase name="ForumListComponent formatLevel() should capitalize level string" time="0.005" classname="ForumListComponent"/>
+  <testcase name="ForumListComponent formatEventDate() should return month and day" time="0.259" classname="ForumListComponent"/>
+  <testcase name="ForumListComponent should create" time="0.004" classname="ForumListComponent"/>
+  <testcase name="ForumListComponent deleteForum() should reload forums after confirmation" time="0.005" classname="ForumListComponent"/>
+  <testcase name="ForumListComponent formatLevel() should return Beginner for undefined" time="0.004" classname="ForumListComponent"/>
+  <testcase name="ForumListComponent formatDate() should return days ago for older dates" time="0.007" classname="ForumListComponent"/>
+  <testcase name="ForumListComponent createForum() should navigate to forum create page" time="0.006" classname="ForumListComponent"/>
+  <testcase name="ForumListComponent loadForums() should set loading=false on error" time="0.01" classname="ForumListComponent"/>
+  <testcase name="ForumListComponent displayedForums should filter to current user posts when showMyPosts is true" time="0.005" classname="ForumListComponent"/>
+  <testcase name="ForumListComponent setPostFilter() should update showMyPosts and reload forums" time="0.005" classname="ForumListComponent"/>
+  <testcase name="ForumListComponent viewForum() should navigate to forum detail page" time="0.006" classname="ForumListComponent"/>
+  <testcase name="ForumListComponent should load forums on init" time="0.004" classname="ForumListComponent"/>
+  <testcase name="ForumListComponent displayedForums should return all posts when showMyPosts is false" time="0.004" classname="ForumListComponent"/>
+  <testcase name="ForumListComponent getAuthorName() should return fallback &quot;User {id}&quot; for unknown userId" time="0.003" classname="ForumListComponent"/>
+  <testcase name="ForumListComponent formatDate() should return minutes ago for recent dates" time="0.003" classname="ForumListComponent"/>
+  <testcase name="ForumListComponent onCategoryChange() should update selectedCategory and reload forums" time="0.003" classname="ForumListComponent"/>
+  <testcase name="ForumListComponent getAuthorName() should return mapped name for known userId" time="0.005" classname="ForumListComponent"/>
+  <testcase name="EventService updateEvent() should PUT updated event data" time="0.002" classname="EventService"/>
   <testcase name="EventService deleteEvent() should send DELETE request" time="0.001" classname="EventService"/>
+  <testcase name="EventService getEventById() should return a single event by id via GET" time="0.001" classname="EventService"/>
+  <testcase name="EventService createEvent() should POST and return created event" time="0.001" classname="EventService"/>
+  <testcase name="EventService getEvents() should handle empty array response" time="0.001" classname="EventService"/>
+  <testcase name="EventService should be created" time="0.001" classname="EventService"/>
+  <testcase name="EventService getEvents() should return a list of events via GET" time="0.001" classname="EventService"/>
+  <testcase name="EventsListComponent deleteEvent() should NOT call service when confirm is rejected" time="0.043" classname="EventsListComponent"/>
+  <testcase name="EventsListComponent deleteEvent() should reload events after successful deletion" time="0.01" classname="EventsListComponent"/>
+  <testcase name="EventsListComponent formatFullDate() should return a full date string" time="0.011" classname="EventsListComponent"/>
+  <testcase name="EventsListComponent formatDate() should return month and day strings" time="0.005" classname="EventsListComponent"/>
+  <testcase name="EventsListComponent should create" time="0.006" classname="EventsListComponent"/>
+  <testcase name="EventsListComponent should set loading=false on error" time="0.005" classname="EventsListComponent"/>
+  <testcase name="EventsListComponent should load events on init" time="0.006" classname="EventsListComponent"/>
+  <testcase name="EventsListComponent topEvents should exclude CANCELLED and FINISHED events" time="0.005" classname="EventsListComponent"/>
+  <testcase name="EventsListComponent viewEvent() should navigate to event details" time="0.005" classname="EventsListComponent"/>
+  <testcase name="EventsListComponent createEvent() should navigate to create page" time="0.005" classname="EventsListComponent"/>
+  <testcase name="EventsListComponent topEvents should return at most 3 events sorted by attendees descending" time="0.005" classname="EventsListComponent"/>
+  <testcase name="ParticipationService should be created" time="0.001" classname="ParticipationService"/>
+  <testcase name="ParticipationService getParticipants() should return empty array on error fallback" time="0.009" classname="ParticipationService"/>
+  <testcase name="ParticipationService removeParticipant() should send DELETE request" time="0.001" classname="ParticipationService"/>
+  <testcase name="ParticipationService confirm() should GET with token query param" time="0.001" classname="ParticipationService"/>
+  <testcase name="ParticipationService getParticipants() should GET participants for an event" time="0.001" classname="ParticipationService"/>
+  <testcase name="ParticipationService addParticipant() should POST a new participant to an event" time="0.001" classname="ParticipationService"/>
   <system-out>
     <![CDATA[Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
-,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
 ,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
 ,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
 ,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
@@ -98,6 +95,9 @@ Error: fail
     at apply (http://localhost:9881/_karma_webpack_/webpack:/src/app/front-office/forum/forum-list/forum-list.component.ts:97:18)
     at _ZoneDelegate.invoke (http://localhost:9881/_karma_webpack_/webpack:/node_modules/zone.js/fesm2015/zone.js:369:28)
     at ProxyZoneSpec.onInvoke (http://localhost:9881/_karma_webpack_/webpack:/node_modules/zone.js/fesm2015/zone-testing.js:2081:39)
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
+,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
 ,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
 ,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
 ,Chrome Headless 147.0.0.0 (Windows 10) LOG: 'Current User ID:', 'user1'
