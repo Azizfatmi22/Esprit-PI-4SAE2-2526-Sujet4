@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         REPO_URL      = 'git@github.com:Azizfatmi22/PIDEV4EME.git'
-        SONAR_TOKEN   = 'squ_323362c5ffd038691f0bab2375129356f4517cda'
+        SONAR_TOKEN   = 'sqa_ded110eee1c638fafe316ac69e08e9b045887e3f'
         DOCKER_IMAGE  = 'benarfa/formini-frontend'
         NODE_VERSION  = '20'
     }
@@ -69,7 +69,7 @@ pipeline {
                         sh """
                             npx sonar-scanner \
                                 -Dsonar.token=${SONAR_TOKEN} \
-                                -Dsonar.host.url=http://localhost:9000
+                                -Dsonar.host.url=http://host.docker.internal:9000
                         """
                     }
                 }

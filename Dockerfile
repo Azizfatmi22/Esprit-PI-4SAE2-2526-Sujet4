@@ -8,11 +8,11 @@ RUN npm install --legacy-peer-deps
 COPY . .
 
 # FIX ANGULAR BUILD
-RUN npm run build -- --configuration production
+RUN node --max-old-space-size=4096 ./node_modules/@angular/cli/bin/ng build --configuration production
 
 FROM nginx:alpine
 
-COPY --from=builder /app/dist/formini-app /usr/share/nginx/html
+COPY --from=builder /app/dist/formini-app/browser /usr/share/nginx/html
 
 EXPOSE 80
 
