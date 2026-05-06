@@ -57,13 +57,13 @@ public class LearnerExamAnswerImpl implements ILearnerExamAnswerService {
 
             double score = calculateAutomaticScore(answer.getAnswerOfLearner(), question);
 
-            // Mise à jour de l'entité
+    
             answer.setScore(score);
             answer.setLearnerId(realLearnerId);
             answer.setLearnerName(realLearnerName);
             answer.setQuestion(question);
-            answer.setIsSuspicious(suspicious); // Stockage du flag d'audit
-            answer.setResponseDate(submissionTime); // Date de fin réelle
+            answer.setIsSuspicious(suspicious); 
+            answer.setResponseDate(submissionTime);
             earnedPoints += score;
             totalPoints += question.getPoints();
             if (score > 0) correctCount++;
@@ -97,7 +97,7 @@ public class LearnerExamAnswerImpl implements ILearnerExamAnswerService {
                     RabbitMQConfig.ROUTING_KEY,
                     result
             );
-            System.out.println("Message envoyé à RabbitMQ pour l'évaluation : " + result.getEvaluationTitle());
+           
         } catch (Exception e) {
             System.err.println("Erreur lors de l'envoi RabbitMQ : " + e.getMessage());
         }
@@ -135,11 +135,7 @@ public class LearnerExamAnswerImpl implements ILearnerExamAnswerService {
         long secondsSinceStart = java.time.Duration.between(scheduledDate, now).getSeconds();
         long minimumSecondsRequired = (durationInMinutes * 60L) / 10;
 
-        System.out.println("--- AUDIT TEMPOREL ---");
-        System.out.println("Début officiel : " + scheduledDate);
-        System.out.println("Soumission à   : " + now);
-        System.out.println("Écart réel     : " + secondsSinceStart + " secondes");
-        System.out.println("Seuil minimum  : " + minimumSecondsRequired + " secondes");
+      
 
         return secondsSinceStart < minimumSecondsRequired;
     }
