@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: front-formini
+  labels:
+    app: front-formini
+spec:
+  replicas: 2        # Runs 2 copies for high availability
+  selector:
+    matchLabels:
+      app: front-formini
+  template:
+    metadata:
+      labels:
+        app: front-formini
+    spec:
+      containers:
+      - name: angular-app
+        # The pipeline replaces FRONT_IMAGE_PLACEHOLDER with kthiriyoussef/front-formini:TAG
+        image: FRONT_IMAGE_PLACEHOLDER 
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
