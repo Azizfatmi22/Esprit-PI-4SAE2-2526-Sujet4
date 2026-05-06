@@ -11,22 +11,42 @@ spec:
     metadata:
       labels:
         app: session-management
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8082"
     spec:
       containers:
         - name: session-management
           image: kthiriyoussef/session-management:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8082
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:mysql://host.docker.internal:3306/formini_session_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
+            - name: SPRING_DATASOURCE_USERNAME
+              value: root
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: root
+            - name: EUREKA_CLIENT_ENABLED
+              value: "false"
+            - name: SPRING_CLOUD_DISCOVERY_ENABLED
+              value: "false"
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: session-management
+  labels:
+    app: session-management
 spec:
   type: NodePort
   selector:
     app: session-management
   ports:
-    - port: 8082
+    - name: http
+      port: 8082
       targetPort: 8082
       nodePort: 30080
