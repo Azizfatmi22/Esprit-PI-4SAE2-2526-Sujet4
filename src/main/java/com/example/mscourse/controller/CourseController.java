@@ -82,6 +82,9 @@ public class CourseController {
             Long courseId = createdCourse.getId();
             log.info("Course created with ID: {}", courseId);
 
+            // Ensure folder structure exists — inside try/catch so IO errors don't crash the whole request
+            ensureCourseDirectoryStructureSafely(courseId);
+
             if (chaptersJson != null && !chaptersJson.trim().isEmpty()) {
                 try {
                     com.fasterxml.jackson.core.type.TypeReference<List<CreateChapterRequestDTO>> typeRef =
@@ -95,9 +98,6 @@ public class CourseController {
                     log.error("Error parsing or creating chapters from JSON: {}", e.getMessage(), e);
                 }
             }
-
-            // Ensure standard folder structure exists for each course
-            ensureCourseDirectoryStructureSafely(courseId);
 
             // Process thumbnail AFTER course creation (so we have the courseId)
             String thumbnailFilename = null;
