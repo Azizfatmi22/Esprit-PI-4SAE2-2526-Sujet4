@@ -72,7 +72,7 @@ public class CourseAttachmentServiceImpl implements ICourseAttachmentService {
         }
 
         // Check file size (e.g., max 500MB)
-        long maxSize = 500 * 1024 * 1024; // 500MB
+        long maxSize = 500L * 1024 * 1024; // 500MB
         if (file.getSize() > maxSize) {
             throw new ValidationException("File size exceeds maximum allowed size of 500MB");
         }
@@ -104,7 +104,9 @@ public class CourseAttachmentServiceImpl implements ICourseAttachmentService {
             safeFilename = nameWithoutExt + "_" + System.currentTimeMillis() + extension;
             filePath = uploadPath.resolve(safeFilename);
         }
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+        try (java.io.InputStream inputStream = file.getInputStream()) {
+            Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
+        }
 
         // Create attachment record with proper URL
         CourseAttachment attachment = new CourseAttachment();
@@ -211,7 +213,7 @@ public class CourseAttachmentServiceImpl implements ICourseAttachmentService {
                 throw new ValidationException("File cannot be empty");
             }
 
-            long maxSize = 500 * 1024 * 1024; // 500MB
+            long maxSize = 500L * 1024 * 1024; // 500MB
             if (file.getSize() > maxSize) {
                 throw new ValidationException("File size exceeds maximum allowed size of 500MB");
             }
@@ -238,7 +240,9 @@ public class CourseAttachmentServiceImpl implements ICourseAttachmentService {
                 safeFilename = nameWithoutExt + "_" + System.currentTimeMillis() + extension;
                 filePath = uploadPath.resolve(safeFilename);
             }
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            try (java.io.InputStream inputStream = file.getInputStream()) {
+                Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
+            }
 
             // Update attachment with new file info
             attachment.setFileName(originalFilename);

@@ -148,8 +148,8 @@ public class ChapterServiceImpl implements IChapterService {
             Path chapterDir = Paths.get(uploadDir, "cours_" + courseId, "chapitre_" + id);
             if (Files.exists(chapterDir)) {
                 log.info("Deleting chapter directory and all its files: {}", chapterDir.toAbsolutePath());
-                Files.walk(chapterDir)
-                        .sorted(Comparator.reverseOrder())
+                try (java.util.stream.Stream<Path> pathStream = Files.walk(chapterDir)) {
+                    pathStream.sorted(Comparator.reverseOrder())
                         .forEach(path -> {
                             try {
                                 Files.deleteIfExists(path);
@@ -157,6 +157,7 @@ public class ChapterServiceImpl implements IChapterService {
                                 log.warn("Failed to delete path during chapter cleanup: {}", path, e);
                             }
                         });
+                }
             }
         } catch (IOException e) {
             log.warn("Failed to delete chapter directory for chapter {}", id, e);
