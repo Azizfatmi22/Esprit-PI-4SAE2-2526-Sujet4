@@ -1,5 +1,5 @@
-// Karma configuration file, see link for more information
-// https://karma-runner.github.io/1.0/config/configuration-file.html
+// Karma configuration file
+// https://karma-runner.github.io/latest/config/configuration-file.html
 
 module.exports = function (config) {
   config.set({
@@ -11,14 +11,19 @@ module.exports = function (config) {
       require('karma-jasmine-html-reporter'),
       require('karma-coverage'),
       require('karma-junit-reporter'),
+      require('karma-spec-reporter'),
       require('@angular-devkit/build-angular/plugins/karma')
     ],
+
     client: {
       jasmine: {},
+      clearContext: false
     },
+
     jasmineHtmlReporter: {
       suppressAll: true
     },
+
     coverageReporter: {
       dir: require('path').join(__dirname, './coverage/formini-app'),
       subdir: '.',
@@ -28,18 +33,26 @@ module.exports = function (config) {
         { type: 'lcovonly', file: 'lcov.info' }
       ]
     },
-    junitReporter: {
-      outputDir:          'reports/junit',
-      outputFile:         'test-results.xml',
-      suite:              '',
-      useBrowserName:     false,
-      nameFormatter:      undefined,
-      classNameFormatter: undefined,
-      properties:         {}
-    },
-    reporters: ['progress', 'kjhtml', 'junit', 'coverage'],
 
-    // ── Custom launcher: ChromeHeadless with --no-sandbox for Docker/CI ──
+    junitReporter: {
+      outputDir: 'reports/junit',
+      outputFile: 'test-results.xml',
+      useBrowserName: false
+    },
+
+    // Use 'spec' instead of 'progress' to show individual test names in the terminal
+    reporters: ['spec', 'kjhtml', 'coverage', 'junit'],
+
+    specReporter: {
+      maxLogLines: 5,
+      suppressErrorSummary: false,
+      suppressFailed: false,
+      suppressPassed: false,
+      suppressSkipped: true,
+      showSpecTiming: false,
+      failFast: false
+    },
+
     customLaunchers: {
       ChromeHeadlessCI: {
         base: 'ChromeHeadless',
@@ -47,10 +60,16 @@ module.exports = function (config) {
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
-          '--disable-gpu'
+          '--disable-gpu',
+          '--disable-hang-monitor'
         ]
       }
     },
+
+    // Fix for "Client disconnected" exit code 1 on Windows
+    browserDisconnectTimeout: 10000,
+    browserDisconnectTolerance: 2,
+    browserNoActivityTimeout: 60000,
 
     browsers: ['ChromeHeadlessCI'],
     restartOnFileChange: true
