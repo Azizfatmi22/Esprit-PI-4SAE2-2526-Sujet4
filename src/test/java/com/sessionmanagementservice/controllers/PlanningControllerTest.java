@@ -1,7 +1,5 @@
 package com.sessionmanagementservice.controllers;
 
-
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sessionmanagementservice.Services.interfaces.PlanningService;
 import com.sessionmanagementservice.entities.Planning;
@@ -10,7 +8,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
@@ -22,6 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(PlanningController.class)
+@ContextConfiguration(classes = {PlanningControllerTest.TestSecurityConfig.class, PlanningController.class})
 class PlanningControllerTest {
 
     @Autowired
@@ -33,8 +39,22 @@ class PlanningControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Configuration
+    static class TestSecurityConfig {
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+            http
+                    .csrf(AbstractHttpConfigurer::disable)
+                    .authorizeHttpRequests(auth -> auth
+                            .anyRequest().permitAll()
+                    );
+            return http.build();
+        }
+    }
+
     private Planning createPlanning() {
         Planning p = new Planning();
+        p.setId((long)1); // ✅ FIX: Added missing ID
         p.setStartDate(LocalDate.now().plusDays(1));
         p.setEndDate(LocalDate.now().plusDays(3));
         p.setTotalHours(35);
@@ -145,7 +165,7 @@ class PlanningControllerTest {
                 .andExpect(content().string("true"));
     }
 
-    // ✅ SUGGEST DATE
+    // ✅ SUGGEST DATE - FIXED
     @Test
     void shouldSuggestDate() throws Exception {
         when(planningService.suggestNextAvailableDate(any(), any()))
@@ -155,7 +175,7 @@ class PlanningControllerTest {
                         .param("locationId", "1")
                         .param("startDate", "2026-05-08"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("2026-05-10"));
+                .andExpect(jsonPath("$").value("2026-05-10"));  // ✅ FIX: Use jsonPath instead of content().string()
     }
 
     // ✅ COUNT BY LOCATION
@@ -182,7 +202,7 @@ class PlanningControllerTest {
                 .andExpect(jsonPath("$.isHighRisk").value(true));
     }
 
-    // ✅ SMART DATE
+    // ✅ SMART DATE - FIXED
     @Test
     void shouldSmartSuggestDate() throws Exception {
         when(planningService.smartSuggestDate(any(), any()))
@@ -192,6 +212,6 @@ class PlanningControllerTest {
                         .param("locationId", "1")
                         .param("startDate", "2026-05-10"))
                 .andExpect(status().isOk())
-                .andExpect(content().string("2026-05-15"));
+                .andExpect(jsonPath("$").value("2026-05-15"));  // ✅ FIX: Use jsonPath instead of content().string()
     }
 }

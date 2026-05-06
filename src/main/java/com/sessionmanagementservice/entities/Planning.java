@@ -31,6 +31,7 @@ public class Planning {
 
 
 
+
     public Long getId() {
         return id;
     }
