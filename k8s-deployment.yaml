@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-liveclass
+spec:
+  type: NodePort
+  selector:
+    app: ms-liveclass
+  ports:
+    - protocol: TCP
+      port: 8099
+      targetPort: 8099
+      nodePort: 30099
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-liveclass
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms-liveclass
+  template:
+    metadata:
+      labels:
+        app: ms-liveclass
+    spec:
+      containers:
+        - name: ms-liveclass
+          image: hazem114/mslivecourse:latest
+          imagePullPolicy: Always
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql-db:3306/liveclassdb?useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "root"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "root"
+            - name: SPRING_JPA_DATABASE_PLATFORM
+              value: "org.hibernate.dialect.MySQLDialect"
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "http://eureka-server:8761/eureka/"
+          ports:
+            - containerPort: 8099
