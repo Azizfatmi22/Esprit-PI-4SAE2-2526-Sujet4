@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: certification-monitor
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: certification
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 15s
