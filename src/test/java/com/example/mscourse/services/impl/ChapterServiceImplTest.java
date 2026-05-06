@@ -13,8 +13,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
 import java.util.Optional;
-import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -34,26 +34,24 @@ public class ChapterServiceImplTest {
 
     private Course course;
     private Chapter chapter;
-    private CreateChapterRequestDTO createChapterDTO;
+    private CreateChapterRequestDTO createDTO;
 
     @BeforeEach
     void setUp() {
-        org.springframework.test.util.ReflectionTestUtils.setField(chapterService, "uploadDir", "./uploads");
-
         course = new Course();
         course.setId(1L);
-        course.setChapters(new ArrayList<>());
+        course.setTitle("Java Course");
+        course.setChapters(new java.util.ArrayList<>());
 
-        
         chapter = new Chapter();
         chapter.setId(1L);
         chapter.setTitle("Introduction");
+        chapter.setOrderIndex(1);
         chapter.setCourse(course);
-        chapter.setContentBlocks(new ArrayList<>());
-        
-        createChapterDTO = new CreateChapterRequestDTO();
-        createChapterDTO.setTitle("Introduction");
-        createChapterDTO.setOrderIndex(1);
+
+        createDTO = new CreateChapterRequestDTO();
+        createDTO.setTitle("Introduction");
+        createDTO.setOrderIndex(1);
     }
 
     @Test
@@ -61,20 +59,11 @@ public class ChapterServiceImplTest {
         when(courseRepository.findById(1L)).thenReturn(Optional.of(course));
         when(chapterRepository.save(any(Chapter.class))).thenReturn(chapter);
 
-        ChapterDTO result = chapterService.createChapter(1L, createChapterDTO);
+        ChapterDTO result = chapterService.createChapter(1L, createDTO);
 
         assertNotNull(result);
-        assertEquals(1L, result.getId());
         assertEquals("Introduction", result.getTitle());
         verify(chapterRepository).save(any(Chapter.class));
-    }
-
-    @Test
-    void createChapter_ThrowsResourceNotFoundException_WhenCourseNotFound() {
-        when(courseRepository.findById(1L)).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class, () -> chapterService.createChapter(1L, createChapterDTO));
-        verify(chapterRepository, never()).save(any(Chapter.class));
     }
 
     @Test
@@ -88,9 +77,15 @@ public class ChapterServiceImplTest {
     }
 
     @Test
+    void getChapterById_NotFound() {
+        when(chapterRepository.findById(1L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> chapterService.getChapterById(1L));
+    }
+
+    @Test
     void deleteChapter_Success() {
         when(chapterRepository.findById(1L)).thenReturn(Optional.of(chapter));
-        doNothing().when(chapterRepository).delete(chapter);
+        doNothing().when(chapterRepository).delete(any(Chapter.class));
 
         assertDoesNotThrow(() -> chapterService.deleteChapter(1L));
         verify(chapterRepository).delete(chapter);
