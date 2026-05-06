@@ -22,13 +22,13 @@ public class EvaluationResultListener {
             containerFactory = "rabbitListenerContainerFactory"
     )
     public void handleResult(EvaluationResultDTO dto) {
-        System.out.println("📩 Réception d'un résultat pour : " + dto.getEvaluationTitle());
+        
         EvaluationHistory savedHistory = evaluationHistoryService.saveResultFromDto(dto);
 
         if (savedHistory.getVigilanceStatus() == VigilanceStatus.CLEAN) {
             gamificationService.processGamification(savedHistory);
             badgeService.processBadgeAttribution(savedHistory);
-            System.out.println("🎮 Gamification appliquée : " + savedHistory.getLearnerName());
+            
         } else {
             System.out.println("🚫 Gamification suspendue : Statut " + savedHistory.getVigilanceStatus());
         }
@@ -40,7 +40,6 @@ public class EvaluationResultListener {
         // Logique de certification simplifiée
         if (Boolean.TRUE.equals(savedHistory.getIsPassed()) &&
                 savedHistory.getVigilanceStatus() != VigilanceStatus.BANNED) {
-            System.out.println("🎓 Éligible pour certification.");
         }
     }
 }
