@@ -40,7 +40,7 @@ public class CertificateImpl implements ICertificateService {
                         existing.setTrainerName(template.getTrainerName());
 
                         existing.setTemplateDefault(false);
-                        System.out.println("updated");
+                    
                         return templateRepository.save(existing);
                     })
                     .orElseGet(() -> {
@@ -66,12 +66,12 @@ public class CertificateImpl implements ICertificateService {
         }
     }
 
-    // --- PARTIE 2 : GÉNÉRATION DU PDF (Pour l'Apprenant) ---
+    
 
     @Override
     public byte[] generateCertificatePdf(EvaluationHistory history, CertificateTemplate template) throws Exception {
         String myIp = getRealIpAddress();
-        String myPort = "8081"; // Ton port backend
+        String myPort = "8081";
         String verificationUrl = "http://" + myIp + ":" + myPort + "/verify/" + history.getId();
         String qrBase64 = generateQRCodeBase64(verificationUrl);
 
