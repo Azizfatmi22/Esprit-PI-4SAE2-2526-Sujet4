@@ -32,13 +32,15 @@ spec:
           imagePullPolicy: Always
           env:
             - name: SPRING_DATASOURCE_URL
-              value: "jdbc:mysql://mysql-db:3306/liveclassdb?useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true"
+              value: "jdbc:h2:mem:liveclassdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
             - name: SPRING_DATASOURCE_USERNAME
-              value: "root"
+              value: "sa"
             - name: SPRING_DATASOURCE_PASSWORD
-              value: "root"
+              value: ""
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: "org.h2.Driver"
             - name: SPRING_JPA_DATABASE_PLATFORM
-              value: "org.hibernate.dialect.MySQLDialect"
+              value: "org.hibernate.dialect.H2Dialect"
             - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
               value: "http://eureka-server:8761/eureka/"
           ports:
