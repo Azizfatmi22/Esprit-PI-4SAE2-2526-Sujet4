@@ -45,7 +45,7 @@ public class LearnerQuizzAnswerImpl implements ILearnerQuizzAnswerService {
         int correctCount = 0;
         LocalDateTime submissionTime = LocalDateTime.now();
 
-        // Optimisation : Récupération groupée des IDs de réponses correctes
+       
         List<Long> selectedIds = answers.stream()
                 .map(ans -> ans.getSelectedAnswer().getId())
                 .toList();
@@ -99,7 +99,7 @@ public class LearnerQuizzAnswerImpl implements ILearnerQuizzAnswerService {
                     RabbitMQConfig.ROUTING_KEY,
                     result
             );
-            System.out.println("[QUIZ] Résultat envoyé à RabbitMQ : " + result.getEvaluationTitle());
+            
         } catch (Exception e) {
             System.err.println(" Erreur RabbitMQ sur le Quiz : " + e.getMessage());
         }
@@ -114,10 +114,7 @@ public class LearnerQuizzAnswerImpl implements ILearnerQuizzAnswerService {
         LocalDateTime now = LocalDateTime.now();
         long secondsSpent = java.time.Duration.between(scheduledStartTime, now).getSeconds();
         long minimumSecondsRequired = (durationInMinutes * 60L) / 10;
-        System.out.println("--- AUDIT QUIZ ---");
-        System.out.println("Début programmé : " + scheduledStartTime);
-        System.out.println("Temps écoulé    : " + secondsSpent + "s");
-        System.out.println("Seuil requis    : " + minimumSecondsRequired + "s");
+     
 
         return secondsSpent < minimumSecondsRequired;
     }
