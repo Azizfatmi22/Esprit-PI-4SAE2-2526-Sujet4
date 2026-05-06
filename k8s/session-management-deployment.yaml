@@ -24,7 +24,7 @@ spec:
             - containerPort: 8082
           env:
             - name: SPRING_DATASOURCE_URL
-              value: jdbc:mysql://host.docker.internal:3306/formini_session_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
+              value: jdbc:mysql://host.docker.internal:3306/session_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
             - name: SPRING_DATASOURCE_USERNAME
               value: root
             - name: SPRING_DATASOURCE_PASSWORD
@@ -33,7 +33,6 @@ spec:
               value: "false"
             - name: SPRING_CLOUD_DISCOVERY_ENABLED
               value: "false"
-
 ---
 apiVersion: v1
 kind: Service
