@@ -176,7 +176,8 @@ public class PlanningServiceImpl implements PlanningService {
 
         // 📅 Trouver la date de début
         LocalDate startDate = findNextAvailableStartDate(bestLocation.getId(), daysNeeded);
-        LocalDate endDate = startDate.plusDays(daysNeeded - 1);
+        long duration = daysNeeded - 1L;
+        LocalDate endDate = startDate.plusDays(duration);
 
         // 📝 Créer le planning
         Planning planning = new Planning();
@@ -227,7 +228,7 @@ public class PlanningServiceImpl implements PlanningService {
 
         // 📅 Trouver la date de début
         LocalDate startDate = findNextAvailableStartDate(locationId, numberOfDays);
-        LocalDate endDate = startDate.plusDays(numberOfDays - 1);
+        LocalDate endDate = startDate.plusDays((long) numberOfDays - 1);
 
         // 📝 Créer un seul planning
         Planning planning = new Planning();
@@ -259,7 +260,7 @@ public class PlanningServiceImpl implements PlanningService {
 
             // Trouver une nouvelle plage de dates
             LocalDate newStartDate = findNextAvailableStartDate(planning.getLocation().getId(), daysNeeded);
-            LocalDate newEndDate = newStartDate.plusDays(daysNeeded - 1);
+            LocalDate newEndDate = newStartDate.plusDays((long) daysNeeded - 1);
 
             planning.setStartDate(newStartDate);
             planning.setEndDate(newEndDate);
