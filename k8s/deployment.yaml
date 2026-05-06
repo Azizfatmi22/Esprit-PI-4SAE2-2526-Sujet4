@@ -24,7 +24,6 @@ spec:
             - containerPort: 8090
           env:
             - name: SPRING_DATASOURCE_URL
-              # Utilisation du nom correct de la base
               value: jdbc:mysql://host.docker.internal:3306/formini_certification_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
             - name: SPRING_DATASOURCE_USERNAME
               value: root
@@ -34,11 +33,14 @@ spec:
               value: "false"
             - name: SPRING_CLOUD_DISCOVERY_ENABLED
               value: "false"
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: certification-service
+  labels:
+    app: certification   # ✅ THIS IS THE ONLY FIX
 spec:
   type: NodePort
   selector:
