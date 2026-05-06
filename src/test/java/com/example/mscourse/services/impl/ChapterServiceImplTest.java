@@ -42,6 +42,9 @@ public class ChapterServiceImplTest {
         course.setId(1L);
         course.setTitle("Java Course");
         course.setChapters(new java.util.ArrayList<>());
+        
+        // Fix: Inject the uploadDir value manually for the test
+        org.springframework.test.util.ReflectionTestUtils.setField(chapterService, "uploadDir", "test-uploads");
 
         chapter = new Chapter();
         chapter.setId(1L);
