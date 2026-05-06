@@ -30,7 +30,7 @@ public class BadgeImpl implements IBadgeService {
     public void processBadgeAttribution(EvaluationHistory history) {
         if (history.getVigilanceStatus() != VigilanceStatus.CLEAN) return;
         Integer currentLevel = gamificationService.getLearnerLevel(history.getLearnerId());
-        System.out.println("------------------Current Level: " + currentLevel);
+        
         List<Badge> allBadges = badgeRepo.findAll();
 
         for (Badge badge : allBadges) {
@@ -56,7 +56,7 @@ public class BadgeImpl implements IBadgeService {
             }
 
             if (conditionMet) {
-                System.out.println(history.getLearnerId() + " - " + badge.getBadgeType());
+              
                 UserAchievement achievement = UserAchievement.builder()
                         .learnerId(history.getLearnerId())
                         .badge(badge)
@@ -64,7 +64,7 @@ public class BadgeImpl implements IBadgeService {
                         .unlockedAt(LocalDateTime.now())
                         .build();
                 achievementRepo.save(achievement);
-                System.out.println("🏆 Badge Débloqué : " + badge.getName());
+                
             }
         }
     }
