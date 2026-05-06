@@ -43,7 +43,7 @@ public class GamificationImpl implements IGamificationService {
     @Override
     public Integer getLearnerLevel(String learnerId) {
         Long totalXp = progressionRepo.findTotalXpByLearnerId(learnerId);
-        System.out.println("________________>Total XP: " + totalXp);
+        
 
         if (totalXp == null || totalXp <= 0) {
             return 1;
