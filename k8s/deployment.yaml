@@ -18,22 +18,21 @@ spec:
     spec:
       containers:
       - name: evaluation
-        image: omaraguil/evaluation-service:latest # Changé pour correspondre à l'image poussée
-        imagePullPolicy: Always # Mis à Always pour récupérer la version du pipeline
+        image: omaraguil/evaluation-service:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8081
         env:
         - name: SPRING_DATASOURCE_URL
-          # Utilisation du nom correct de la base
           value: jdbc:mysql://host.docker.internal:3306/formini_evaluation_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
         - name: SPRING_DATASOURCE_USERNAME
           value: root
         - name: SPRING_DATASOURCE_PASSWORD
           value: root
-        - name: EUREKA_CLIENT_ENABLED
-          value: "false"
-        - name: SPRING_CLOUD_DISCOVERY_ENABLED
-          value: "false"
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          value: http://eureka-server:8761/eureka/
+        - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+          value: "true"
 ---
 apiVersion: v1
 kind: Service
