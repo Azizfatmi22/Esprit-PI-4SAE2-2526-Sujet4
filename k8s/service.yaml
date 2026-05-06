@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: front-formini-service
+  labels:
+    app: front-formini
+spec:
+  selector:
+    app: front-formini  # This MUST match the label in your deployment.yaml
+  ports:
+    - protocol: TCP
+      port: 80         # Port accessible outside the cluster
+      targetPort: 80   # Port the container is listening on
+  type: LoadBalancer   # Use NodePort if you don't have a cloud LoadBalancer
