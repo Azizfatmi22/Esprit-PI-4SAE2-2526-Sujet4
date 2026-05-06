@@ -27,6 +27,8 @@ spec:
               value: http://eureka-server:8761/eureka/
             - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
               value: "true"
+            - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
+              value: "http://host.docker.internal:8180/realms/myrealm"
 ---
 apiVersion: v1
 kind: Service
