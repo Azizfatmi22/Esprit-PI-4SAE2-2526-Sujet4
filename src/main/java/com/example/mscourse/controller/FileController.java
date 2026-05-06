@@ -610,19 +610,21 @@ public class FileController {
             }
 
             List<Map<String, String>> files = new ArrayList<>();
-            Files.list(path).forEach(filePath -> {
-                Map<String, String> fileInfo = new HashMap<>();
-                String filename = filePath.getFileName().toString();
-                fileInfo.put("fileName", filename);
-                fileInfo.put("fileUrl", String.format("/api/courses/uploads/cours_%d/chapitre_%d/content_block_%d/%s/%s",
-                        coursId, chapitreId,contentBlockId, typeFolder, filename));
-                try {
-                    fileInfo.put("fileSize", String.valueOf(Files.size(filePath)));
-                } catch (IOException e) {
-                    fileInfo.put("fileSize", "0");
-                }
-                files.add(fileInfo);
-            });
+            try (java.util.stream.Stream<Path> stream = Files.list(path)) {
+                stream.forEach(filePath -> {
+                    Map<String, String> fileInfo = new HashMap<>();
+                    String filename = filePath.getFileName().toString();
+                    fileInfo.put("fileName", filename);
+                    fileInfo.put("fileUrl", String.format("/api/courses/uploads/cours_%d/chapitre_%d/content_block_%d/%s/%s",
+                            coursId, chapitreId,contentBlockId, typeFolder, filename));
+                    try {
+                        fileInfo.put("fileSize", String.valueOf(Files.size(filePath)));
+                    } catch (IOException e) {
+                        fileInfo.put("fileSize", "0");
+                    }
+                    files.add(fileInfo);
+                });
+            }
 
             return ResponseEntity.ok(files);
 
