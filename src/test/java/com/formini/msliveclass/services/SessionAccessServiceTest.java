@@ -7,15 +7,18 @@ import com.formini.msliveclass.dto.EnrollmentSummary;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class SessionAccessServiceTest {
@@ -26,107 +29,137 @@ class SessionAccessServiceTest {
     @Mock
     private EnrollmentClient enrollmentClient;
 
+    @InjectMocks
     private SessionAccessService sessionAccessService;
+
+    private CourseDTO sampleCourse;
 
     @BeforeEach
     void setUp() {
-        sessionAccessService = new SessionAccessService(courseClient, enrollmentClient);
+        sampleCourse = new CourseDTO();
+        sampleCourse.setId(1L);
+        sampleCourse.setTrainerId("trainer-123");
+    }
+
+    @Test
+    void findCourseTrainerId_NullCourseId() {
+        assertTrue(sessionAccessService.findCourseTrainerId(null).isEmpty());
+    }
+
+    @Test
+    void findCourseTrainerId_CourseNotFound() {
+        when(courseClient.getCourseById(1L)).thenReturn(null);
+        assertTrue(sessionAccessService.findCourseTrainerId(1L).isEmpty());
+    }
+
+    @Test
+    void findCourseTrainerId_NoTrainerId() {
+        sampleCourse.setTrainerId(null);
+        when(courseClient.getCourseById(1L)).thenReturn(sampleCourse);
+        assertTrue(sessionAccessService.findCourseTrainerId(1L).isEmpty());
+
+        sampleCourse.setTrainerId("  ");
+        assertTrue(sessionAccessService.findCourseTrainerId(1L).isEmpty());
     }
 
     @Test
     void findCourseTrainerId_Success() {
-        Long courseId = 1L;
-        CourseDTO course = new CourseDTO();
-        course.setTrainerId("trainer123");
-        
-        when(courseClient.getCourseById(courseId)).thenReturn(course);
-
-        Optional<String> result = sessionAccessService.findCourseTrainerId(courseId);
-
-        assertTrue(result.isPresent());
-        assertEquals("trainer123", result.get());
-        verify(courseClient).getCourseById(courseId);
-    }
-
-    @Test
-    void findCourseTrainerId_NullId() {
-        Optional<String> result = sessionAccessService.findCourseTrainerId(null);
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    void findCourseTrainerId_NotFound() {
-        when(courseClient.getCourseById(1L)).thenReturn(null);
+        when(courseClient.getCourseById(1L)).thenReturn(sampleCourse);
         Optional<String> result = sessionAccessService.findCourseTrainerId(1L);
-        assertTrue(result.isEmpty());
+        assertTrue(result.isPresent());
+        assertEquals("trainer-123", result.get());
+    }
+
+    @Test
+    void findCourseTrainerId_Error() {
+        when(courseClient.getCourseById(anyLong())).thenThrow(new RuntimeException("API error"));
+        assertTrue(sessionAccessService.findCourseTrainerId(1L).isEmpty());
+    }
+
+    @Test
+    void isCourseTrainer_InvalidUserId() {
+        assertFalse(sessionAccessService.isCourseTrainer(1L, null));
+        assertFalse(sessionAccessService.isCourseTrainer(1L, " "));
+    }
+
+    @Test
+    void isCourseTrainer_NoTrainerFound() {
+        when(courseClient.getCourseById(1L)).thenReturn(null);
+        assertFalse(sessionAccessService.isCourseTrainer(1L, "user-1"));
     }
 
     @Test
     void isCourseTrainer_True() {
-        Long courseId = 1L;
-        String userId = "trainer123";
-        CourseDTO course = new CourseDTO();
-        course.setTrainerId(userId);
-        
-        when(courseClient.getCourseById(courseId)).thenReturn(course);
-
-        boolean result = sessionAccessService.isCourseTrainer(courseId, userId);
-
-        assertTrue(result);
+        when(courseClient.getCourseById(1L)).thenReturn(sampleCourse);
+        assertTrue(sessionAccessService.isCourseTrainer(1L, "trainer-123"));
     }
 
     @Test
     void isCourseTrainer_False() {
-        Long courseId = 1L;
-        String userId = "wrongUser";
-        CourseDTO course = new CourseDTO();
-        course.setTrainerId("trainer123");
-        
-        when(courseClient.getCourseById(courseId)).thenReturn(course);
-
-        boolean result = sessionAccessService.isCourseTrainer(courseId, userId);
-
-        assertFalse(result);
+        when(courseClient.getCourseById(1L)).thenReturn(sampleCourse);
+        assertFalse(sessionAccessService.isCourseTrainer(1L, "other-user"));
     }
 
     @Test
-    void hasPaidEnrollment_Success() {
-        Long courseId = 1L;
-        String learnerId = "learner123";
-        EnrollmentSummary enrollment = new EnrollmentSummary();
-        enrollment.setCourseId(courseId);
-        enrollment.setStatus("ACTIVE");
-        
-        when(enrollmentClient.getEnrollmentsByLearner(learnerId)).thenReturn(List.of(enrollment));
-
-        boolean result = sessionAccessService.hasPaidEnrollment(courseId, learnerId);
-
-        assertTrue(result);
+    void hasPaidEnrollment_InvalidParams() {
+        assertFalse(sessionAccessService.hasPaidEnrollment(null, "l1"));
+        assertFalse(sessionAccessService.hasPaidEnrollment(1L, null));
+        assertFalse(sessionAccessService.hasPaidEnrollment(1L, ""));
     }
 
     @Test
-    void hasPaidEnrollment_FallbackAccess() {
-        Long courseId = 1L;
-        String learnerId = "learner123";
+    void hasPaidEnrollment_ActiveRecord() {
+        EnrollmentSummary summary = new EnrollmentSummary();
+        summary.setCourseId(1L);
+        summary.setStatus("ACTIVE");
         
-        when(enrollmentClient.getEnrollmentsByLearner(learnerId)).thenThrow(new RuntimeException("Service down"));
-        when(enrollmentClient.hasCourseAccess(learnerId, courseId)).thenReturn(true);
-
-        boolean result = sessionAccessService.hasPaidEnrollment(courseId, learnerId);
-
-        assertTrue(result);
+        when(enrollmentClient.getEnrollmentsByLearner("l1")).thenReturn(Arrays.asList(summary));
+        
+        assertTrue(sessionAccessService.hasPaidEnrollment(1L, "l1"));
     }
 
     @Test
-    void hasPaidEnrollment_NoAccess() {
-        Long courseId = 1L;
-        String learnerId = "learner123";
+    void hasPaidEnrollment_CompletedRecord() {
+        EnrollmentSummary summary = new EnrollmentSummary();
+        summary.setCourseId(1L);
+        summary.setStatus("COMPLETED");
         
-        when(enrollmentClient.getEnrollmentsByLearner(learnerId)).thenReturn(Collections.emptyList());
-        when(enrollmentClient.hasCourseAccess(learnerId, courseId)).thenReturn(false);
+        when(enrollmentClient.getEnrollmentsByLearner("l1")).thenReturn(Arrays.asList(summary));
+        
+        assertTrue(sessionAccessService.hasPaidEnrollment(1L, "l1"));
+    }
 
-        boolean result = sessionAccessService.hasPaidEnrollment(courseId, learnerId);
+    @Test
+    void hasPaidEnrollment_FallbackSuccess() {
+        // Records found but no match for courseId
+        EnrollmentSummary other = new EnrollmentSummary();
+        other.setCourseId(99L);
+        when(enrollmentClient.getEnrollmentsByLearner("l1")).thenReturn(Arrays.asList(other));
+        
+        // Fallback returns true
+        when(enrollmentClient.hasCourseAccess("l1", 1L)).thenReturn(true);
+        
+        assertTrue(sessionAccessService.hasPaidEnrollment(1L, "l1"));
+    }
 
-        assertFalse(result);
+    @Test
+    void hasPaidEnrollment_Failure() {
+        when(enrollmentClient.getEnrollmentsByLearner("l1")).thenReturn(Collections.emptyList());
+        when(enrollmentClient.hasCourseAccess("l1", 1L)).thenReturn(false);
+        
+        assertFalse(sessionAccessService.hasPaidEnrollment(1L, "l1"));
+    }
+
+    @Test
+    void hasPaidEnrollment_ExceptionHandling() {
+        // Exception in records triggers fallback
+        when(enrollmentClient.getEnrollmentsByLearner(anyString())).thenThrow(new RuntimeException("DB error"));
+        when(enrollmentClient.hasCourseAccess("l1", 1L)).thenReturn(true);
+        
+        assertTrue(sessionAccessService.hasPaidEnrollment(1L, "l1"));
+
+        // Exception in fallback returns false
+        when(enrollmentClient.hasCourseAccess("l1", 1L)).thenThrow(new RuntimeException("API error"));
+        assertFalse(sessionAccessService.hasPaidEnrollment(1L, "l1"));
     }
 }
