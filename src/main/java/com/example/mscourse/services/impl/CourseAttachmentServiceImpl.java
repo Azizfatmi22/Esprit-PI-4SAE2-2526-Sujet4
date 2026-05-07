@@ -69,16 +69,11 @@ public class CourseAttachmentServiceImpl implements ICourseAttachmentService {
     public CourseAttachmentDTO uploadAttachment(Long courseId, MultipartFile file, AttachmentCategory category, String description) throws IOException {
         log.info("Uploading attachment for course ID: {}", courseId);
 
-        validateMultipartFile(file);
+        String originalFilename = validateAndGetFilename(file);
 
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + courseId));
-
-        // Get original filename and extension
-        String originalFilename = file.getOriginalFilename();
-        if (originalFilename == null || originalFilename.isEmpty()) {
-            throw new ValidationException("File name is required");
-        }
+        
         
         String safeFilename = originalFilename.replaceAll("[^a-zA-Z0-9.-]", "_");
 
@@ -206,9 +201,7 @@ public class CourseAttachmentServiceImpl implements ICourseAttachmentService {
 
     private void handleFileUpdate(CourseAttachment attachment, MultipartFile file, Long courseId) throws IOException {
         deletePhysicalFile(attachment.getFileUrl());
-        validateMultipartFile(file);
-
-        String originalFilename = file.getOriginalFilename();
+        String originalFilename = validateAndGetFilename(file);
         String safeFilename = originalFilename.replaceAll("[^a-zA-Z0-9.-]", "_");
         
         Path uploadPath = Paths.get(uploadDir, "cours_" + courseId, "attachments");
@@ -235,8 +228,17 @@ public class CourseAttachmentServiceImpl implements ICourseAttachmentService {
         log.info("Updated attachment file: {}", filePath);
     }
 
+    private String validateAndGetFilename(MultipartFile file) {
+        validateMultipartFile(file);
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || originalFilename.isEmpty()) {
+            throw new ValidationException("File name is required");
+        }
+        return originalFilename;
+    }
+
     private void validateMultipartFile(MultipartFile file) {
-        if (file.isEmpty()) {
+        if (file == null || file.isEmpty()) {
             throw new ValidationException("File cannot be empty");
         }
         long maxSize = 500L * 1024 * 1024; // 500MB
