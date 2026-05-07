@@ -6,6 +6,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest
 class MsLiveClassApplicationTests {
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private org.springframework.ai.chat.client.ChatClient.Builder chatClientBuilder;
+
     @org.springframework.beans.factory.annotation.Autowired
     private org.springframework.context.ApplicationContext applicationContext;
 
@@ -14,5 +17,4 @@ class MsLiveClassApplicationTests {
         // Verify the Spring application context loads successfully.
         org.junit.jupiter.api.Assertions.assertNotNull(applicationContext, "The application context should not be null");
     }
-
 }
