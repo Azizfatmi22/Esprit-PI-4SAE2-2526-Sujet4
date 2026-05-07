@@ -39,11 +39,14 @@ public class ChapterServiceImpl implements IChapterService {
     @Value("${file.upload.dir:./uploads}")
     private String uploadDir;
 
+    private static final String CHAPTER_NOT_FOUND_MSG = "Chapter not found with id: ";
+    private static final String COURSE_NOT_FOUND_MSG = "Course not found with id: ";
+
     public ChapterDTO createChapter(Long courseId, CreateChapterRequestDTO chapterDTO) {
         log.info("Creating new chapter for course ID: {}", courseId);
 
         Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + courseId));
+                .orElseThrow(() -> new ResourceNotFoundException(COURSE_NOT_FOUND_MSG + courseId));
 
         // Set order index if not provided
         if (chapterDTO.getOrderIndex() == null) {
@@ -71,7 +74,7 @@ public class ChapterServiceImpl implements IChapterService {
     public ChapterDTO getChapterById(Long id) {
         log.info("Fetching chapter by ID: {}", id);
         Chapter chapter = chapterRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Chapter not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(CHAPTER_NOT_FOUND_MSG + id));
         return mapToDTO(chapter);
     }
 
@@ -87,7 +90,7 @@ public class ChapterServiceImpl implements IChapterService {
     public ChapterDTO getChapterWithContent(Long id) {
         log.info("Fetching chapter with content blocks by ID: {}", id);
         Chapter chapter = chapterRepository.findChapterWithContentBlocks(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Chapter not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(CHAPTER_NOT_FOUND_MSG + id));
 
         ChapterDTO chapterDTO = mapToDTO(chapter);
         chapterDTO.setContentBlocks(chapter.getContentBlocks().stream()
@@ -102,7 +105,7 @@ public class ChapterServiceImpl implements IChapterService {
         log.info("Updating chapter with ID: {}", id);
 
         Chapter chapter = chapterRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Chapter not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(CHAPTER_NOT_FOUND_MSG + id));
 
         if (chapterDTO.getTitle() != null) {
             chapter.setTitle(chapterDTO.getTitle());
@@ -128,7 +131,7 @@ public class ChapterServiceImpl implements IChapterService {
         log.info("Reordering chapter {} to position: {}", id, newOrderIndex);
 
         Chapter chapter = chapterRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Chapter not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(CHAPTER_NOT_FOUND_MSG + id));
 
         updateChapterOrder(chapter, newOrderIndex);
 
@@ -140,7 +143,7 @@ public class ChapterServiceImpl implements IChapterService {
     public void deleteChapter(Long id) {
         log.info("Deleting chapter with ID: {}", id);
         Chapter chapter = chapterRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Chapter not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(CHAPTER_NOT_FOUND_MSG + id));
 
         // Delete the physical folder for this chapter (including all content block files)
         try {
