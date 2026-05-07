@@ -36,6 +36,9 @@ public class ContentBlockServiceImpl implements IContentBlockService {
     @Value("${file.upload.dir:./uploads}")
     private String uploadDir;
 
+    private static final String CONTENT_BLOCK_NOT_FOUND_MSG = "Content block not found with id: ";
+    private static final String UPLOADS_API_PATH = "/api/courses/uploads/";
+
     @Override
     public ContentBlockDTO createContentBlock(Long chapterId, CreateContentBlockRequestDTO contentBlockDTO) {
         log.info("Creating new content block for chapter ID: {}", chapterId);
@@ -71,7 +74,7 @@ public class ContentBlockServiceImpl implements IContentBlockService {
     public ContentBlockDTO getContentBlockById(Long id) {
         log.info("Fetching content block by ID: {}", id);
         ContentBlock contentBlock = contentBlockRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Content block not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(CONTENT_BLOCK_NOT_FOUND_MSG + id));
         return mapToDTO(contentBlock);
     }
 
@@ -96,7 +99,7 @@ public class ContentBlockServiceImpl implements IContentBlockService {
         log.info("Updating content block with ID: {}", id);
 
         ContentBlock contentBlock = contentBlockRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Content block not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(CONTENT_BLOCK_NOT_FOUND_MSG + id));
 
         if (contentBlockDTO.getType() != null) {
             contentBlock.setType(contentBlockDTO.getType());
@@ -130,7 +133,7 @@ public class ContentBlockServiceImpl implements IContentBlockService {
         log.info("Reordering content block {} to position: {}", id, newOrderIndex);
 
         ContentBlock contentBlock = contentBlockRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Content block not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(CONTENT_BLOCK_NOT_FOUND_MSG + id));
 
         updateContentBlockOrder(contentBlock, newOrderIndex);
 
@@ -143,14 +146,14 @@ public class ContentBlockServiceImpl implements IContentBlockService {
         log.info("Deleting content block with ID: {}", id);
 
         ContentBlock contentBlock = contentBlockRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Content block not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(CONTENT_BLOCK_NOT_FOUND_MSG + id));
 
         // Delete physical file if it exists
         try {
             String fileUrl = contentBlock.getData();
-            if (fileUrl != null && fileUrl.startsWith("/api/courses/uploads/")) {
+            if (fileUrl != null && fileUrl.startsWith(UPLOADS_API_PATH)) {
                 // Extract the relative path from the URL
-                String relativePath = fileUrl.replace("/api/courses/uploads/", "");
+                String relativePath = fileUrl.replace(UPLOADS_API_PATH, "");
                 Path filePath = Paths.get(uploadDir, relativePath);
                 if (Files.exists(filePath)) {
                     Files.delete(filePath);
@@ -217,13 +220,13 @@ public class ContentBlockServiceImpl implements IContentBlockService {
             case FILE:
                 // Accept various URL formats from file upload
                 // Including new structure: /api/courses/uploads/cours_{id}/chapitre_{id}/content_block_{id}/{type}/filename
-                if (!data.startsWith("/api/courses/uploads/") && 
+                if (!data.startsWith(UPLOADS_API_PATH) && 
                     !data.startsWith("/api/uploads/") && 
                     !data.startsWith("http") &&
                     !data.equals("temp")) { // Allow temp placeholder during creation
                     throw new ValidationException(
                             "For media content, data must be a valid URL or server path. " +
-                                    "Received: " + data + ". Expected: starts with /api/courses/uploads/, /api/uploads/ or http"
+                                    "Received: " + data + ". Expected: starts with " + UPLOADS_API_PATH + ", /api/uploads/ or http"
                     );
                 }
                 log.debug("Media URL accepted: {}", data);
