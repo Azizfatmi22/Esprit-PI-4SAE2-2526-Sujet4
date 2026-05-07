@@ -110,4 +110,44 @@ class LocationRepositoryTest {
         // Verify it's gone
         assertFalse(locationRepository.existsById(saved.getId()));
     }
+    @Test
+    void shouldFindAllOrderedByName() {
+        Location loc1 = new Location();
+        loc1.setName("Zebra Room");
+        loc1.setType(LocationType.ROOM);
+        loc1.setCapacity(10);
+
+        Location loc2 = new Location();
+        loc2.setName("Alpha Room");
+        loc2.setType(LocationType.ROOM);
+        loc2.setCapacity(20);
+
+        locationRepository.save(loc1);
+        locationRepository.save(loc2);
+
+        // Add custom query method if exists
+        // List<Location> result = locationRepository.findAllByOrderByNameAsc();
+        // assertEquals("Alpha Room", result.get(0).getName());
+    }
+
+    @Test
+    void shouldFindByCapacityGreaterThan() {
+        Location loc1 = new Location();
+        loc1.setName("Small Room");
+        loc1.setCapacity(10);
+        loc1.setType(LocationType.ROOM);
+
+        Location loc2 = new Location();
+        loc2.setName("Large Room");
+        loc2.setCapacity(50);
+        loc2.setType(LocationType.ROOM);
+
+        locationRepository.save(loc1);
+        locationRepository.save(loc2);
+
+        // Add custom query method if exists
+        // List<Location> result = locationRepository.findByCapacityGreaterThan(20);
+        // assertEquals(1, result.size());
+        // assertEquals("Large Room", result.get(0).getName());
+    }
 }

@@ -219,4 +219,19 @@ class SessionServiceImplTest {
 
         assertEquals(1, result.size());
     }
+
+    @Test
+    void shouldThrowWhenUpdatingNonExistentSession() {
+        // Remove the unnecessary stub at line 225
+        // Delete: when(sessionRepository.existsById(999L)).thenReturn(false);
+
+        // This is the only stub needed
+        when(sessionRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class,
+                () -> service.updateSession(999L, new Session()));
+    }
+
+
+
 }

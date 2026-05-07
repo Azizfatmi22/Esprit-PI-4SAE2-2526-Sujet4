@@ -171,4 +171,36 @@ class LocationControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.size()").value(1));
     }
+    // Add these tests to LocationControllerTest
+
+    @Test
+    void shouldReturn404WhenLocationNotFound() throws Exception {
+        Mockito.when(locationService.getLocationById(999L))
+                .thenThrow(new RuntimeException("Location not found"));
+
+        mockMvc.perform(get("/api/locations/999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReturn400WhenInvalidLocationData() throws Exception {
+        Location invalidLocation = new Location();
+        // Don't set required fields - name is null, type is null, capacity is null
+
+        mockMvc.perform(post("/api/locations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidLocation)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldHandleEmptySearchResults() throws Exception {
+        Mockito.when(locationService.searchLocations("nonexistent"))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/api/locations/search")
+                        .param("keyword", "nonexistent"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(0));
+    }
 }
