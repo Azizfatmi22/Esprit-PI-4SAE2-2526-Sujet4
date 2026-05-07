@@ -459,8 +459,8 @@ public class SecureLearnerDataService {
             }
 
             Object progressObj = enrollment.get("progress");
-            if (progressObj instanceof Number) {
-                stats.totalProgress += ((Number) progressObj).doubleValue();
+            if (progressObj instanceof Number number) {
+                stats.totalProgress += number.doubleValue();
             }
             statsMap.put(learnerId, stats);
         }
