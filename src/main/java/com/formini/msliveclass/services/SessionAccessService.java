@@ -88,52 +88,54 @@ public class SessionAccessService {
         log.info("Course ID: {}", courseId);
         log.info("Learner ID: {}", normalizedLearnerId);
 
-        try {
-            log.info("Attempting to fetch enrollments from enrollment service...");
-            List<EnrollmentSummary> enrollments = enrollmentClient.getEnrollmentsByLearner(normalizedLearnerId);
-            log.info("Received {} enrollment(s) from service", enrollments != null ? enrollments.size() : 0);
-            
-            if (enrollments != null && !enrollments.isEmpty()) {
-                log.info("Enrollment records:");
-                for (EnrollmentSummary enrollment : enrollments) {
-                    log.info("  - Course ID: {}, Status: {}", enrollment.getCourseId(), enrollment.getStatus());
-                }
-                
-                boolean hasPaidEnrollmentRecord = enrollments.stream().anyMatch(enrollment ->
-                        Objects.equals(courseId, enrollment.getCourseId())
-                                && isPaidEnrollmentStatus(enrollment.getStatus())
-                );
-
-                if (hasPaidEnrollmentRecord) {
-                    log.info("✅ Found paid enrollment record for course {}", courseId);
-                    return true;
-                } else {
-                    log.warn("❌ No paid enrollment found for course {} in enrollment records", courseId);
-                }
-            } else {
-                log.warn("No enrollment records found for learner {}", normalizedLearnerId);
-            }
-        } catch (Exception e) {
-            log.error("Error fetching enrollments from service: {}", e.getMessage(), e);
-            // fall through to access endpoint fallback
+        if (checkEnrollmentRecords(courseId, normalizedLearnerId)) {
+            return true;
         }
 
+        return checkCourseAccessFallback(courseId, normalizedLearnerId);
+    }
+
+    private boolean checkEnrollmentRecords(Long courseId, String learnerId) {
+        try {
+            log.info("Attempting to fetch enrollments from enrollment service...");
+            List<EnrollmentSummary> enrollments = enrollmentClient.getEnrollmentsByLearner(learnerId);
+            
+            if (enrollments == null || enrollments.isEmpty()) {
+                log.warn("No enrollment records found for learner {}", learnerId);
+                return false;
+            }
+
+            log.info("Received {} enrollment(s) from service", enrollments.size());
+            boolean hasPaidRecord = enrollments.stream().anyMatch(e ->
+                    Objects.equals(courseId, e.getCourseId()) && isPaidEnrollmentStatus(e.getStatus())
+            );
+
+            if (hasPaidRecord) {
+                log.info("✅ Found paid enrollment record for course {}", courseId);
+                return true;
+            }
+            log.warn("❌ No paid enrollment found for course {} in records", courseId);
+        } catch (Exception e) {
+            log.error("Error fetching enrollments: {}", e.getMessage());
+        }
+        return false;
+    }
+
+    private boolean checkCourseAccessFallback(Long courseId, String learnerId) {
         log.info("Trying fallback: hasCourseAccess endpoint...");
         try {
-            Boolean hasAccess = enrollmentClient.hasCourseAccess(normalizedLearnerId, courseId);
+            Boolean hasAccess = enrollmentClient.hasCourseAccess(learnerId, courseId);
             log.info("hasCourseAccess returned: {}", hasAccess);
             
             if (Boolean.TRUE.equals(hasAccess)) {
-                log.info("✅ Access granted via hasCourseAccess endpoint");
+                log.info("✅ Access granted via fallback");
                 return true;
-            } else {
-                log.warn("❌ Access denied via hasCourseAccess endpoint");
-                return false;
             }
+            log.warn("❌ Access denied via fallback");
         } catch (Exception e) {
-            log.error("Error checking course access: {}", e.getMessage(), e);
-            return false;
+            log.error("Error checking fallback access: {}", e.getMessage());
         }
+        return false;
     }
 
     private boolean isPaidEnrollmentStatus(String status) {

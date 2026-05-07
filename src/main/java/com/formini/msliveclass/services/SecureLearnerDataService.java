@@ -189,7 +189,6 @@ public class SecureLearnerDataService {
 
         try {
             ChapterDTO chapter = courseClient.getChapterWithContent(courseId, chapterId);
-            
             StringBuilder content = new StringBuilder();
             content.append("📖 Chapter: ").append(chapter.getTitle()).append("\n\n");
             
@@ -199,34 +198,34 @@ public class SecureLearnerDataService {
             
             if (chapter.getContentBlocks() != null && !chapter.getContentBlocks().isEmpty()) {
                 content.append("📚 Content Blocks:\n\n");
-                
                 for (ContentBlockDTO block : chapter.getContentBlocks()) {
-                    content.append("▶️ ").append(block.getTitle()).append("\n");
-                    content.append("   Type: ").append(block.getType()).append("\n");
-                    
-                    if (block.getData() != null && !block.getData().isEmpty()) {
-                        // Parse and display content based on type
-                        String blockData = block.getData();
-                        
-                        if ("TEXT".equals(block.getType())) {
-                            // Extract text content
-                            content.append("   Content: ").append(extractTextContent(blockData)).append("\n");
-                        } else if ("IMAGE".equals(block.getType())) {
-                            content.append("   📷 Image: ").append(extractImageInfo(blockData)).append("\n");
-                        } else if ("VIDEO".equals(block.getType())) {
-                            content.append("   🎥 Video: ").append(extractVideoInfo(blockData)).append("\n");
-                        } else if ("CODE".equals(block.getType())) {
-                            content.append("   💻 Code: ").append(extractCodeContent(blockData)).append("\n");
-                        }
-                    }
+                    appendContentBlockInfo(content, block);
                     content.append("\n");
                 }
             }
-            
             return content.toString();
-            
         } catch (Exception e) {
             return "I couldn't retrieve the chapter content. Please try again.";
+        }
+    }
+
+    private void appendContentBlockInfo(StringBuilder content, ContentBlockDTO block) {
+        content.append("▶️ ").append(block.getTitle()).append("\n");
+        content.append("   Type: ").append(block.getType()).append("\n");
+
+        if (block.getData() != null && !block.getData().isEmpty()) {
+            String blockData = block.getData();
+            String type = block.getType();
+
+            if ("TEXT".equals(type)) {
+                content.append("   Content: ").append(extractTextContent(blockData)).append("\n");
+            } else if ("IMAGE".equals(type)) {
+                content.append("   📷 Image: ").append(extractImageInfo(blockData)).append("\n");
+            } else if ("VIDEO".equals(type)) {
+                content.append("   🎥 Video: ").append(extractVideoInfo(blockData)).append("\n");
+            } else if ("CODE".equals(type)) {
+                content.append("   💻 Code: ").append(extractCodeContent(blockData)).append("\n");
+            }
         }
     }
 
@@ -438,62 +437,70 @@ public class SecureLearnerDataService {
     public String getPublicLeaderboard(int limit) {
         try {
             List<Map<String, Object>> enrollments = enrollmentClient.getAllEnrollments();
-            
-            // Group by learner and calculate stats
-            Map<String, LearnerPublicStats> statsMap = new HashMap<>();
-            
-            for (Map<String, Object> enrollment : enrollments) {
-                String learnerId = (String) enrollment.get("learnerId");
-                if (learnerId == null) continue;
-                
-                LearnerPublicStats stats = statsMap.getOrDefault(learnerId, new LearnerPublicStats(learnerId));
-                stats.totalEnrollments++;
-                
-                if ("COMPLETED".equals(enrollment.get("status"))) {
-                    stats.completedCourses++;
-                }
-                
-                Object progressObj = enrollment.get("progress");
-                if (progressObj != null) {
-                    double progress = progressObj instanceof Number ? ((Number) progressObj).doubleValue() : 0.0;
-                    stats.totalProgress += progress;
-                }
-                
-                statsMap.put(learnerId, stats);
-            }
-            
-            // Calculate scores and sort
-            List<LearnerPublicStats> topLearners = statsMap.values().stream()
-                    .peek(stats -> {
-                        stats.avgProgress = stats.totalProgress / stats.totalEnrollments;
-                        stats.score = (stats.completedCourses * 100) + stats.avgProgress;
-                    })
-                    .sorted((a, b) -> Double.compare(b.score, a.score))
-                    .limit(limit)
-                    .collect(Collectors.toList());
-            
-            StringBuilder result = new StringBuilder();
-            result.append("🏆 Top ").append(limit).append(" Learners:\n\n");
-            
-            int rank = 1;
-            for (LearnerPublicStats stats : topLearners) {
-                String medal = rank == 1 ? "🥇" : rank == 2 ? "🥈" : rank == 3 ? "🥉" : "🎖️";
-                
-                // ONLY expose public display name (anonymized)
-                String displayName = "Learner " + stats.learnerId.substring(0, Math.min(8, stats.learnerId.length()));
-                
-                result.append(medal).append(" #").append(rank).append(" - ").append(displayName).append("\n");
-                result.append("   📚 Enrolled: ").append(stats.totalEnrollments).append(" courses\n");
-                result.append("   ✅ Completed: ").append(stats.completedCourses).append(" courses\n");
-                result.append("   📊 Avg Progress: ").append(String.format("%.1f%%", stats.avgProgress)).append("\n\n");
-                rank++;
-            }
-            
-            return result.toString();
-            
+            Map<String, LearnerPublicStats> statsMap = aggregateLearnerStats(enrollments);
+            List<LearnerPublicStats> topLearners = rankTopLearners(statsMap, limit);
+            return formatLeaderboardOutput(topLearners, limit);
         } catch (Exception e) {
             return "I couldn't retrieve the leaderboard right now. Please try again later.";
         }
+    }
+
+    private Map<String, LearnerPublicStats> aggregateLearnerStats(List<Map<String, Object>> enrollments) {
+        Map<String, LearnerPublicStats> statsMap = new HashMap<>();
+        for (Map<String, Object> enrollment : enrollments) {
+            String learnerId = (String) enrollment.get("learnerId");
+            if (learnerId == null) continue;
+
+            LearnerPublicStats stats = statsMap.getOrDefault(learnerId, new LearnerPublicStats(learnerId));
+            stats.totalEnrollments++;
+
+            if ("COMPLETED".equals(enrollment.get("status"))) {
+                stats.completedCourses++;
+            }
+
+            Object progressObj = enrollment.get("progress");
+            if (progressObj instanceof Number) {
+                stats.totalProgress += ((Number) progressObj).doubleValue();
+            }
+            statsMap.put(learnerId, stats);
+        }
+        return statsMap;
+    }
+
+    private List<LearnerPublicStats> rankTopLearners(Map<String, LearnerPublicStats> statsMap, int limit) {
+        return statsMap.values().stream()
+                .peek(stats -> {
+                    stats.avgProgress = stats.totalProgress / stats.totalEnrollments;
+                    stats.score = (stats.completedCourses * 100) + stats.avgProgress;
+                })
+                .sorted((a, b) -> Double.compare(b.score, a.score))
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+
+    private String formatLeaderboardOutput(List<LearnerPublicStats> topLearners, int limit) {
+        StringBuilder result = new StringBuilder();
+        result.append("🏆 Top ").append(limit).append(" Learners:\n\n");
+
+        int rank = 1;
+        for (LearnerPublicStats stats : topLearners) {
+            String medal = getMedalForRank(rank);
+            String displayName = "Learner " + stats.learnerId.substring(0, Math.min(8, stats.learnerId.length()));
+
+            result.append(medal).append(" #").append(rank).append(" - ").append(displayName).append("\n");
+            result.append("   📚 Enrolled: ").append(stats.totalEnrollments).append(" courses\n");
+            result.append("   ✅ Completed: ").append(stats.completedCourses).append(" courses\n");
+            result.append("   📊 Avg Progress: ").append(String.format("%.1f%%", stats.avgProgress)).append("\n\n");
+            rank++;
+        }
+        return result.toString();
+    }
+
+    private String getMedalForRank(int rank) {
+        if (rank == 1) return "🥇";
+        if (rank == 2) return "🥈";
+        if (rank == 3) return "🥉";
+        return "🎖️";
     }
 
     /**
