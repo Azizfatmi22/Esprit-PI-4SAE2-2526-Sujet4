@@ -58,12 +58,15 @@ public class ChatController {
             String senderId = chatMessage.getSenderId().trim();
             log.info("Sender ID: {}", senderId);
 
-            return liveSessionRepository.findById(chatMessage.getSessionId())
-                .map(session -> processSessionMessage(session, chatMessage, senderId))
-                .orElse(ResponseEntity.badRequest().body(new ErrorResponse("Session not found", 400)));
+            Optional<LiveSession> sessionOpt = liveSessionRepository.findById(chatMessage.getSessionId());
+            if (sessionOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body((Object) new ErrorResponse("Session not found", 400));
+            }
+
+            return processSessionMessage(sessionOpt.get(), chatMessage, senderId);
         } catch (Exception e) {
             log.error("Error sending message", e);
-            return ResponseEntity.status(500).body(new ErrorResponse("Internal server error: " + e.getMessage(), 500));
+            return ResponseEntity.status(500).body((Object) new ErrorResponse("Internal server error: " + e.getMessage(), 500));
         }
     }
 
@@ -90,7 +93,7 @@ public class ChatController {
 
         ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
         log.info("Message sent successfully by user {}", senderId);
-        return ResponseEntity.ok(savedMessage);
+        return ResponseEntity.ok((Object) savedMessage);
     }
 
     private ResponseEntity<Object> validateSessionAccess(LiveSession session, String senderId) {
@@ -99,7 +102,7 @@ public class ChatController {
         }
 
         if (Boolean.FALSE.equals(session.getChatEnabled())) {
-            return ResponseEntity.status(403).body(new ErrorResponse("Chat is disabled for this session", 403));
+            return ResponseEntity.status(403).body((Object) new ErrorResponse("Chat is disabled for this session", 403));
         }
 
         boolean isTrainer = sessionAccessService.isCourseTrainer(session.getCourseId(), senderId);
@@ -110,7 +113,7 @@ public class ChatController {
         }
 
         if (!isTrainer) {
-            return checkSpamProtection(senderId);
+            return (ResponseEntity<Object>) (ResponseEntity<?>) checkSpamProtection(senderId);
         }
         return null;
     }
@@ -147,7 +150,7 @@ public class ChatController {
             // Apply timeout
             userTimeouts.put(userId, now.plusSeconds(TIMEOUT_DURATION_SECONDS));
             timestamps.clear();
-            return ResponseEntity.status(429).body(new ErrorResponse("TIMEOUT: You sent too many messages too quickly. You are blocked for 1 minute.", 429));
+            return ResponseEntity.status(429).body((Object) new ErrorResponse("TIMEOUT: You sent too many messages too quickly. You are blocked for 1 minute.", 429));
         }
 
         // Record this message timestamp
@@ -163,7 +166,7 @@ public class ChatController {
     ) {
         LiveSession session = liveSessionRepository.findById(sessionId).orElse(null);
         if (session == null) {
-            return ResponseEntity.badRequest().body(new ErrorResponse("Session not found.", 400));
+            return ResponseEntity.badRequest().body((Object) new ErrorResponse("Session not found.", 400));
         }
 
         if (userId != null && !userId.isBlank()) {
@@ -172,12 +175,12 @@ public class ChatController {
             boolean isPaidLearner = sessionAccessService.hasPaidEnrollment(session.getCourseId(), candidateUserId);
 
             if (!isTrainer && !isPaidLearner) {
-                return ResponseEntity.status(403).body(new ErrorResponse("Only the trainer and learners who paid for this course can access chat messages.", 403));
+                return ResponseEntity.status(403).body((Object) new ErrorResponse("Only the trainer and learners who paid for this course can access chat messages.", 403));
             }
         }
 
         // Return chat history regardless of session active status
-        return ResponseEntity.ok(chatMessageRepository.findBySessionId(sessionId));
+        return ResponseEntity.ok((Object) chatMessageRepository.findBySessionId(sessionId));
     }
 
     @GetMapping
@@ -187,18 +190,22 @@ public class ChatController {
 
     @DeleteMapping("/{messageId}")
     public ResponseEntity<Object> deleteMessage(@PathVariable Long messageId, @RequestParam String userId) {
-        return chatMessageRepository.findById(messageId).map(message -> {
-            LiveSession session = liveSessionRepository.findById(message.getSessionId()).orElse(null);
-            if (session == null) {
-                return ResponseEntity.status(400).body(new ErrorResponse("Session unavailable", 400));
-            }
+        Optional<ChatMessage> messageOpt = chatMessageRepository.findById(messageId);
+        if (messageOpt.isEmpty()) {
+            return ResponseEntity.status(404).body((Object) new ErrorResponse("Message not found", 404));
+        }
 
-            if (!sessionAccessService.isCourseTrainer(session.getCourseId(), userId)) {
-                return ResponseEntity.status(403).body(new ErrorResponse("Only the course trainer can delete messages.", 403));
-            }
+        ChatMessage message = messageOpt.get();
+        LiveSession session = liveSessionRepository.findById(message.getSessionId()).orElse(null);
+        if (session == null) {
+            return ResponseEntity.status(400).body((Object) new ErrorResponse("Session unavailable", 400));
+        }
 
-            chatMessageRepository.delete(message);
-            return ResponseEntity.ok().body((Object) "Message deleted.");
-        }).orElse(ResponseEntity.notFound().build());
+        if (!sessionAccessService.isCourseTrainer(session.getCourseId(), userId)) {
+            return ResponseEntity.status(403).body((Object) new ErrorResponse("Only the course trainer can delete messages.", 403));
+        }
+
+        chatMessageRepository.delete(message);
+        return ResponseEntity.ok().body((Object) "Message deleted.");
     }
 }
