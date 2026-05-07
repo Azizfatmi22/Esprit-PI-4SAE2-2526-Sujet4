@@ -163,6 +163,13 @@ class ChatControllerTest {
     }
 
     @Test
+    void sendMessage_InternalServerError() {
+        when(liveSessionRepository.findById(any())).thenThrow(new RuntimeException("DB error"));
+        ResponseEntity<Object> response = chatController.sendMessage(chatMessage);
+        assertEquals(500, response.getStatusCode().value());
+    }
+
+    @Test
     void getMessages_SessionNotFound() {
         when(liveSessionRepository.findById(1L)).thenReturn(Optional.empty());
 
@@ -183,6 +190,17 @@ class ChatControllerTest {
     }
 
     @Test
+    void getMessages_UnauthorizedUser() {
+        when(liveSessionRepository.findById(1L)).thenReturn(Optional.of(activeSession));
+        when(sessionAccessService.isCourseTrainer(10L, "unauthorized")).thenReturn(false);
+        when(sessionAccessService.hasPaidEnrollment(10L, "unauthorized")).thenReturn(false);
+
+        ResponseEntity<Object> response = chatController.getMessages(1L, "unauthorized");
+
+        assertEquals(403, response.getStatusCode().value());
+    }
+
+    @Test
     void getAllMessages() {
         when(chatMessageRepository.findAll()).thenReturn(Arrays.asList(chatMessage));
         List<ChatMessage> result = chatController.getAllMessages();
@@ -196,6 +214,19 @@ class ChatControllerTest {
         ResponseEntity<Object> response = chatController.deleteMessage(1L, "trainer-1");
 
         assertEquals(404, response.getStatusCode().value());
+    }
+
+    @Test
+    void deleteMessage_SessionNotFound() {
+        ChatMessage msg = new ChatMessage();
+        msg.setSessionId(99L);
+        when(chatMessageRepository.findById(1L)).thenReturn(Optional.of(msg));
+        when(liveSessionRepository.findById(99L)).thenReturn(Optional.empty());
+
+        ResponseEntity<Object> response = chatController.deleteMessage(1L, "trainer-1");
+
+        assertEquals(400, response.getStatusCode().value());
+        assertEquals("Session unavailable", ((ErrorResponse) response.getBody()).getMessage());
     }
 
     @Test
