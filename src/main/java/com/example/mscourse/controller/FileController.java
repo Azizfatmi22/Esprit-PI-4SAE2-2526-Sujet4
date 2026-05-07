@@ -195,7 +195,7 @@ public class FileController {
                 }
             }
 
-            response.put("files", uploadedFiles);
+            response.put(SUBFOLDER_FILES, uploadedFiles);
             response.put("count", uploadedFiles.size());
             response.put(KEY_TYPE, type);
             response.put(KEY_COURS_ID, coursId);
