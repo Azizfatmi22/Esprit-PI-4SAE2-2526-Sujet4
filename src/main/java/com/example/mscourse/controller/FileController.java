@@ -1,4 +1,3 @@
-// FileController.java
 package com.example.mscourse.controller;
 
 import org.slf4j.Logger;
@@ -13,7 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import jakarta.annotation.PostConstruct;  // Au lieu de javax.annotation.PostConstruct
+import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,6 +27,20 @@ import java.util.Map;
 public class FileController {
 
     private static final Logger logger = LoggerFactory.getLogger(FileController.class);
+
+    // ── Constants ─────────────────────────────────────────────────────────────
+    private static final String SUBFOLDER_IMAGES  = "images";
+    private static final String SUBFOLDER_VIDEOS  = "videos";
+    private static final String SUBFOLDER_PDFS    = "pdfs";
+    private static final String SUBFOLDER_FILES   = "files";
+    private static final String SUBFOLDER_CONTENT = "content";
+
+    private static final String CONTENT_TYPE_OCTET  = "application/octet-stream";
+    private static final String CONTENT_TYPE_JPEG   = "image/jpeg";
+    private static final String CONTENT_TYPE_PNG    = "image/png";
+    private static final String CONTENT_TYPE_GIF    = "image/gif";
+    private static final String CONTENT_TYPE_MP4    = "video/mp4";
+    private static final String CONTENT_TYPE_PDF    = "application/pdf";
 
     @Value("${file.upload.dir:./uploads}")
     private String uploadDir;
@@ -49,109 +62,80 @@ public class FileController {
     // ==================== DEBUG METHODS ====================
 
     /**
-     * Debug endpoint to check upload directory configuration
+     * Debug endpoint to check upload directory configuration.
      */
     @GetMapping("/debug/config")
-    public ResponseEntity<?> getConfig() {
+    public ResponseEntity<Map<String, Object>> getConfig() {
         Map<String, Object> config = new HashMap<>();
         config.put("uploadDir", uploadDir);
         config.put("absolutePath", Paths.get(uploadDir).toAbsolutePath().toString());
         config.put("exists", Files.exists(Paths.get(uploadDir)));
-        
-        // Check if the specific file exists
-        Path testFile = Paths.get(uploadDir, "cours_3/chapitre_3/content_block_4/images/4.jpg");
-        config.put("testFileExists", Files.exists(testFile));
-        config.put("testFilePath", testFile.toAbsolutePath().toString());
-        
         return ResponseEntity.ok(config);
     }
 
     /**
-     * Debug endpoint to test path matching
+     * Debug endpoint to test path matching.
      */
     @GetMapping("/debug/test/{coursId}/{chapitreId}/{contentBlockId}/{type}/{filename:.+}")
-    public ResponseEntity<?> testPathMatching(
-
+    public ResponseEntity<Map<String, Object>> testPathMatching(
             @PathVariable Long coursId,
             @PathVariable Long chapitreId,
             @PathVariable Long contentBlockId,
             @PathVariable String type,
             @PathVariable String filename) {
-        
+
+        String typeFolder = determineSubfolder(type);
+        String relativePath = String.format("cours_%d/chapitre_%d/content_block_%d/%s/%s",
+                coursId, chapitreId, contentBlockId, typeFolder, filename);
+        Path fullPath = Paths.get(uploadDir, relativePath);
+
         Map<String, Object> result = new HashMap<>();
         result.put("coursId", coursId);
         result.put("chapitreId", chapitreId);
         result.put("contentBlockId", contentBlockId);
         result.put("type", type);
         result.put("filename", filename);
-        
-        String typeFolder = determineSubfolder(type);
         result.put("typeFolder", typeFolder);
-        
-        String relativePath = String.format("cours_%d/chapitre_%d/content_block_%d/%s/%s",
-                coursId, chapitreId, contentBlockId, typeFolder, filename);
         result.put("relativePath", relativePath);
-        
-        Path fullPath = Paths.get(uploadDir, relativePath);
         result.put("fullPath", fullPath.toAbsolutePath().toString());
         result.put("fileExists", Files.exists(fullPath));
-        
+
         return ResponseEntity.ok(result);
     }
 
     // ==================== UPLOAD METHODS ====================
 
     /**
-     * Upload content file with course and chapter structure
+     * Upload content file with course and chapter structure.
      * Files are named by content block ID: {id}.ext (e.g., 19.jpg)
      */
     @PostMapping("/content")
-    public ResponseEntity<?> uploadContentFile(
+    public ResponseEntity<Map<String, Object>> uploadContentFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam("type") String type,
             @RequestParam("coursId") Long coursId,
             @RequestParam("chapitreId") Long chapitreId,
-            @RequestParam("contentBlockId") Long contentBlockId) {  // ← Required
+            @RequestParam("contentBlockId") Long contentBlockId) {
 
         Map<String, Object> response = new HashMap<>();
 
+        if (file.isEmpty()) {
+            response.put("error", "Le fichier est vide");
+            return ResponseEntity.badRequest().body(response);
+        }
+
         try {
-            // Validation
-            if (file.isEmpty()) {
-                response.put("error", "Le fichier est vide");
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            // Get file extension
             String originalFilename = file.getOriginalFilename();
-            String extension = "";
-
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-
-            // Determine subfolder based on type
+            String extension = extractExtension(originalFilename);
             String typeFolder = determineSubfolder(type);
-
-            // Filename: {id}.ext (e.g., 19.jpg)
             String filename = contentBlockId + extension;
 
-            // Save with content block ID
             String uploadPath = String.format("%s/cours_%d/chapitre_%d/content_block_%d/%s/",
                     uploadDir, coursId, chapitreId, contentBlockId, typeFolder);
             String fileUrl = String.format("/api/courses/uploads/cours_%d/chapitre_%d/content_block_%d/%s/%s",
                     coursId, chapitreId, contentBlockId, typeFolder, filename);
 
-            Path dirPath = Paths.get(uploadPath);
-            if (!Files.exists(dirPath)) {
-                Files.createDirectories(dirPath);
-                logger.info("Created directory: {}", dirPath);
-            }
-
-            // Save the file (overwrite if exists)
-            Path filePath = Paths.get(uploadPath + filename);
-            Files.write(filePath, file.getBytes());
-            logger.info("File saved: {}", filePath);
+            saveFile(uploadPath, filename, file.getBytes());
 
             response.put("fileUrl", fileUrl);
             response.put("fileName", originalFilename);
@@ -177,15 +161,14 @@ public class FileController {
     }
 
     /**
-     * Upload multiple files
+     * Upload multiple files.
      */
     @PostMapping("/content/bulk")
-    public ResponseEntity<?> uploadMultipleFiles(
+    public ResponseEntity<Map<String, Object>> uploadMultipleFiles(
             @RequestParam("files") MultipartFile[] files,
             @RequestParam("type") String type,
             @RequestParam("coursId") Long coursId,
-            @RequestParam("chapitreId") Long chapitreId
-    ) {
+            @RequestParam("chapitreId") Long chapitreId) {
 
         Map<String, Object> response = new HashMap<>();
         List<Map<String, String>> uploadedFiles = new ArrayList<>();
@@ -193,40 +176,7 @@ public class FileController {
         try {
             for (MultipartFile file : files) {
                 if (!file.isEmpty()) {
-                    String originalFilename = file.getOriginalFilename();
-                    String extension = "";
-                    String nameWithoutExtension = originalFilename;
-                    
-                    if (originalFilename != null && originalFilename.contains(".")) {
-                        extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-                        nameWithoutExtension = originalFilename.substring(0, originalFilename.lastIndexOf("."));
-                    }
-
-                    String safeFilename = nameWithoutExtension != null ?
-                            nameWithoutExtension.replaceAll("[^a-zA-Z0-9.-]", "_") : "file";
-                    String filename = System.currentTimeMillis() + "_" + safeFilename + extension;
-
-                    String typeFolder = determineSubfolder(type);
-                    String uploadPath = String.format("%s/cours_%d/chapitre_%d/%s/",
-                            uploadDir, coursId, chapitreId, typeFolder);
-
-                    Path dirPath = Paths.get(uploadPath);
-                    if (!Files.exists(dirPath)) {
-                        Files.createDirectories(dirPath);
-                    }
-
-                    Path filePath = Paths.get(uploadPath + filename);
-                    Files.write(filePath, file.getBytes());
-
-                    String fileUrl = String.format("/api/courses/uploads/cours_%d/chapitre_%d/%s/%s",
-                            coursId, chapitreId, typeFolder, filename);
-
-                    Map<String, String> fileInfo = new HashMap<>();
-                    fileInfo.put("fileUrl", fileUrl);
-                    fileInfo.put("fileName", originalFilename != null ? originalFilename : filename);
-                    fileInfo.put("fileSize", String.valueOf(file.getSize()));
-
-                    uploadedFiles.add(fileInfo);
+                    uploadedFiles.add(processBulkFile(file, type, coursId, chapitreId));
                 }
             }
 
@@ -246,47 +196,29 @@ public class FileController {
     }
 
     /**
-     * Upload thumbnail
-     * Filename: {id}.ext (e.g., 11.jpg)
+     * Upload thumbnail. Filename: {coursId}.ext
      */
     @PostMapping("/thumbnails/upload")
-    public ResponseEntity<?> uploadThumbnail(
+    public ResponseEntity<Map<String, Object>> uploadThumbnail(
             @RequestParam("file") MultipartFile file,
             @RequestParam("coursId") Long coursId) {
 
         Map<String, Object> response = new HashMap<>();
 
+        if (file.isEmpty()) {
+            response.put("error", "Le fichier est vide");
+            return ResponseEntity.badRequest().body(response);
+        }
+
         try {
-            if (file.isEmpty()) {
-                response.put("error", "Le fichier est vide");
-                return ResponseEntity.badRequest().body(response);
-            }
-
             String originalFilename = file.getOriginalFilename();
-            String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-
-            // Filename: {id}.ext (e.g., 11.jpg)
+            String extension = extractExtension(originalFilename);
             String filename = coursId + extension;
-
-            // Structure: uploads/cours_{coursId}/thumbnails/
             String uploadPath = String.format("%s/cours_%d/thumbnails/", uploadDir, coursId);
-            Path dirPath = Paths.get(uploadPath);
-            if (!Files.exists(dirPath)) {
-                Files.createDirectories(dirPath);
-                logger.info("Created directory: {}", dirPath);
-            }
 
-            // Save the file (overwrite if exists)
-            Path filePath = Paths.get(uploadPath + filename);
-            Files.write(filePath, file.getBytes());
-            logger.info("Thumbnail saved: {}", filePath);
+            saveFile(uploadPath, filename, file.getBytes());
 
-            // Fix the URL formatting - use String.format instead of concatenation
-            String fileUrl = String.format("/api/courses/uploads/cours_%d/thumbnails/%s",
-                    coursId, filename);
+            String fileUrl = String.format("/api/courses/uploads/cours_%d/thumbnails/%s", coursId, filename);
 
             response.put("fileUrl", fileUrl);
             response.put("fileName", originalFilename);
@@ -302,12 +234,9 @@ public class FileController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
     // ==================== SERVE METHODS ====================
 
-    /**
-     * Serve files with course/chapter/content_block structure
-     * Matches: /api/courses/uploads/cours_{coursId}/chapitre_{chapitreId}/content_block_{contentBlockId}/{type}/{filename}
-     */
     @GetMapping("/cours_{coursId}/chapitre_{chapitreId}/content_block_{contentBlockId}/{type}/{filename:.+}")
     public ResponseEntity<Resource> serveCourseFileWithContentBlock(
             @PathVariable Long coursId,
@@ -316,26 +245,12 @@ public class FileController {
             @PathVariable String type,
             @PathVariable String filename) {
 
-        logger.info("=== SERVE CONTENT BLOCK FILE ===");
-        logger.info("coursId: {}", coursId);
-        logger.info("chapitreId: {}", chapitreId);
-        logger.info("contentBlockId: {}", contentBlockId);
-        logger.info("type: {}", type);
-        logger.info("filename: {}", filename);
         String typeFolder = determineSubfolder(type);
-        logger.info("typeFolder: {}", typeFolder);
-        
         String filePath = String.format("cours_%d/chapitre_%d/content_block_%d/%s/%s",
                 coursId, chapitreId, contentBlockId, typeFolder, filename);
-        logger.info("Constructed relativePath: {}", filePath);
-
         return serveFile(filePath, filename);
     }
 
-    /**
-     * Serve files with course/chapter structure (legacy/temp support)
-     * Matches: /api/courses/uploads/cours_{coursId}/chapitre_{chapitreId}/{type}/{filename}
-     */
     @GetMapping("/cours_{coursId}/chapitre_{chapitreId}/{type}/{filename:.+}")
     public ResponseEntity<Resource> serveCourseFile(
             @PathVariable Long coursId,
@@ -343,23 +258,12 @@ public class FileController {
             @PathVariable String type,
             @PathVariable String filename) {
 
-        logger.info("=== SERVE COURSE FILE ===");
-        logger.info("coursId: {}", coursId);
-        logger.info("chapitreId: {}", chapitreId);
-        logger.info("type: {}", type);
-        logger.info("filename: {}", filename);
-
         String typeFolder = determineSubfolder(type);
         String filePath = String.format("cours_%d/chapitre_%d/%s/%s",
                 coursId, chapitreId, typeFolder, filename);
-
         return serveFile(filePath, filename);
     }
 
-    /**
-     * Serve temp files (fallback for files uploaded without content block ID)
-     * Matches: /api/courses/uploads/cours_{coursId}/chapitre_{chapitreId}/temp/{type}/{filename}
-     */
     @GetMapping("/cours_{coursId}/chapitre_{chapitreId}/temp/{type}/{filename:.+}")
     public ResponseEntity<Resource> serveTempFile(
             @PathVariable Long coursId,
@@ -367,199 +271,52 @@ public class FileController {
             @PathVariable String type,
             @PathVariable String filename) {
 
-        logger.info("=== SERVE TEMP FILE ===");
-        logger.info("coursId: {}", coursId);
-        logger.info("chapitreId: {}", chapitreId);
-        logger.info("type: {}", type);
-        logger.info("filename: {}", filename);
-
         String typeFolder = determineSubfolder(type);
         String filePath = String.format("cours_%d/chapitre_%d/temp/%s/%s",
                 coursId, chapitreId, typeFolder, filename);
-
         return serveFile(filePath, filename);
     }
 
-    /**
-     * Serve thumbnails
-     * Matches: /api/courses/uploads/{coursId}/thumbnails/{filename}
-     */
     @GetMapping("/{coursId}/thumbnails/{filename:.+}")
     public ResponseEntity<Resource> serveThumbnail(
             @PathVariable Long coursId,
             @PathVariable String filename) {
 
-        logger.info("=== SERVE COURSE THUMBNAIL ===");
-        logger.info("coursId: {}", coursId);
-        logger.info("filename: {}", filename);
-
-        // ✅ Map URL path to actual storage path structure with cours_ prefix
-        String filePath = String.format("cours_%d/thumbnails/%s", coursId, filename);
-
-        return serveFile(filePath, filename);
+        return serveFile(String.format("cours_%d/thumbnails/%s", coursId, filename), filename);
     }
 
-    /**
-     * Serve course attachments
-     */
     @GetMapping("/cours_{coursId}/attachments/{filename:.+}")
     public ResponseEntity<Resource> serveAttachment(
             @PathVariable Long coursId,
             @PathVariable String filename) {
-        
-        String filePath = String.format("cours_%d/attachments/%s", coursId, filename);
-        return serveFile(filePath, filename);
+
+        return serveFile(String.format("cours_%d/attachments/%s", coursId, filename), filename);
     }
 
-    /**
-     * Serve images (legacy support)
-     */
     @GetMapping("/images/{filename:.+}")
     public ResponseEntity<Resource> serveImage(@PathVariable String filename) {
         return serveFile("images/" + filename, filename);
     }
 
-    /**
-     * Serve videos (legacy support)
-     */
     @GetMapping("/videos/{filename:.+}")
     public ResponseEntity<Resource> serveVideo(@PathVariable String filename) {
         return serveFile("videos/" + filename, filename);
     }
 
-    /**
-     * Serve PDFs (legacy support)
-     */
     @GetMapping("/pdfs/{filename:.+}")
     public ResponseEntity<Resource> servePdf(@PathVariable String filename) {
         return serveFile("pdfs/" + filename, filename);
     }
 
-    /**
-     * Serve content files (legacy support)
-     */
     @GetMapping("/content/{filename:.+}")
     public ResponseEntity<Resource> serveContent(@PathVariable String filename) {
         return serveFile("content/" + filename, filename);
     }
 
-    /**
-     * Generic method to serve files
-     */
-    private ResponseEntity<Resource> serveFile(String relativePath, String filename) {
-        try {
-            Path filePath = Paths.get(uploadDir, relativePath);
-            logger.info("=== SERVE FILE DEBUG ===");
-            logger.info("uploadDir: {}", uploadDir);
-            logger.info("relativePath: {}", relativePath);
-            logger.info("filename: {}", filename);
-            logger.info("Constructed filePath: {}", filePath);
-            logger.info("Absolute path: {}", filePath.toAbsolutePath());
-            logger.info("File exists: {}", Files.exists(filePath));
-            logger.info("File readable: {}", Files.isReadable(filePath));
+    // ==================== UTILITY ENDPOINTS ====================
 
-            Resource resource = new UrlResource(filePath.toUri());
-
-            if (resource.exists() && resource.isReadable()) {
-                String contentType = determineContentType(filename);
-                return ResponseEntity.ok()
-                        .contentType(MediaType.parseMediaType(contentType))
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
-                        .body(resource);
-            } else {
-                logger.warn("File not found or not readable: {}", filePath);
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            logger.error("Error serving file: {}", relativePath, e);
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    // ==================== HELPER METHODS ====================
-
-    /**
-     * Determine subfolder based on file type
-     */
-    private String determineSubfolder(String type) {
-        if (type == null) return "content";
-
-        switch (type.toUpperCase()) {
-            case "IMAGE":
-            case "IMAGES":
-                return "images";
-            case "VIDEO":
-            case "VIDEOS":
-                return "videos";
-            case "PDF":
-            case "PDFS":
-                return "pdfs";
-            case "FILE":
-            case "FILES":
-                return "files";
-            default:
-                return "content";
-        }
-    }
-
-    /**
-     * Determine content type based on file extension
-     */
-    private String determineContentType(String filename) {
-        if (filename == null || !filename.contains(".")) {
-            return "application/octet-stream";
-        }
-
-        String extension = filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
-
-        switch (extension) {
-            case "jpg":
-            case "jpeg":
-                return "image/jpeg";
-            case "png":
-                return "image/png";
-            case "gif":
-                return "image/gif";
-            case "mp4":
-                return "video/mp4";
-            case "pdf":
-                return "application/pdf";
-            case "txt":
-                return "text/plain";
-            case "html":
-            case "htm":
-                return "text/html";
-            case "css":
-                return "text/css";
-            case "js":
-                return "application/javascript";
-            case "json":
-                return "application/json";
-            case "xml":
-                return "application/xml";
-            case "zip":
-                return "application/zip";
-            case "doc":
-            case "docx":
-                return "application/msword";
-            case "xls":
-            case "xlsx":
-                return "application/vnd.ms-excel";
-            case "ppt":
-            case "pptx":
-                return "application/vnd.ms-powerpoint";
-            default:
-                return "application/octet-stream";
-        }
-    }
-
-    // ==================== UTILITY METHODS ====================
-
-    /**
-     * Delete a file
-     */
     @DeleteMapping("/cours_{coursId}/chapitre_{chapitreId}/content_block_{contentBlockId}/{type}/{filename:.+}")
-    public ResponseEntity<?> deleteFile(
+    public ResponseEntity<Map<String, String>> deleteFile(
             @PathVariable Long coursId,
             @PathVariable Long chapitreId,
             @PathVariable Long contentBlockId,
@@ -567,21 +324,18 @@ public class FileController {
             @PathVariable String filename) {
 
         try {
-
             String typeFolder = determineSubfolder(type);
             String filePath = String.format("%s/cours_%d/chapitre_%d/content_block_%d/%s/%s",
-                    uploadDir,coursId, chapitreId, contentBlockId, typeFolder, filename);
-
-
+                    uploadDir, coursId, chapitreId, contentBlockId, typeFolder, filename);
 
             Path path = Paths.get(filePath);
             if (Files.exists(path)) {
                 Files.delete(path);
                 logger.info("File deleted: {}", path);
                 return ResponseEntity.ok(Map.of("message", "Fichier supprimé avec succès"));
-            } else {
-                return ResponseEntity.notFound().build();
             }
+            return ResponseEntity.notFound().build();
+
         } catch (IOException e) {
             logger.error("Error deleting file", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -589,11 +343,8 @@ public class FileController {
         }
     }
 
-    /**
-     * List files in a course/chapter
-     */
     @GetMapping("/cours_{coursId}/chapitre_{chapitreId}/content_block_{contentBlockId}/{type}/list")
-    public ResponseEntity<?> listFiles(
+    public ResponseEntity<List<Map<String, String>>> listFiles(
             @PathVariable Long coursId,
             @PathVariable Long chapitreId,
             @PathVariable Long contentBlockId,
@@ -602,7 +353,7 @@ public class FileController {
         try {
             String typeFolder = determineSubfolder(type);
             String dirPath = String.format("%s/cours_%d/chapitre_%d/content_block_%d/%s/",
-                    uploadDir, coursId, chapitreId,contentBlockId, typeFolder);
+                    uploadDir, coursId, chapitreId, contentBlockId, typeFolder);
 
             Path path = Paths.get(dirPath);
             if (!Files.exists(path)) {
@@ -612,11 +363,12 @@ public class FileController {
             List<Map<String, String>> files = new ArrayList<>();
             try (java.util.stream.Stream<Path> stream = Files.list(path)) {
                 stream.forEach(filePath -> {
+                    String fname = filePath.getFileName().toString();
                     Map<String, String> fileInfo = new HashMap<>();
-                    String filename = filePath.getFileName().toString();
-                    fileInfo.put("fileName", filename);
-                    fileInfo.put("fileUrl", String.format("/api/courses/uploads/cours_%d/chapitre_%d/content_block_%d/%s/%s",
-                            coursId, chapitreId,contentBlockId, typeFolder, filename));
+                    fileInfo.put("fileName", fname);
+                    fileInfo.put("fileUrl", String.format(
+                            "/api/courses/uploads/cours_%d/chapitre_%d/content_block_%d/%s/%s",
+                            coursId, chapitreId, contentBlockId, typeFolder, fname));
                     try {
                         fileInfo.put("fileSize", String.valueOf(Files.size(filePath)));
                     } catch (IOException e) {
@@ -630,8 +382,109 @@ public class FileController {
 
         } catch (IOException e) {
             logger.error("Error listing files", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Erreur lors du listage des fichiers: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    // ==================== PRIVATE HELPERS ====================
+
+    private Map<String, String> processBulkFile(MultipartFile file, String type,
+                                                  Long coursId, Long chapitreId) throws IOException {
+        String originalFilename = file.getOriginalFilename();
+        String extension = extractExtension(originalFilename);
+        String nameWithoutExt = originalFilename != null && originalFilename.contains(".")
+                ? originalFilename.substring(0, originalFilename.lastIndexOf("."))
+                : originalFilename;
+        String safeFilename = nameWithoutExt != null
+                ? nameWithoutExt.replaceAll("[^a-zA-Z0-9.-]", "_") : "file";
+        String filename = System.currentTimeMillis() + "_" + safeFilename + extension;
+
+        String typeFolder = determineSubfolder(type);
+        String uploadPath = String.format("%s/cours_%d/chapitre_%d/%s/",
+                uploadDir, coursId, chapitreId, typeFolder);
+
+        saveFile(uploadPath, filename, file.getBytes());
+
+        Map<String, String> fileInfo = new HashMap<>();
+        fileInfo.put("fileUrl", String.format("/api/courses/uploads/cours_%d/chapitre_%d/%s/%s",
+                coursId, chapitreId, typeFolder, filename));
+        fileInfo.put("fileName", originalFilename != null ? originalFilename : filename);
+        fileInfo.put("fileSize", String.valueOf(file.getSize()));
+        return fileInfo;
+    }
+
+    private void saveFile(String dirPath, String filename, byte[] bytes) throws IOException {
+        Path dir = Paths.get(dirPath);
+        if (!Files.exists(dir)) {
+            Files.createDirectories(dir);
+            logger.info("Created directory: {}", dir);
+        }
+        Path filePath = dir.resolve(filename);
+        Files.write(filePath, bytes);
+        logger.info("File saved: {}", filePath);
+    }
+
+    private ResponseEntity<Resource> serveFile(String relativePath, String filename) {
+        try {
+            Path filePath = Paths.get(uploadDir, relativePath);
+            Resource resource = new UrlResource(filePath.toUri());
+
+            if (resource.exists() && resource.isReadable()) {
+                String contentType = determineContentType(filename);
+                return ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(contentType))
+                        .header(HttpHeaders.CONTENT_DISPOSITION,
+                                "inline; filename=\"" + resource.getFilename() + "\"")
+                        .body(resource);
+            }
+            logger.warn("File not found or not readable: {}", filePath);
+            return ResponseEntity.notFound().build();
+
+        } catch (Exception e) {
+            logger.error("Error serving file: {}", relativePath, e);
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    private String extractExtension(String originalFilename) {
+        if (originalFilename != null && originalFilename.contains(".")) {
+            return originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+        return "";
+    }
+
+    private String determineSubfolder(String type) {
+        if (type == null) return SUBFOLDER_CONTENT;
+        return switch (type.toUpperCase()) {
+            case "IMAGE", "IMAGES" -> SUBFOLDER_IMAGES;
+            case "VIDEO", "VIDEOS" -> SUBFOLDER_VIDEOS;
+            case "PDF",   "PDFS"   -> SUBFOLDER_PDFS;
+            case "FILE",  "FILES"  -> SUBFOLDER_FILES;
+            default                -> SUBFOLDER_CONTENT;
+        };
+    }
+
+    private String determineContentType(String filename) {
+        if (filename == null || !filename.contains(".")) {
+            return CONTENT_TYPE_OCTET;
+        }
+        return switch (filename.substring(filename.lastIndexOf(".") + 1).toLowerCase()) {
+            case "jpg", "jpeg" -> CONTENT_TYPE_JPEG;
+            case "png"         -> CONTENT_TYPE_PNG;
+            case "gif"         -> CONTENT_TYPE_GIF;
+            case "mp4"         -> CONTENT_TYPE_MP4;
+            case "pdf"         -> CONTENT_TYPE_PDF;
+            case "txt"         -> "text/plain";
+            case "html", "htm" -> "text/html";
+            case "css"         -> "text/css";
+            case "js"          -> "application/javascript";
+            case "json"        -> "application/json";
+            case "xml"         -> "application/xml";
+            case "zip"         -> "application/zip";
+            case "doc", "docx" -> "application/msword";
+            case "xls", "xlsx" -> "application/vnd.ms-excel";
+            case "ppt", "pptx" -> "application/vnd.ms-powerpoint";
+            default            -> CONTENT_TYPE_OCTET;
+        };
     }
 }
