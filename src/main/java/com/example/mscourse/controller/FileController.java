@@ -42,6 +42,21 @@ public class FileController {
     private static final String CONTENT_TYPE_MP4    = "video/mp4";
     private static final String CONTENT_TYPE_PDF    = "application/pdf";
 
+    // ── Map key constants ─────────────────────────────────────────────────────
+    private static final String KEY_FILE_URL        = "fileUrl";
+    private static final String KEY_FILE_NAME       = "fileName";
+    private static final String KEY_FILE_SIZE       = "fileSize";
+    private static final String KEY_COURS_ID        = "coursId";
+    private static final String KEY_CHAPITRE_ID     = "chapitreId";
+    private static final String KEY_CONTENT_BLOCK_ID = "contentBlockId";
+    private static final String KEY_TYPE            = "type";
+    private static final String KEY_MESSAGE         = "message";
+    private static final String KEY_ERROR           = "error";
+    private static final String KEY_TYPE_FOLDER     = "typeFolder";
+    private static final String KEY_RELATIVE_PATH   = "relativePath";
+    private static final String KEY_FULL_PATH       = "fullPath";
+    private static final String KEY_FILE_EXISTS     = "fileExists";
+
     @Value("${file.upload.dir:./uploads}")
     private String uploadDir;
 
@@ -90,15 +105,15 @@ public class FileController {
         Path fullPath = Paths.get(uploadDir, relativePath);
 
         Map<String, Object> result = new HashMap<>();
-        result.put("coursId", coursId);
-        result.put("chapitreId", chapitreId);
-        result.put("contentBlockId", contentBlockId);
-        result.put("type", type);
-        result.put("filename", filename);
-        result.put("typeFolder", typeFolder);
-        result.put("relativePath", relativePath);
-        result.put("fullPath", fullPath.toAbsolutePath().toString());
-        result.put("fileExists", Files.exists(fullPath));
+        result.put(KEY_COURS_ID, coursId);
+        result.put(KEY_CHAPITRE_ID, chapitreId);
+        result.put(KEY_CONTENT_BLOCK_ID, contentBlockId);
+        result.put(KEY_TYPE, type);
+        result.put(KEY_FILE_NAME, filename);
+        result.put(KEY_TYPE_FOLDER, typeFolder);
+        result.put(KEY_RELATIVE_PATH, relativePath);
+        result.put(KEY_FULL_PATH, fullPath.toAbsolutePath().toString());
+        result.put(KEY_FILE_EXISTS, Files.exists(fullPath));
 
         return ResponseEntity.ok(result);
     }
@@ -120,7 +135,7 @@ public class FileController {
         Map<String, Object> response = new HashMap<>();
 
         if (file.isEmpty()) {
-            response.put("error", "Le fichier est vide");
+            response.put(KEY_ERROR, "Le fichier est vide");
             return ResponseEntity.badRequest().body(response);
         }
 
@@ -137,25 +152,25 @@ public class FileController {
 
             saveFile(uploadPath, filename, file.getBytes());
 
-            response.put("fileUrl", fileUrl);
-            response.put("fileName", originalFilename);
-            response.put("fileSize", file.getSize());
+            response.put(KEY_FILE_URL, fileUrl);
+            response.put(KEY_FILE_NAME, originalFilename);
+            response.put(KEY_FILE_SIZE, file.getSize());
             response.put("contentType", file.getContentType());
-            response.put("coursId", coursId);
-            response.put("chapitreId", chapitreId);
-            response.put("contentBlockId", contentBlockId);
-            response.put("type", typeFolder);
-            response.put("message", "Fichier uploadé avec succès");
+            response.put(KEY_COURS_ID, coursId);
+            response.put(KEY_CHAPITRE_ID, chapitreId);
+            response.put(KEY_CONTENT_BLOCK_ID, contentBlockId);
+            response.put(KEY_TYPE, typeFolder);
+            response.put(KEY_MESSAGE, "Fichier uploadé avec succès");
 
             return ResponseEntity.ok(response);
 
         } catch (IOException e) {
             logger.error("IO Error during file upload", e);
-            response.put("error", "Erreur lors de la sauvegarde: " + e.getMessage());
+            response.put(KEY_ERROR, "Erreur lors de la sauvegarde: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         } catch (Exception e) {
             logger.error("Unexpected error during file upload", e);
-            response.put("error", "Erreur inattendue: " + e.getMessage());
+            response.put(KEY_ERROR, "Erreur inattendue: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
@@ -182,15 +197,15 @@ public class FileController {
 
             response.put("files", uploadedFiles);
             response.put("count", uploadedFiles.size());
-            response.put("type", type);
-            response.put("coursId", coursId);
-            response.put("chapitreId", chapitreId);
+            response.put(KEY_TYPE, type);
+            response.put(KEY_COURS_ID, coursId);
+            response.put(KEY_CHAPITRE_ID, chapitreId);
 
             return ResponseEntity.ok(response);
 
         } catch (IOException e) {
             logger.error("IO Error during bulk upload", e);
-            response.put("error", "Erreur lors de l'upload multiple: " + e.getMessage());
+            response.put(KEY_ERROR, "Erreur lors de l'upload multiple: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
@@ -206,7 +221,7 @@ public class FileController {
         Map<String, Object> response = new HashMap<>();
 
         if (file.isEmpty()) {
-            response.put("error", "Le fichier est vide");
+            response.put(KEY_ERROR, "Le fichier est vide");
             return ResponseEntity.badRequest().body(response);
         }
 
@@ -220,17 +235,17 @@ public class FileController {
 
             String fileUrl = String.format("/api/courses/uploads/cours_%d/thumbnails/%s", coursId, filename);
 
-            response.put("fileUrl", fileUrl);
-            response.put("fileName", originalFilename);
-            response.put("fileSize", file.getSize());
-            response.put("coursId", coursId);
-            response.put("message", "Thumbnail uploadé avec succès");
+            response.put(KEY_FILE_URL, fileUrl);
+            response.put(KEY_FILE_NAME, originalFilename);
+            response.put(KEY_FILE_SIZE, file.getSize());
+            response.put(KEY_COURS_ID, coursId);
+            response.put(KEY_MESSAGE, "Thumbnail uploadé avec succès");
 
             return ResponseEntity.ok(response);
 
         } catch (IOException e) {
             logger.error("IO Error during thumbnail upload", e);
-            response.put("error", "Erreur lors de l'upload de la miniature: " + e.getMessage());
+            response.put(KEY_ERROR, "Erreur lors de l'upload de la miniature: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
@@ -332,14 +347,14 @@ public class FileController {
             if (Files.exists(path)) {
                 Files.delete(path);
                 logger.info("File deleted: {}", path);
-                return ResponseEntity.ok(Map.of("message", "Fichier supprimé avec succès"));
+                return ResponseEntity.ok(Map.of(KEY_MESSAGE, "Fichier supprimé avec succès"));
             }
             return ResponseEntity.notFound().build();
 
         } catch (IOException e) {
             logger.error("Error deleting file", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Erreur lors de la suppression: " + e.getMessage()));
+                    .body(Map.of(KEY_ERROR, "Erreur lors de la suppression: " + e.getMessage()));
         }
     }
 
@@ -365,14 +380,14 @@ public class FileController {
                 stream.forEach(filePath -> {
                     String fname = filePath.getFileName().toString();
                     Map<String, String> fileInfo = new HashMap<>();
-                    fileInfo.put("fileName", fname);
-                    fileInfo.put("fileUrl", String.format(
+                    fileInfo.put(KEY_FILE_NAME, fname);
+                    fileInfo.put(KEY_FILE_URL, String.format(
                             "/api/courses/uploads/cours_%d/chapitre_%d/content_block_%d/%s/%s",
                             coursId, chapitreId, contentBlockId, typeFolder, fname));
                     try {
-                        fileInfo.put("fileSize", String.valueOf(Files.size(filePath)));
+                        fileInfo.put(KEY_FILE_SIZE, String.valueOf(Files.size(filePath)));
                     } catch (IOException e) {
-                        fileInfo.put("fileSize", "0");
+                        fileInfo.put(KEY_FILE_SIZE, "0");
                     }
                     files.add(fileInfo);
                 });
@@ -406,10 +421,10 @@ public class FileController {
         saveFile(uploadPath, filename, file.getBytes());
 
         Map<String, String> fileInfo = new HashMap<>();
-        fileInfo.put("fileUrl", String.format("/api/courses/uploads/cours_%d/chapitre_%d/%s/%s",
+        fileInfo.put(KEY_FILE_URL, String.format("/api/courses/uploads/cours_%d/chapitre_%d/%s/%s",
                 coursId, chapitreId, typeFolder, filename));
-        fileInfo.put("fileName", originalFilename != null ? originalFilename : filename);
-        fileInfo.put("fileSize", String.valueOf(file.getSize()));
+        fileInfo.put(KEY_FILE_NAME, originalFilename != null ? originalFilename : filename);
+        fileInfo.put(KEY_FILE_SIZE, String.valueOf(file.getSize()));
         return fileInfo;
     }
 
