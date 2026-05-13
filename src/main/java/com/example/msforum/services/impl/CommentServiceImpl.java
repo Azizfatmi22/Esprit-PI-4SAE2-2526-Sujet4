@@ -11,6 +11,7 @@ import com.example.msforum.repositories.PostRepository;
 import com.example.msforum.services.CommentService;
 import com.example.msforum.services.ModerationService;
 import com.example.msforum.services.ReputationService;
+import com.example.msforum.services.SentimentServiceClient;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,13 +26,16 @@ public class CommentServiceImpl implements CommentService {
     private final PostRepository postRepository;
     private final ReputationService reputationService;
     private final ModerationService moderationService;
+    private final SentimentServiceClient sentimentServiceClient;
 
     public CommentServiceImpl(CommentRepository commentRepository, PostRepository postRepository,
-                              ReputationService reputationService, ModerationService moderationService) {
+                              ReputationService reputationService, ModerationService moderationService,
+                              SentimentServiceClient sentimentServiceClient) {
         this.commentRepository = commentRepository;
         this.postRepository = postRepository;
         this.reputationService = reputationService;
         this.moderationService = moderationService;
+        this.sentimentServiceClient = sentimentServiceClient;
     }
 
     @Override
@@ -46,6 +50,10 @@ public class CommentServiceImpl implements CommentService {
         // Moderation
         ContentStatus status = moderationService.moderateContent(comment.getContent());
         comment.setStatus(status);
+
+        // Sentiment
+        String sentiment = sentimentServiceClient.getSentiment(comment.getContent());
+        comment.setSentiment(sentiment);
 
         Comment saved = commentRepository.save(comment);
 
@@ -126,6 +134,7 @@ public class CommentServiceImpl implements CommentService {
             .createdAt(comment.getCreatedAt())
             .status(comment.getStatus())
             .reviewedByAdmin(comment.getReviewedByAdmin())
+            .sentiment(comment.getSentiment())
             .build();
     }
 }

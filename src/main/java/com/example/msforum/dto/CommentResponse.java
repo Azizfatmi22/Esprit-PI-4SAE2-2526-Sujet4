@@ -16,4 +16,5 @@ public class CommentResponse {
     private LocalDateTime createdAt;
     private ContentStatus status;
     private Boolean reviewedByAdmin;
+    private String sentiment;
 }

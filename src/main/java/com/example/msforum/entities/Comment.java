@@ -42,6 +42,8 @@ public class Comment {
 
     private Boolean reviewedByAdmin = false;
 
+    private String sentiment;
+
     @PrePersist
     public void onCreate() {
         createdAt = LocalDateTime.now();

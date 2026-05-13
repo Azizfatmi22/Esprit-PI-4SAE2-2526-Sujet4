@@ -15,7 +15,7 @@ public class ModerationServiceImpl implements ModerationService {
     // A sample list of bad words. In a real app, this should probably be in a database or external file.
     private static final Set<String> BAD_WORDS = new HashSet<>(Arrays.asList(
         // English
-        "fuck", "shit", "asshole", "bitch", "crap", "bastard",
+        "fuck", "shit", "asshole", "bitch", "crap", "bastard","badword",
         // French
         "merde", "connard", "salope", "putain", "cul", "batard",
         // Tunisian (Transliterated & Arabic)
